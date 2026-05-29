@@ -91,6 +91,7 @@ canvas{display:block;background:#04060f;touch-action:none;width:100%;flex:1;min-
 .upgrade-card.evolved-card{border-color:#EF9F27;background:#14100a}
 .upgrade-card.evolved2-card{border-color:#ff4400;background:#14080a}
 .upgrade-card.evolved3-card{border-color:#cc00ff;background:#100018}
+.upgrade-card.exclusive-gold{border-color:#EF9F27!important;background:#1a1000!important;box-shadow:0 0 16px rgba(239,159,39,0.5),inset 0 0 20px rgba(239,159,39,0.08)}
 .uc-name{font-size:11px;font-weight:600;color:#ddd;margin-bottom:3px}
 .uc-type{font-size:8px;padding:1px 5px;border-radius:3px;display:inline-block;margin-bottom:4px}
 .type-attack{background:#2a1010;color:#E24B4A}.type-orbit{background:#0d2a1a;color:#1D9E75}
@@ -1407,31 +1408,31 @@ const QUALITY_DEFS=[
 
 // 品质对各武器的真实加成（装备后持续生效）
 const QUALITY_BONUS={
-  white:  {atkMult:1.0,  cdMult:1.0,  dmgFlat:0,   spdMult:1.0,  critRate:0,    comboHit:0, splashR:0,  pierce:0, reflect:0,    hpMult:1.0,  shield:0,  leechRate:0,    dodgeFrames:0, dmgReduce:0,    revive:false, comboSpeed:1.0,  comboDmg:0,    evolveRate:1.0,  xpBoost:1.0,  starDmg:0,    evolveRange:1.0,  extra:''},
-  green:  {atkMult:1.15, cdMult:0.92, dmgFlat:0.5, spdMult:1.0,  critRate:0.02, comboHit:1, splashR:25, pierce:1, reflect:0.03,  hpMult:1.10, shield:3,  leechRate:0.01,  dodgeFrames:0, dmgReduce:0.02,  revive:false, comboSpeed:1.02, comboDmg:0.01,  evolveRate:1.05,  xpBoost:1.05, starDmg:0.02,  evolveRange:1.0,   extra:'攻伐+15%'},
-  blue:   {atkMult:1.3,  cdMult:0.85, dmgFlat:1.2, spdMult:1.05, critRate:0.04, comboHit:1, splashR:40, pierce:1, reflect:0.05,  hpMult:1.20, shield:7,  leechRate:0.02,  dodgeFrames:0, dmgReduce:0.04,  revive:false, comboSpeed:1.04, comboDmg:0.02,  evolveRate:1.10,  xpBoost:1.10, starDmg:0.04,  evolveRange:1.0,   extra:'攻伐+30%·冷却-15%'},
-  purple: {atkMult:1.55, cdMult:0.75, dmgFlat:2.5, spdMult:1.1,  critRate:0.07, comboHit:1, splashR:55, pierce:1, reflect:0.08,  hpMult:1.35, shield:15, leechRate:0.04,  dodgeFrames:900,dmgReduce:0.07,  revive:false, comboSpeed:1.06, comboDmg:0.03,  evolveRate:1.18,  xpBoost:1.18, starDmg:0.07,  evolveRange:1.0,   extra:'攻伐+55%·冷却-25%·移速+10%'},
-  gold:   {atkMult:1.9,  cdMult:0.62, dmgFlat:5.0, spdMult:1.15, critRate:0.10, comboHit:2, splashR:70, pierce:2, reflect:0.12,  hpMult:1.50, shield:25, leechRate:0.07,  dodgeFrames:750,dmgReduce:0.10,  revive:false, comboSpeed:1.09, comboDmg:0.05,  evolveRate:1.30,  xpBoost:1.30, starDmg:0.10,  evolveRange:1.05,  extra:'攻伐+90%·冷却-38%·移速+15%'},
-  red:    {atkMult:2.6,  cdMult:0.45, dmgFlat:10,  spdMult:1.25, critRate:0.14, comboHit:2, splashR:80, pierce:3, reflect:0.18,  hpMult:1.80, shield:40, leechRate:0.12,  dodgeFrames:600,dmgReduce:0.15,  revive:true,  comboSpeed:1.12, comboDmg:0.08,  evolveRate:1.50,  xpBoost:1.50, starDmg:0.15,  evolveRange:1.10,  extra:'⚡全属性暴涨·冷却砍半·移速+25%'},
+  white:  {qualityMult:1.0,atkMult:1.0,  cdMult:1.0,  dmgFlat:0,   spdMult:1.0,  critRate:0,    comboHit:0, splashR:0,  pierce:0, reflect:0,    hpMult:1.0,  shield:0,  leechRate:0,    dodgeFrames:0, dmgReduce:0,    revive:false, comboSpeed:1.0,  comboDmg:0,    evolveRate:1.0,  xpBoost:1.0,  starDmg:0,    evolveRange:1.0,  extra:''},
+  green:  {qualityMult:1.15,atkMult:1.15, cdMult:0.92, dmgFlat:0.5, spdMult:1.0,  critRate:0.02, comboHit:1, splashR:25, pierce:1, reflect:0.03,  hpMult:1.10, shield:3,  leechRate:0.01,  dodgeFrames:0, dmgReduce:0.02,  revive:false, comboSpeed:1.02, comboDmg:0.01,  evolveRate:1.05,  xpBoost:1.05, starDmg:0.02,  evolveRange:1.0,   extra:'攻伐+15%'},
+  blue:   {qualityMult:1.3, atkMult:1.3,  cdMult:0.85, dmgFlat:1.2, spdMult:1.05, critRate:0.04, comboHit:1, splashR:40, pierce:1, reflect:0.05,  hpMult:1.20, shield:7,  leechRate:0.02,  dodgeFrames:0, dmgReduce:0.04,  revive:false, comboSpeed:1.04, comboDmg:0.02,  evolveRate:1.10,  xpBoost:1.10, starDmg:0.04,  evolveRange:1.0,   extra:'攻伐+30%·冷却-15%'},
+  purple: {qualityMult:1.55,atkMult:1.55, cdMult:0.75, dmgFlat:2.5, spdMult:1.1,  critRate:0.07, comboHit:1, splashR:55, pierce:1, reflect:0.08,  hpMult:1.35, shield:15, leechRate:0.04,  dodgeFrames:900,dmgReduce:0.07,  revive:false, comboSpeed:1.06, comboDmg:0.03,  evolveRate:1.18,  xpBoost:1.18, starDmg:0.07,  evolveRange:1.0,   extra:'攻伐+55%·冷却-25%·移速+10%'},
+  gold:   {qualityMult:1.9, atkMult:1.9,  cdMult:0.62, dmgFlat:5.0, spdMult:1.15, critRate:0.10, comboHit:2, splashR:70, pierce:2, reflect:0.12,  hpMult:1.50, shield:25, leechRate:0.07,  dodgeFrames:750,dmgReduce:0.10,  revive:false, comboSpeed:1.09, comboDmg:0.05,  evolveRate:1.30,  xpBoost:1.30, starDmg:0.10,  evolveRange:1.05,  extra:'攻伐+90%·冷却-38%·移速+15%'},
+  red:    {qualityMult:2.5, atkMult:2.6,  cdMult:0.45, dmgFlat:10,  spdMult:1.25, critRate:0.14, comboHit:2, splashR:80, pierce:3, reflect:0.18,  hpMult:1.80, shield:40, leechRate:0.12,  dodgeFrames:600,dmgReduce:0.15,  revive:true,  comboSpeed:1.12, comboDmg:0.08,  evolveRate:1.50,  xpBoost:1.50, starDmg:0.15,  evolveRange:1.10,  extra:'⚡全属性暴涨·冷却砍半·移速+25%'},
 };
 
 // 法宝池（映射到真实weapon id）
 const TREASURE_POOL=[
-  {wid:'spore_cannon', name:'蚀灵玉佩',  icon:'🌿', qmod:0,  desc:'追踪蚀灵符·感染·穿透'},
-  {wid:'poison_spit',  name:'魔渊魂珠',icon:'💀', qmod:0,  desc:'持续魔气DOT·范围扩散'},
-  {wid:'lightning_bug',name:'九霄雷印',icon:'⚡', qmod:0,  desc:'跳链天雷·连锁清场'},
-  {wid:'orbit_bugs',   name:'御灵法镯',  icon:'🌀', qmod:0,  desc:'御灵护体·旋转撞击'},
-  {wid:'flame_tower',  name:'丹火剑匣',icon:'🔥', qmod:0,  desc:'丹火剑台·等距环绕'},
-  {wid:'bio_leech',    name:'汲灵血玉',icon:'💉', qmod:-1, desc:'斩敌汲灵·持续回血'},
-  {wid:'berserker_soul',name:'狂道血晶',icon:'🩸',qmod:1,  desc:'无伤道力暴涨·受伤暴怒'},
-  {wid:'shell_armor',  name:'金刚法盾',icon:'🛡', qmod:-1, desc:'灵虫血量+80%·减伤'},
-  {wid:'hive_expand',  name:'洞府宝鉴',icon:'🏯', qmod:-1, desc:'魔军上限+8·精英魔率+'},
-  {wid:'rapid_spawn',  name:'灵虫灵卵',icon:'🥚', qmod:-1, desc:'孵化间隔-30%·斩杀孵化'},
-  {wid:'blade_storm',  name:'灵刃玉符',icon:'🔪', qmod:1,  desc:'每秒12道灵刃·高频切割'},
-  {wid:'soul_bullet',  name:'魂弹法珠',icon:'💫', qmod:1,  desc:'慢速大魂弹·命中爆裂8向'},
-  {wid:'void_lance',   name:'虚空刺枪',icon:'🗡', qmod:1,  desc:'超长穿透·Boss专克·CD长'},
-  {wid:'frost_seal',   name:'寒冰道符',icon:'❄️', qmod:0,  desc:'冻结控制·2秒冰封·稳场'},
-  {wid:'thunder_ring', name:'雷罡法环',icon:'⚡', qmod:0,  desc:'闪电护体环·触链连诛'},
+  {wid:'spore_cannon', name:'蚀灵玉佩',  icon:'🌿', qmod:0,  desc:'追踪蚀灵符·感染·穿透',       effects:['atkMult','pierce']},
+  {wid:'poison_spit',  name:'魔渊魂珠',icon:'💀', qmod:0,  desc:'持续魔气DOT·范围扩散',        effects:['dmgFlat','splashR']},
+  {wid:'lightning_bug',name:'九霄雷印',icon:'⚡', qmod:0,  desc:'跳链天雷·连锁清场',           effects:['critRate','comboDmg']},
+  {wid:'orbit_bugs',   name:'御灵法镯',  icon:'🌀', qmod:0,  desc:'御灵护体·旋转撞击',          effects:['spdMult','dodgeFrames']},
+  {wid:'flame_tower',  name:'丹火剑匣',icon:'🔥', qmod:0,  desc:'丹火剑台·等距环绕',           effects:['dmgFlat','critRate']},
+  {wid:'bio_leech',    name:'汲灵血玉',icon:'💉', qmod:-1, desc:'斩敌汲灵·持续回血',            effects:['leechRate','comboDmg']},
+  {wid:'berserker_soul',name:'狂道血晶',icon:'🩸',qmod:1,  desc:'无伤道力暴涨·受伤暴怒',         effects:['comboSpeed','starDmg']},
+  {wid:'shell_armor',  name:'金刚法盾',icon:'🛡', qmod:-1, desc:'灵虫血量+80%·减伤',            effects:['hpMult','shield']},
+  {wid:'hive_expand',  name:'洞府宝鉴',icon:'🏯', qmod:-1, desc:'魔军上限+8·精英魔率+',          effects:['xpBoost','evolveRate']},
+  {wid:'rapid_spawn',  name:'灵虫灵卵',icon:'🥚', qmod:-1, desc:'孵化间隔-30%·斩杀孵化',         effects:['hpMult','reflect']},
+  {wid:'blade_storm',  name:'灵刃玉符',icon:'🔪', qmod:1,  desc:'每秒12道灵刃·高频切割',         effects:['atkMult','comboHit']},
+  {wid:'soul_bullet',  name:'魂弹法珠',icon:'💫', qmod:1,  desc:'慢速大魂弹·命中爆裂8向',        effects:['critRate','splashR']},
+  {wid:'void_lance',   name:'虚空刺枪',icon:'🗡', qmod:1,  desc:'超长穿透·Boss专克·CD长',       effects:['pierce','dmgReduce']},
+  {wid:'frost_seal',   name:'寒冰道符',icon:'❄️', qmod:0,  desc:'冻结控制·2秒冰封·稳场',         effects:['shield','dodgeFrames']},
+  {wid:'thunder_ring', name:'雷罡法环',icon:'⚡', qmod:0,  desc:'闪电护体环·触链连诛',          effects:['reflect','comboSpeed']},
 ];
 
 function rollQuality(qmod=0){
@@ -1502,6 +1503,8 @@ function selectGacha(t,q){
   G.comboSpeedBonus=b.comboSpeed||1;G.comboDmgBonus=b.comboDmg||0;
   G.evolveRateBonus=b.evolveRate||1;G.xpBoost=b.xpBoost||1;
   G.starDmgBonus=b.starDmg||0;G.evolveRangeBonus=b.evolveRange||1;
+  G.vaultEquipEffects=t.effects||[];G.vaultEquipQualityMult=b.qualityMult||1;
+  G.vaultEquipQuality=q.id;G.vaultEquipWid=t.wid;
   G.buffs.atk=1.2*b.atkMult;
   G.buffs.spd=1.15*b.spdMult;
   G.buffs.dmgFlat=b.dmgFlat||0;
@@ -1588,21 +1591,23 @@ function initGame(){
 
   function _applyEquip(eq){
     if(!eq)return;
-    // 乘法叠加
-    _baseAtk*=(eq.atkMult||1);_baseSpd*=(eq.spdMult||1);_baseCd*=(eq.cdMult||1);
-    _baseHpMult*=(eq.hpMult||1);_baseComboSpeed*=(eq.comboSpeed||1);
-    _baseEvolveRate*=(eq.evolveRate||1);_baseXpBoost*=(eq.xpBoost||1);
-    _baseEvolveRange*=(eq.evolveRange||1);
+    const ef=eq.effects||[];const hasAll=!ef.length; // 旧版法宝兼容：无effects则全效果
+    function has(k){return hasAll||ef.includes(k);}
+    // 乘法叠加（仅effects中声明的字段生效）
+    if(has('atkMult'))_baseAtk*=(eq.atkMult||1);if(has('spdMult'))_baseSpd*=(eq.spdMult||1);if(has('cdMult'))_baseCd*=(eq.cdMult||1);
+    if(has('hpMult'))_baseHpMult*=(eq.hpMult||1);if(has('comboSpeed'))_baseComboSpeed*=(eq.comboSpeed||1);
+    if(has('evolveRate'))_baseEvolveRate*=(eq.evolveRate||1);if(has('xpBoost'))_baseXpBoost*=(eq.xpBoost||1);
+    if(has('evolveRange'))_baseEvolveRange*=(eq.evolveRange||1);
     // 加法叠加
-    _baseDmgFlat+=(eq.dmgFlat||0);_baseCritRate+=(eq.critRate||0);
-    _baseComboHit+=(eq.comboHit||0);_basePierce+=(eq.pierce||0);
-    _baseReflect+=(eq.reflect||0);_baseShield+=(eq.shield||0);
-    _baseLeechRate+=(eq.leechRate||0);_baseComboDmg+=(eq.comboDmg||0);
-    _baseStarDmg+=(eq.starDmg||0);_baseDmgReduce+=(eq.dmgReduce||0);
+    if(has('dmgFlat'))_baseDmgFlat+=(eq.dmgFlat||0);if(has('critRate'))_baseCritRate+=(eq.critRate||0);
+    if(has('comboHit'))_baseComboHit+=(eq.comboHit||0);if(has('pierce'))_basePierce+=(eq.pierce||0);
+    if(has('reflect'))_baseReflect+=(eq.reflect||0);if(has('shield'))_baseShield+=(eq.shield||0);
+    if(has('leechRate'))_baseLeechRate+=(eq.leechRate||0);if(has('comboDmg'))_baseComboDmg+=(eq.comboDmg||0);
+    if(has('starDmg'))_baseStarDmg+=(eq.starDmg||0);if(has('dmgReduce'))_baseDmgReduce+=(eq.dmgReduce||0);
     // 最优值
-    _baseSplashR=Math.max(_baseSplashR,eq.splashR||0);
-    _baseRevive=_baseRevive||(eq.revive||false);
-    if((eq.dodgeFrames||0)>0)_baseDodgeFrames=_baseDodgeFrames>0?Math.min(_baseDodgeFrames,eq.dodgeFrames):eq.dodgeFrames;
+    if(has('splashR'))_baseSplashR=Math.max(_baseSplashR,eq.splashR||0);
+    if(has('revive'))_baseRevive=_baseRevive||(eq.revive||false);
+    if(has('dodgeFrames')&&(eq.dodgeFrames||0)>0)_baseDodgeFrames=_baseDodgeFrames>0?Math.min(_baseDodgeFrames,eq.dodgeFrames):eq.dodgeFrames;
   }
   _applyEquip(pendingEquip);
   _applyEquip(pendingEquip2);
@@ -1637,6 +1642,10 @@ function initGame(){
     // 仓库法宝数据
     vaultEquip:pendingEquip||null,
     vaultEquip2:pendingEquip2||null,
+    vaultEquipEffects:pendingEquip?pendingEquip.effects||[]:[],
+    vaultEquipQualityMult:pendingEquip?pendingEquip.qualityMult||1:1,
+    vaultEquipQuality:pendingEquip?pendingEquip.quality||'white':'white',
+    vaultEquipWid:pendingEquip?pendingEquip.wid||null:null,
     // 新法宝属性
     critRate:_baseCritRate,comboHit:_baseComboHit,splashR:_baseSplashR,
     pierceCount:_basePierce,reflectRate:_baseReflect,
@@ -2375,6 +2384,25 @@ function showUpgrade(){
   if(hasEmpty){const newShuffled=[...buildPriorityPool];while(choices.length<3&&newShuffled.length>0)choices.push({kind:'new',wid:newShuffled.pop()});}
   while(choices.length<3&&upgradeable.length>0)choices.push({kind:'upgrade',slot:upgradeable[Math.floor(Math.random()*upgradeable.length)]});
   choices=choices.slice(0,3);
+  // ── 法宝专属进化卡：玄品以上注入关联武器进化 ──
+  const vQual=G.vaultEquipQuality||'white';
+  const vWid=G.vaultEquipWid;
+  if(vQual!=='white'&&vQual!=='green'&&vWid){
+    const vWeapon=WEAPONS[vWid];
+    if(vWeapon&&vWeapon.evolve&&!equippedIds.includes(vWeapon.evolve)&&!choices.some(c=>c.kind==='evolve'&&G.slots[c.slot?G.slots.indexOf(c.slot):-1]&&G.slots[G.slots.indexOf(c.slot)].id===vWid)){
+      const vSlot=G.slots.find(s=>s.id===vWid);
+      if(vSlot&&vSlot.lv>=vWeapon.maxLv){
+        const exclusiveCard={kind:'evolve',slot:G.slots.indexOf(vSlot),exclusive:true};
+        // 替换第3张卡(如果存在且不是强推卡)，否则追加
+        const isGold=vQual==='purple'||vQual==='gold'||vQual==='red';
+        if(isGold)exclusiveCard.gold=true;
+        if(choices.length>=3&&Math.random()<0.75){choices[2]=exclusiveCard;}
+        else if(choices.length<3){choices.push(exclusiveCard);}
+      }
+    }
+  }
+  choices=choices.slice(0,3);
+  // 去重
   // 去重：同种类+同目标视为重复
   const seen=new Set();choices=choices.filter(c=>{const k=c.kind==='new'?'n'+c.wid:c.kind==='upgrade'?'u'+G.slots.indexOf(c.slot):c.kind;if(seen.has(k))return false;seen.add(k);return true;});
   if(choices.length===0){G.paused=false;G.upgrading=false;return;}
@@ -2386,7 +2414,7 @@ function showUpgrade(){
     if(c.kind==='new'){const w=WEAPONS[c.wid];card.innerHTML=`<div class="uc-name">${w.name}</div><span class="uc-type type-${w.type}">${typeName(w.type)}</span><div class="uc-desc">${w.desc[0]}</div><div class="uc-lv">新获得</div>`;card.onclick=()=>pickNew(c.wid);}
     else if(c.kind==='upgrade'){const sl=c.slot;const w=WEAPONS[sl.id];const nl=sl.lv+1;const willEvolve=nl>=w.maxLv&&w.evolve&&!equippedIds.includes(w.evolve);card.innerHTML=`<div class="uc-name">↑ ${w.name}</div><span class="uc-type type-${w.type}">${typeName(w.type)}</span><div class="uc-desc">${w.desc[Math.min(sl.lv,w.desc.length-1)]}</div><div class="uc-lv">Lv.${sl.lv}→${nl}${willEvolve?'（满级可进化）':''}</div>`;
       card.onclick=()=>{const wCheck=WEAPONS[sl.id];if(wCheck.type==='evolve'||wCheck.type==='evolvePassive'){closeUpgrade();return;}sl.lv++;const w2=WEAPONS[sl.id];if(w2.onEquip)w2.onEquip(G,sl.lv);closeUpgrade();};}
-    else if(c.kind==='evolve'){const sl=c.slot;const w=WEAPONS[sl.id];const ew=WEAPONS[w.evolve];card.className+=' evolved-card';card.innerHTML=`<div class="uc-name">★ 进化：${ew.name}</div><span class="uc-type type-evolve">超武进化</span><div class="uc-desc">${ew.desc[0]}</div><div class="uc-lv">${w.name} 满级 → 超武★</div>`;
+    else if(c.kind==='evolve'){const sl=c.slot;const w=WEAPONS[sl.id];const ew=WEAPONS[w.evolve];card.className+=' evolved-card'+(c.gold?' exclusive-gold':'');card.innerHTML=`<div class="uc-name">${c.gold?'👑 ':''}★ 进化：${ew.name}</div><span class="uc-type type-evolve">${c.exclusive?'⚔ 法宝专属·':''}超武进化</span><div class="uc-desc">${ew.desc[0]}</div><div class="uc-lv">${w.name} 满级 → 超武★${c.gold?' · 品质加成':''}</div>`;
       card.onclick=()=>{sl.id=w.evolve;sl.lv=1;sl.timer=0;sl.state={};sl.stars=0;const ew2=WEAPONS[w.evolve];if(ew2.onEquip)ew2.onEquip(G,1,0);closeUpgrade();};}
     else if(c.kind==='stackSrc'){const ss=c.ss;const sw=ss.sourceW;const ew=WEAPONS[ss.evolveId];const curStar=G.slots.find(s=>s.id===ss.evolveId)?.stars||0;const nextStar=curStar+1;card.className+=' evolved2-card';card.innerHTML=`<div class="uc-name">${sw.name}</div><span class="uc-type type-${sw.type}">${typeName(sw.type)}</span><div class="uc-desc">${sw.desc[0]}<br><span style="color:#ff8844">叠加至 ${ew.name} → ${starStr(nextStar)}</span></div><div class="uc-lv">新获得（叠星路线）</div>`;
       card.onclick=()=>{const emptySl=G.slots.find(s=>!s.id);if(!emptySl){closeUpgrade();return;}const idx=G.slots.indexOf(emptySl);emptySl.id=ss.sourceId;emptySl.lv=1;emptySl.timer=0;emptySl.state={};emptySl.stars=0;const sw2=WEAPONS[ss.sourceId];if(sw2.onEquip)sw2.onEquip(G,1);if(!G.pendingStarFor)G.pendingStarFor={};G.pendingStarFor[ss.evolveId]=idx;closeUpgrade();};}
@@ -2853,7 +2881,7 @@ function getVault(){try{return JSON.parse(localStorage.getItem('daojie_vault')||
 function saveToVault(t,q,b){
   const vault=getVault();
   const cap=getVaultCapacity();
-  vault.push({wid:t.wid,name:t.name,icon:t.icon,desc:t.desc,quality:q.id,qualityName:q.name,qualityColor:q.color,cardClass:q.cardClass,atkMult:b.atkMult,cdMult:b.cdMult,dmgFlat:b.dmgFlat||0,extra:b.extra||'',spdMult:b.spdMult,critRate:b.critRate||0,comboHit:b.comboHit||0,splashR:b.splashR||0,pierce:b.pierce||0,reflect:b.reflect||0,hpMult:b.hpMult||1,shield:b.shield||0,leechRate:b.leechRate||0,dodgeFrames:b.dodgeFrames||0,dmgReduce:b.dmgReduce||0,revive:b.revive||false,comboSpeed:b.comboSpeed||1,comboDmg:b.comboDmg||0,evolveRate:b.evolveRate||1,xpBoost:b.xpBoost||1,starDmg:b.starDmg||0,evolveRange:b.evolveRange||1,date:new Date().toLocaleDateString('zh-CN')});
+  vault.push({wid:t.wid,name:t.name,icon:t.icon,desc:t.desc,quality:q.id,qualityName:q.name,qualityColor:q.color,cardClass:q.cardClass,atkMult:b.atkMult,cdMult:b.cdMult,dmgFlat:b.dmgFlat||0,extra:b.extra||'',spdMult:b.spdMult,critRate:b.critRate||0,comboHit:b.comboHit||0,splashR:b.splashR||0,pierce:b.pierce||0,reflect:b.reflect||0,hpMult:b.hpMult||1,shield:b.shield||0,leechRate:b.leechRate||0,dodgeFrames:b.dodgeFrames||0,dmgReduce:b.dmgReduce||0,revive:b.revive||false,comboSpeed:b.comboSpeed||1,comboDmg:b.comboDmg||0,evolveRate:b.evolveRate||1,xpBoost:b.xpBoost||1,starDmg:b.starDmg||0,evolveRange:b.evolveRange||1,effects:t.effects||[],qualityMult:b.qualityMult||1,date:new Date().toLocaleDateString('zh-CN')});
   if(vault.length>cap)vault.splice(0,vault.length-cap);
   try{localStorage.setItem('daojie_vault',JSON.stringify(vault));}catch(e){}
   updateVaultDot(); // 实时刷新红点
