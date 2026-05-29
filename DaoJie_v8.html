@@ -998,10 +998,10 @@ const WEAPONS={
     },cd:[80,65,50],},
   blizzard_field:{name:'冰域领域',type:'evolve',maxLv:3,sourceWeapon:'frost_seal',
     desc:['全场持续减速+冰DOT'],
-    onFire(G,lv,stars){screenShake(8);playSound('poison');G.blizzardFlash=35;
+    onFire(G,lv,stars){screenShake(8);playSound('poison');
       const frostDmg=(1.2+stars*0.8)*(G.buffs.atk||1);
-      G.enemies.forEach(e=>{e.slowTimer=Math.max(e.slowTimer||0,240);e.frostDot=Math.max(e.frostDot||0,120+stars*40);e._frostDmg=frostDmg/(e.defMult||1);addPt(G,e.x,e.y,'#88CCFF',5,2);});
-      if(G.boss){G.boss.slowTimer=Math.max(G.boss.slowTimer||0,180);G.boss.frostDot=Math.max(G.boss.frostDot||0,80);G.boss._frostDmg=frostDmg*0.5;}
+      G.enemies.forEach(e=>{e.slowTimer=Math.max(e.slowTimer||0,240);e.frostDot=Math.max(e.frostDot||0,120+stars*40);e._frostDmg=frostDmg/(e.defMult||1);e._frostFlash=15;addPt(G,e.x,e.y,'#88CCFF',8,3);});
+      if(G.boss){G.boss.slowTimer=Math.max(G.boss.slowTimer||0,180);G.boss.frostDot=Math.max(G.boss.frostDot||0,80);G.boss._frostDmg=frostDmg*0.5;G.boss._frostFlash=15;}
     },cd:[150,120,100],},
   // —— 环绕·雷罡护体 ——
   thunder_ring:{name:'雷罡护体',type:'orbit',maxLv:3,
@@ -3514,7 +3514,6 @@ function draw(){
   }
 
   if(G.eliteFlash>0){ctx.fillStyle=`rgba(0,0,0,${G.eliteFlash/35*0.28})`;ctx.fillRect(0,0,W,H);G.eliteFlash--;}
-  if(G.blizzardFlash>0){ctx.fillStyle=`rgba(100,180,255,${G.blizzardFlash/35*0.15})`;ctx.fillRect(0,0,W,H);G.blizzardFlash--;}
 
   // 毒液水洼
   (G.slimePools||[]).forEach(s=>{
@@ -3614,8 +3613,9 @@ function draw(){
     if(e.shield>0){ctx.save();ctx.strokeStyle='rgba(68,136,204,0.7)';ctx.lineWidth=2;ctx.shadowBlur=8;ctx.shadowColor='#4488CC';ctx.beginPath();ctx.arc(e.x,e.y,e.sz/2+5,0,Math.PI*2);ctx.stroke();ctx.restore();}
     // shieldBubble
     if((e.shieldBubble||0)>0){ctx.save();ctx.globalAlpha=0.4;ctx.strokeStyle='#44aacc';ctx.lineWidth=1;ctx.beginPath();ctx.arc(e.x,e.y,e.sz/2+8,0,Math.PI*2);ctx.stroke();ctx.restore();}
-    if(e.freezeTimer>0){ctx.save();ctx.globalAlpha=0.7;ctx.strokeStyle='#88CCFF';ctx.lineWidth=3;ctx.shadowBlur=10;ctx.shadowColor='#88CCFF';ctx.beginPath();ctx.arc(e.x,e.y,e.sz/2+4,0,Math.PI*2);ctx.stroke();ctx.restore();}
-    if(e.frostDot>0){ctx.save();ctx.globalAlpha=0.15+Math.sin(G.elapsed*0.08)*0.08;ctx.fillStyle='#88CCFF';ctx.beginPath();ctx.arc(e.x,e.y,e.sz/2+6,0,Math.PI*2);ctx.fill();ctx.restore();}
+    if(e._frostFlash>0){e._frostFlash--;ctx.save();ctx.globalAlpha=0.5;ctx.fillStyle='#aaddff';ctx.shadowBlur=12;ctx.shadowColor='#88CCFF';ctx.beginPath();ctx.arc(e.x,e.y,e.sz/2+5,0,Math.PI*2);ctx.fill();ctx.globalAlpha=0.3;ctx.fillStyle='#ffffff';ctx.beginPath();ctx.arc(e.x,e.y,e.sz/2,0,Math.PI*2);ctx.fill();ctx.restore();}
+    if(e.freezeTimer>0){ctx.save();ctx.globalAlpha=0.6;ctx.strokeStyle='#88CCFF';ctx.lineWidth=3;ctx.shadowBlur=10;ctx.shadowColor='#88CCFF';ctx.beginPath();ctx.arc(e.x,e.y,e.sz/2+4,0,Math.PI*2);ctx.stroke();ctx.restore();}
+    if(e.frostDot>0){ctx.save();ctx.globalAlpha=0.12+Math.sin(G.elapsed*0.08)*0.06;ctx.fillStyle='#88CCFF';ctx.beginPath();ctx.arc(e.x,e.y,e.sz/2+6,0,Math.PI*2);ctx.fill();ctx.restore();}
     ctx.fillStyle=col;
     if(e.special==='armored'){ctx.strokeStyle='#7080A0';ctx.lineWidth=2;ctx.beginPath();ctx.rect(e.x-e.sz/2,e.y-e.sz/2,e.sz,e.sz);ctx.fill();ctx.stroke();}
     else if(e.special==='bomber'||e.special==='suicidal'){
