@@ -1469,7 +1469,7 @@ function initGame(){
     // 新法宝属性
     critRate:_baseCritRate,comboHit:_baseComboHit,splashR:_baseSplashR,
     pierceCount:_basePierce,reflectRate:_baseReflect,
-    shieldHp:_baseShield,leechRate:_baseLeechRate,
+    shieldHp:_baseShield,shieldBase:_baseShield,leechRate:_baseLeechRate,
     dodgeFrames:_baseDodgeFrames,dodgeCd:0,dodgeTimer:0,
     revive:_baseRevive,reviveConsumed:false,
     comboSpeedBonus:_baseComboSpeed,comboDmgBonus:_baseComboDmg,
@@ -1575,6 +1575,11 @@ function _update(){
     if(G.dodgeCd>=G.dodgeFrames){G.dodgeCd=0;G.dodgeTimer=30;showBuffToast('⚡ 道心闪避·无敌0.5秒','#4488CC');}
   }
   if(G.dodgeTimer>0)G.dodgeTimer--;
+
+  // ── 护盾回复（每30秒回复20%基础值）──
+  if(G.shieldBase>0&&G.elapsed%1800===0&&G.shieldHp<G.shieldBase){
+    G.shieldHp=Math.min(G.shieldBase,G.shieldHp+G.shieldBase*0.2);
+  }
 
   // ── 连斩系统（连斩数只作战斗加成，不代表境界）──
   if(G.comboTimer>0){G.comboTimer--;}else{G.combo=0;}
@@ -3073,7 +3078,7 @@ function renderEquipBar(){
       <div class="equip-item-icon">${item.icon||'⚡'}</div>
       <div class="equip-item-name">${item.name}${item.count>1?` ×${item.count}`:''}</div>
       <div class="equip-item-q" style="color:${item.qualityColor}">${item.qualityName}</div>
-      <div class="equip-item-stat">攻击×${(item.atkMult||1).toFixed(1)}${(item.critRate||0)>0.1?'暴'+Math.round((item.critRate||0)*100)+'%':''}${(item.shield||0)>20?'盾'+item.shield:''}${item.revive?'复活':''}</div>`;
+      <div class="equip-item-stat">攻1.0→×${(item.atkMult||1).toFixed(1)}${(item.critRate||0)>0.1?'暴'+Math.round((item.critRate||0)*100)+'%':''}${(item.shield||0)>20?'盾'+item.shield:''}${item.revive?'复活':''}</div>`;
     div.onclick=()=>{
       if(key===selectedEquipKey){selectedEquipKey=null;}
       else if(key===selectedEquipKey2){selectedEquipKey2=null;}
