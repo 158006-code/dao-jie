@@ -941,10 +941,12 @@ const WEAPONS={
         if(G.boss&&Math.hypot(G.boss.x-tx,G.boss.y-ty)<50)G.boss.hp-=dmg*0.8;
       }
       // Chain lightning between random pairs
-      for(let j=0;j<chainN*4;j++){
-        const e1=G.enemies[Math.floor(Math.random()*G.enemies.length)];
-        const e2=G.enemies[Math.floor(Math.random()*G.enemies.length)];
-        if(e1&&e2&&e1!==e2){addArc(G,e2.x,e2.y,stars);e2.hp-=dmg*0.3/(e2.defMult||1);}
+      if(G.enemies.length>=2){
+        for(let j=0;j<chainN*4;j++){
+          const e1=G.enemies[Math.floor(Math.random()*G.enemies.length)];
+          const e2=G.enemies[Math.floor(Math.random()*G.enemies.length)];
+          if(e1&&e2&&e1!==e2){addArc(G,e2.x,e2.y,stars);e2.hp-=dmg*0.3/(e2.defMult||1);}
+        }
       }
     },cd:[120,100,80],},
   // —— 攻击·虚空枪刺 ——
@@ -960,10 +962,11 @@ const WEAPONS={
     desc:['持续横扫光束'],
     update(G,lv,ws,stars){
       ws.rayTimer=(ws.rayTimer||0)+1;
-      if(ws.rayTimer%120===0||!ws.rayAng){
+      if(ws.rayTimer%120===0||ws.rayAng==null){
         const tgt=nearestEnemy(G);
-        ws.rayAng=tgt?Math.atan2(tgt.y-G.my,tgt.x-G.mx):ws.rayAng||0;
+        ws.rayAng=tgt?Math.atan2(tgt.y-G.my,tgt.x-G.mx):(ws.rayAng!=null?ws.rayAng:0);
       }
+      if(ws.rayAng==null)ws.rayAng=0;
       const ang=ws.rayAng;const len=300,width=12+stars*4;
       const dmgPerFrame=(0.4+stars*0.2)*(G.buffs.atk||1);
       G.enemies.forEach(e=>{
@@ -1688,7 +1691,7 @@ function spawnBug(n,x,y){
     const cap=10+G.lv*2+G.swarmBonus;
     if(G.bugs.length>=cap)break;
     const a=Math.random()*Math.PI*2,rr=16+Math.random()*12;
-    const hp=(1.5+G.lv*0.1)*(G.bugHpMult||1);
+    const hp=(3+G.lv*0.25)*(G.bugHpMult||1);
     // V13: 虫海流虫子分工
     const isSwarm=G.activeBuild==='swarm';
     const role=isSwarm?(['fighter','bomber','guard'][Math.floor(Math.random()*3)]):'fighter';
@@ -1926,7 +1929,7 @@ function _update(){
   }
 
   G.bugTimer++;
-  const bugRate=Math.max(75,200*(G.spawnMult||1));
+  const bugRate=Math.max(50,130*(G.spawnMult||1));
   const cap=10+G.lv*2+G.swarmBonus;
   if(G.bugTimer>=bugRate&&G.bugs.length<cap){G.bugTimer=0;spawnBug(1);}
 
@@ -2175,7 +2178,7 @@ function _update(){
     p.x+=p.vx;p.y+=p.vy;p.life--;
     if(p.life<=0||p.x<-10||p.x>W+10||p.y<-10||p.y>H+10){dp.push(i);recycleProj(p);return;}
     if(p.isBossBullet||p.isEnemyBullet){
-      G.bugs.forEach(b=>{if(Math.hypot(b.x-p.x,b.y-p.y)<8){b.hp-=p.dmg;}});
+      G.bugs.forEach(b=>{if(Math.hypot(b.x-p.x,b.y-p.y)<8){b.hp-=p.dmg*0.4;}});
       if(!p._hitPlayer&&Math.hypot(G.mx-p.x,G.my-p.y)<14){p._hitPlayer=true;const ebDmg=p.dmg*0.5;applyPlayerDamage(G,ebDmg);applyReflect(G,ebDmg);G.combo=0;G.comboTimer=0;G.noDmgTimer=0;screenShake(5);triggerFlash();playSound('hurt');addDamageText(G,G.mx+(Math.random()-0.5)*12,G.my-14,'-'+Math.ceil(ebDmg),'#ff3333',15);dp.push(i);recycleProj(p);}
       return;
     }
@@ -2371,7 +2374,10 @@ function showUpgrade(){
   const upShuffled=upgradeable.sort(()=>Math.random()-0.5);upShuffled.slice(0,2).forEach(sl=>{if(choices.length<3)choices.push({kind:'upgrade',slot:sl});});
   if(hasEmpty){const newShuffled=[...buildPriorityPool];while(choices.length<3&&newShuffled.length>0)choices.push({kind:'new',wid:newShuffled.pop()});}
   while(choices.length<3&&upgradeable.length>0)choices.push({kind:'upgrade',slot:upgradeable[Math.floor(Math.random()*upgradeable.length)]});
-  choices=choices.slice(0,3);if(choices.length===0){G.paused=false;G.upgrading=false;return;}
+  choices=choices.slice(0,3);
+  // 去重：同种类+同目标视为重复
+  const seen=new Set();choices=choices.filter(c=>{const k=c.kind==='new'?'n'+c.wid:c.kind==='upgrade'?'u'+G.slots.indexOf(c.slot):c.kind;if(seen.has(k))return false;seen.add(k);return true;});
+  if(choices.length===0){G.paused=false;G.upgrading=false;return;}
   const el=document.getElementById('up-cards');el.innerHTML='';
   const hasMerge=choices.some(c=>c.kind==='merge'),hasEv=choices.some(c=>c.kind==='evolve'),hasStack=choices.some(c=>c.kind==='stackSrc');
   document.getElementById('up-title').textContent=hasMerge?'⚡ 叠星进化！':hasEv?'⚡ 超武进化时机！':hasStack?'★ 叠星路线开启！':'⚡ 悟道突破';
