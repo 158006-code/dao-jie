@@ -589,7 +589,7 @@ resizeCanvas();
 window.addEventListener('resize',resizeCanvas);
 
 const FPS=60,TOTAL=540;
-const BOSS_AT=[180,360,510]; // 3个Boss均匀分布在9分钟内
+const BOSS_AT=[180,360,540]; // 3/6/9分钟各一个Boss
 let SPEED=1,manualPaused=false;
 const SPEEDS=[1,1.5,2,3];
 let speedIdx=0;
@@ -718,13 +718,13 @@ const WEAPONS={
       const t=nearestEnemy(G);if(!t)return;
       playSound('thunder');const atkMult=G.buffs.atk;
       // v17 电浆流：plasmaAtkMult倍伤害，chainBonus额外连锁，plasmaSpeedMult攻速
-      const dmg=(3.5+lv*1.5)*atkMult*(G.activeBuild==='plasma'?(G.plasmaAtkMult||1.8):1);
-      const chainR=G.activeBuild==='plasma'?100:65;
-      const chainN=G.activeBuild==='plasma'?(lv+(G.chainBonus||3)):(lv+1);
+      const dmg=(6+lv*3)*atkMult*(G.activeBuild==='plasma'?(G.plasmaAtkMult||1.8):1);
+      const chainR=G.activeBuild==='plasma'?110:75;
+      const chainN=G.activeBuild==='plasma'?(lv+(G.chainBonus||4)):(lv+2);
       const ang=Math.atan2(t.y-G.my,t.x-G.mx);
       addProj(G,G.mx,G.my,Math.cos(ang)*7,Math.sin(ang)*7,{dmg,r:3,color:'#C9E054',life:55,chain:chainN,chainR,isLightning:true,homing:t,overload:G.activeBuild==='plasma'});
     },
-    cd:[90,72,55],
+    cd:[70,55,40],
     cdMult(G){return G.activeBuild==='plasma'?1/(G.plasmaSpeedMult||1.4):1;},
   },
   orbit_bugs:{
@@ -810,7 +810,7 @@ const WEAPONS={
     desc:['九道追踪天雷齐劈'],
     onFire(G,lv,stars){screenShake(8);playSound('thunder');
       const targets=[...G.enemies];if(G.boss)targets.push(G.boss);
-      const bolts=4+stars*2,dmg=6+stars*3,chainCount=1+stars;
+      const bolts=8+stars*3,dmg=14+stars*5,chainCount=2+stars;
       targets.sort((a,b)=>Math.hypot(a.x-G.mx,a.y-G.my)-Math.hypot(b.x-G.mx,b.y-G.my));
       for(let i=0;i<bolts;i++){
         const t=targets[i%Math.max(1,targets.length)];if(!t)break;
@@ -822,7 +822,7 @@ const WEAPONS={
         G.enemies.forEach(e=>{if(Math.hypot(e.x-G.mx,e.y-G.my)<120){e.slowTimer=Math.max(e.slowTimer||0,240);addPt(G,e.x,e.y,'#7aadff',3,1);}});
       }
       const arcN=3+stars*2;for(let i=0;i<arcN;i++){const t=targets[i%Math.max(1,targets.length)];if(t)addArc(G,t.x,t.y,stars);}},
-    cd:[150,120,95],},
+    cd:[90,70,55],},
   orbit_storm:{name:'御灵环风暴',type:'evolve',maxLv:3,sourceWeapon:'orbit_bugs',
     desc:['高速御灵旋转弹射'],
     update(G,lv,ws,stars){
@@ -896,14 +896,14 @@ const WEAPONS={
 // ══════ V13: 敌人生态系统（18种）══════
 const ENEMY_TYPES=[
   {key:'normal',name:'邪修残念',col:'#B04040',sz:10,hpBase:2.5,spdBase:0.58,atk:0.38,hasKB:false,unlockSec:0,special:null},
-  {key:'swift',name:'游魂刀客',col:'#E06030',sz:8,hpBase:1.2,spdBase:1.18,atk:0.24,hasKB:false,unlockSec:25,special:'fast'},
+  {key:'swift',name:'游魂刀客',col:'#E06030',sz:8,hpBase:1.2,spdBase:1.05,atk:0.24,hasKB:false,unlockSec:25,special:'fast'},
   {key:'armored',name:'铁甲傀儡',col:'#607090',sz:16,hpBase:10,spdBase:0.34,atk:0.65,hasKB:true,unlockSec:50,special:'armored',defMult:2.5},
   {key:'ranged',name:'御剑散修',col:'#A060C0',sz:9,hpBase:3.5,spdBase:0.50,atk:0.44,hasKB:false,unlockSec:80,special:'ranged',keepDist:120},
   {key:'bomber',name:'自爆走火',col:'#C09020',sz:11,hpBase:4.5,spdBase:0.46,atk:0.55,hasKB:false,unlockSec:130,special:'bomber',explodeR:50,explodeDmg:18},
   {key:'elite',name:'魔道精英',col:'#C83030',sz:13,hpBase:16,spdBase:0.72,atk:0.75,hasKB:true,unlockSec:90,special:'elite'},
   {key:'queen',name:'召魂法师',col:'#8030A0',sz:18,hpBase:28,spdBase:0.28,atk:0.9,hasKB:false,unlockSec:200,special:'spawner',spawnInterval:160},
   {key:'regen',name:'不死邪灵',col:'#206040',sz:14,hpBase:18,spdBase:0.44,atk:0.58,hasKB:false,unlockSec:300,special:'regen',regenRate:0.05},
-  {key:'void',name:'虚空裂隙',col:'#8040C0',sz:11,hpBase:7,spdBase:1.35,atk:0.65,hasKB:false,unlockSec:400,special:'void'},
+  {key:'void',name:'虚空裂隙',col:'#8040C0',sz:11,hpBase:7,spdBase:1.10,atk:0.65,hasKB:false,unlockSec:400,special:'void'},
   {key:'shield',name:'护道金盾',col:'#4488CC',sz:12,hpBase:8,spdBase:0.52,atk:0.46,hasKB:false,unlockSec:100,special:'shield',immuneDot:true},
   {key:'jumper',name:'凌空刺客',col:'#FF6644',sz:9,hpBase:4,spdBase:0.58,atk:0.52,hasKB:false,unlockSec:150,special:'jumper'},
   {key:'devourer',name:'噬魂魔兽',col:'#664422',sz:11,hpBase:6,spdBase:0.46,atk:0.56,hasKB:false,unlockSec:280,special:'devourer'},
@@ -1121,7 +1121,7 @@ function updateLateGameRules(G,sec){
       G.worldPulseFlash=40;
       playSound('pulse');
       // 所有敌人短暂狂暴
-      G.enemies.forEach(e=>{e.rage=1.2;e.spd=Math.min(e.spd*1.05,e.spd*1.5);}); // v14: rage减弱
+      G.enemies.forEach(e=>{e.rage=1.1;e.spd=Math.min(e.spd*1.03,e.spd*1.25);});
       // 全场护盾虫恢复护盾
       G.enemies.forEach(e=>{if(e.special==='shield')e.shield=1;});
       showEcoAlert('🌊 世界脉冲！');
@@ -1717,7 +1717,7 @@ function _update(){
     G.enemies.forEach(e=>{
       const dx=G.mx-e.x,dy=G.my-e.y,d=Math.hypot(dx,dy)||1;
       // 加速朝玩家冲 + 额外吸力（满压×4.5）
-      const surge=1+stillPressure*4.5;
+      const surge=1+stillPressure*2.5;
       e.vx+=(dx/d)*e.spd*0.06*surge;
       e.vy+=(dy/d)*e.spd*0.06*surge;
     });
@@ -1819,54 +1819,48 @@ function _update(){
     G.bugShotTimer=0;
   }
 
-  // ── V13: 虫子行动（分工角色）──
+  // ── 虫子AI：优先攻击最近敌人至消灭，无敌人时围绕本体随机飞行·飞行中碰撞有伤害 ──
   const allTargets=[...G.enemies];if(G.boss)allTargets.push(G.boss);
   G.bugs.forEach((b,bi)=>{
     b.age++;
     let tgt=null;
+    // 锁定最近敌人
     if(b.targetId!=null){tgt=allTargets.find(e=>e.id===b.targetId&&e.hp>0);if(!tgt)b.targetId=null;}
     if(!tgt&&allTargets.length>0){
-      const liveTargets=allTargets.filter(e=>e.hp>0);
-      // 虫海流分工：优先攻击类型
-      if(G.activeBuild==='swarm'){
-        if(b.role==='guard'){
-          // 守卫型：攻击最近敌人保护玩家
-          const sorted=liveTargets.sort((a,b2)=>Math.hypot(a.x-G.mx,a.y-G.my)-Math.hypot(b2.x-G.mx,b2.y-G.my));
-          tgt=sorted[0];
-        } else if(b.role==='bomber'){
-          // 爆破型：优先孵化虫
-          const queens=liveTargets.filter(e=>e.special==='spawner');
-          tgt=queens.length>0?queens[0]:liveTargets.sort((a,b2)=>b2.hp-a.hp)[0];
-        } else {
-          // 战斗型：最低血量
-          tgt=liveTargets.sort((a,b2)=>a.hp-b2.hp)[0];
-        }
-      } else {
-        const byHp=liveTargets.sort((a,b2)=>a.hp-b2.hp);
-        tgt=byHp[Math.min(bi%3,byHp.length-1)];
-      }
-      if(tgt)b.targetId=tgt.id;
+      const nearest=allTargets.filter(e=>e.hp>0).sort((a,b2)=>Math.hypot(a.x-b.x,a.y-b.y)-Math.hypot(b2.x-b.x,b2.y-b.y));
+      if(nearest.length>0){tgt=nearest[0];b.targetId=tgt.id;}
     }
     if(tgt){
+      // 追击最近敌人
       const nd=Math.hypot(tgt.x-b.x,tgt.y-b.y);
-      const spd=(1.2+(b.elite?0.5:0));
-      if(nd>10){b.vx=b.vx*0.83+(tgt.x-b.x)/nd*spd*0.17;b.vy=b.vy*0.83+(tgt.y-b.y)/nd*spd*0.17;}
-      else{b.atkTimer++;if(b.atkTimer>=22){
+      const spd=(1.4+(b.elite?0.6:0));
+      b.vx=b.vx*0.82+(tgt.x-b.x)/nd*spd*0.18;b.vy=b.vy*0.82+(tgt.y-b.y)/nd*spd*0.18;
+      if(nd<18){b.atkTimer++;if(b.atkTimer>=18){
         b.atkTimer=0;const atkMult=G.buffs.atk*(G.activeBuild==='swarm'?(G.bugAtkMult||1.6):1);
-        const dmg=(b.elite?2.2:1.1)*atkMult/(tgt.defMult||1)/(tgt.shield?3:1)/(tgt.shieldBubble>0?2:1);
+        const dmg=(b.elite?2.5:1.3)*atkMult/(tgt.defMult||1)/(tgt.shield?3:1)/(tgt.shieldBubble>0?2:1);
         tgt.hp-=dmg+(G.buffs.dmgFlat||0);
         if(tgt.shield>0&&!tgt.immuneDot)tgt.shield=Math.max(0,tgt.shield-0.1);
         if(G.leechLv>=3){G.mhp=Math.min(G.mmaxhp,G.mhp+0.3);triggerTreasureFlash();}
-        if(Math.random()<0.35)addDamageText(G,tgt.x+(Math.random()-0.5)*8,tgt.y-2,Math.ceil(dmg)+'','#5DCAA5',13);
+        if(Math.random()<0.4)addDamageText(G,tgt.x+(Math.random()-0.5)*8,tgt.y-2,Math.ceil(dmg)+'','#5DCAA5',13);
         addPt(G,tgt.x,tgt.y,'#1D9E75',2,1.2);
         if(tgt.hp<=0)b.targetId=null;
       }}
     } else {
+      // 无敌人：围绕本体随机飞行
       const dx=G.mx-b.x,dy=G.my-b.y,dd=Math.hypot(dx,dy)||1;
-      if(dd>25){b.vx=b.vx*0.88+(dx/dd)*0.12;b.vy=b.vy*0.88+(dy/dd)*0.12;}else{b.vx*=0.9;b.vy*=0.9;}
+      if(dd>40){b.vx=b.vx*0.85+(dx/dd)*0.15;b.vy=b.vy*0.85+(dy/dd)*0.15;}
+      else{b.vx=b.vx*0.88+(dx/dd+(Math.random()-0.5)*0.6)*0.12;b.vy=b.vy*0.88+(dy/dd+(Math.random()-0.5)*0.6)*0.12;}
     }
-    const mv=Math.hypot(b.vx,b.vy);if(mv>2.5){b.vx=b.vx/mv*2.5;b.vy=b.vy/mv*2.5;}
+    const mv=Math.hypot(b.vx,b.vy);if(mv>2.8){b.vx=b.vx/mv*2.8;b.vy=b.vy/mv*2.8;}
     b.x=Math.max(5,Math.min(W-5,b.x+b.vx));b.y=Math.max(5,Math.min(H-5,b.y+b.vy));
+    // 飞行接触伤害：碰到敌人即造成轻伤
+    allTargets.forEach(e=>{
+      if(e.hp>0&&Math.hypot(b.x-e.x,b.y-e.y)<e.sz/2+b.sz+2){
+        const contactDmg=(0.15+b.sz*0.08)*G.buffs.atk/(e.defMult||1);
+        e.hp-=contactDmg;
+        if(G.elapsed%10===0)addPt(G,e.x,e.y,'#3DCAC5',1,0.6);
+      }
+    });
   });
 
   // ── 敌人行动 ──
@@ -1875,7 +1869,7 @@ function _update(){
     if(e.kbCd>0)e.kbCd--;if(e.slowTimer>0)e.slowTimer--;
     const spdMult=e.slowTimer>0?0.3:1;
     e.vx*=0.88;e.vy*=0.88;
-    if(e.rage&&e.rage>1){e.spd=Math.min(e.spd*1.002,e.spd*2);}
+    if(e.rage&&e.rage>1){e.spd=Math.min(e.spd*1.0006,e.spd*1.45);}
 
     // 护盾虫：护盾恢复
     if(e.special==='shield'){
