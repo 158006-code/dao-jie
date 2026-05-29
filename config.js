@@ -337,12 +337,12 @@ const WEAPONS={
       addProj(G,G.mx,G.my,Math.cos(ang)*3,Math.sin(ang)*3,{dmg,r:5,color:'#88CCFF',life:70,isFrost:true,freeze:120});
     },cd:[80,65,50],},
   blizzard_field:{name:'冰域领域',type:'evolve',maxLv:3,sourceWeapon:'frost_seal',
-    desc:['全场持续减速+冰DOT'],
-    onFire(G,lv,stars){screenShake(8);playSound('poison');
-      const frostDmg=(1.2+stars*0.8)*(G.buffs.atk||1);
-      G.enemies.forEach(e=>{e.slowTimer=Math.max(e.slowTimer||0,240);e.frostDot=Math.max(e.frostDot||0,120+stars*40);e._frostDmg=frostDmg/(e.defMult||1);e._frostFlash=15;addPt(G,e.x,e.y,'#88CCFF',8,3);});
-      if(G.boss){G.boss.slowTimer=Math.max(G.boss.slowTimer||0,180);G.boss.frostDot=Math.max(G.boss.frostDot||0,80);G.boss._frostDmg=frostDmg*0.5;G.boss._frostFlash=15;}
-    },cd:[150,120,100],},
+    desc:['全场减速+冰爆伤害'],
+    onFire(G,lv,stars){screenShake(6);playSound('thunder');
+      const dmg=(2.5+stars*1.5)*(G.buffs.atk||1);
+      G.enemies.forEach(e=>{e.slowTimer=Math.max(e.slowTimer||0,240);e.freezeTimer=Math.max(e.freezeTimer||0,40);e.hp-=dmg/(e.defMult||1);addPt(G,e.x,e.y,'#88CCFF',6,3);});
+      if(G.boss){G.boss.slowTimer=Math.max(G.boss.slowTimer||0,180);G.boss.hp-=dmg*0.6;G.boss.freezeTimer=Math.max(G.boss.freezeTimer||0,20);}
+    },cd:[90,75,60],},
   // —— 环绕·雷罡护体 ——
   thunder_ring:{name:'雷罡护体',type:'orbit',maxLv:3,
     desc:['闪电护体环·触链连诛'],
