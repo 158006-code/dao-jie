@@ -337,12 +337,19 @@ const WEAPONS={
       addProj(G,G.mx,G.my,Math.cos(ang)*3,Math.sin(ang)*3,{dmg,r:5,color:'#88CCFF',life:70,isFrost:true,freeze:120});
     },cd:[80,65,50],},
   blizzard_field:{name:'冰域领域',type:'evolve',maxLv:3,sourceWeapon:'frost_seal',
-    desc:['全场减速+冰爆伤害'],
-    onFire(G,lv,stars){screenShake(6);playSound('thunder');
-      const dmg=(2.5+stars*1.5)*(G.buffs.atk||1);
-      G.enemies.forEach(e=>{e.slowTimer=Math.max(e.slowTimer||0,240);e.freezeTimer=Math.max(e.freezeTimer||0,40);e.hp-=dmg/(e.defMult||1);addPt(G,e.x,e.y,'#88CCFF',6,3);});
-      if(G.boss){G.boss.slowTimer=Math.max(G.boss.slowTimer||0,180);G.boss.hp-=dmg*0.6;G.boss.freezeTimer=Math.max(G.boss.freezeTimer||0,20);}
-    },cd:[90,75,60],},
+    desc:['旋转冰刃+全场减速'],
+    update(G,lv,ws,stars){
+      const count=6+stars*3,dmg=(1.5+stars*0.8)*(G.buffs.atk||1),r=60+stars*20;
+      ws.orbitAngle=(ws.orbitAngle||0)+0.035+stars*0.015;
+      ws.orbs=ws.orbs||Array.from({length:count},(_,i)=>({a:i/count*Math.PI*2}));
+      ws.orbs.length=count;
+      ws.orbs.forEach((o,i)=>{
+        o.a=ws.orbitAngle+i/count*Math.PI*2;
+        o.x=G.mx+Math.cos(o.a)*r;o.y=G.my+Math.sin(o.a)*r;
+        G.enemies.forEach(e=>{if(Math.hypot(e.x-o.x,e.y-o.y)<e.sz/2+8){e.hp-=dmg/(e.defMult||1);e.slowTimer=Math.max(e.slowTimer||0,90);addPt(G,o.x,o.y,'#88CCFF',1,0.8);}});
+        if(G.boss&&Math.hypot(G.boss.x-o.x,G.boss.y-o.y)<G.boss.sz/2+8){G.boss.hp-=dmg*0.6;G.boss.slowTimer=Math.max(G.boss.slowTimer||0,60);}
+      });
+    },},
   // —— 环绕·雷罡护体 ——
   thunder_ring:{name:'雷罡护体',type:'orbit',maxLv:3,
     desc:['闪电护体环·触链连诛'],
