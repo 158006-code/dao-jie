@@ -568,3 +568,41 @@ const REALMS=[
   {name:'元婴期',sub:'神识出窍',stages:4,icon:'🌀',stageNames:['元婴渡世','道心磨砺','古神苏醒','天地共鸣']},
   {name:'化神期',sub:'道法自然',stages:5,icon:'💫',stageNames:['化神渡劫','万象归一','天魔降临','道心归一','飞升证道']},
 ];
+
+// ══════ 配置校验器 ══════
+(function validateConfig(){
+  const errors=[];
+  // 武器校验
+  Object.entries(WEAPONS).forEach(([id,w])=>{
+    if(!w.name){errors.push('WEAPONS.'+id+': missing name');}
+    if(!w.type){errors.push('WEAPONS.'+id+': missing type');}
+    if(w.maxLv==null){errors.push('WEAPONS.'+id+': missing maxLv');}
+    if(w.type==='attack'||w.type==='evolve'){
+      if(w.onFire&&!w.cd){errors.push('WEAPONS.'+id+': has onFire but missing cd');}
+    }
+    if(w.evolve&&!WEAPONS[w.evolve]){errors.push('WEAPONS.'+id+': evolve target "'+w.evolve+'" not found');}
+  });
+  // 敌人校验
+  ENEMY_TYPES.forEach((e,i)=>{
+    if(!e.key){errors.push('ENEMY_TYPES['+i+']: missing key');}
+    if(!e.name){errors.push('ENEMY_TYPES['+i+']: missing name');}
+    if(e.hpBase==null){errors.push('ENEMY_TYPES['+i+']: missing hpBase');}
+    if(e.spdBase==null){errors.push('ENEMY_TYPES['+i+']: missing spdBase');}
+  });
+  // 法宝校验
+  TREASURE_POOL.forEach((t,i)=>{
+    if(!t.wid){errors.push('TREASURE_POOL['+i+']: missing wid');}
+    if(!t.name){errors.push('TREASURE_POOL['+i+']: missing name');}
+    if(t.wid&&!WEAPONS[t.wid]){errors.push('TREASURE_POOL['+i+']: wid "'+t.wid+'" not in WEAPONS');}
+    if(!t.effects){errors.push('TREASURE_POOL['+i+']: missing effects');}
+  });
+  // 品质校验
+  ['white','green','blue','purple','gold','red'].forEach(id=>{
+    if(!QUALITY_BONUS[id]){errors.push('QUALITY_BONUS: missing tier "'+id+'"');}
+    else if(QUALITY_BONUS[id].qualityMult==null){errors.push('QUALITY_BONUS.'+id+': missing qualityMult');}
+  });
+  if(errors.length>0){
+    console.error('CONFIG VALIDATION FAILED ('+errors.length+' errors):');
+    errors.forEach(e=>console.error('  - '+e));
+  }
+})();
