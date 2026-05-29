@@ -48,7 +48,7 @@ canvas{display:block;background:#04060f;touch-action:none;width:100%;flex:1;min-
 .boss-bar-bg{width:100%;height:6px;background:#1a0a0a;border-radius:3px;overflow:hidden;border:1px solid rgba(226,75,74,0.3)}
 .boss-bar-fill{height:100%;background:linear-gradient(90deg,#7B1FA2,#E24B4A,#EF9F27);border-radius:3px;transition:width 0.15s;position:relative}
 .boss-bar-fill::after{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:repeating-linear-gradient(90deg,transparent,transparent 8px,rgba(255,255,255,0.06) 8px,rgba(255,255,255,0.06) 9px)}
-.weapon-row{display:grid;grid-template-columns:repeat(6,1fr);gap:3px;width:100%;padding:2px 4px;flex-shrink:0;background:rgba(0,0,0,0.88);border-top:1px solid rgba(120,80,200,0.2)}
+.weapon-row{display:grid;grid-template-columns:repeat(10,1fr);gap:2px;width:100%;padding:2px 4px;flex-shrink:0;background:rgba(0,0,0,0.88);border-top:1px solid rgba(120,80,200,0.2)}
 .weapon-slot{background:#0c140c;border:1px solid #1a2a1a;border-radius:5px;padding:3px 2px;text-align:center;position:relative;min-height:46px;transition:border-color 0.2s}
 .weapon-slot.evolved{border-color:#EF9F27;background:#14100a;box-shadow:0 0 6px rgba(239,159,39,0.2)}
 .weapon-slot.evolved2{border-color:#ff4400;background:#14080a;box-shadow:0 0 6px rgba(255,68,0,0.2)}
@@ -392,6 +392,10 @@ canvas{display:block;background:#04060f;touch-action:none;width:100%;flex:1;min-
   <div class="weapon-slot" id="ws3"><div class="ws-empty">法宝槽</div></div>
   <div class="weapon-slot" id="ws4"><div class="ws-empty">法宝槽</div></div>
   <div class="weapon-slot" id="ws5"><div class="ws-empty">法宝槽</div></div>
+  <div class="weapon-slot" id="ws6"><div class="ws-empty">法宝槽</div></div>
+  <div class="weapon-slot" id="ws7"><div class="ws-empty">法宝槽</div></div>
+  <div class="weapon-slot" id="ws8"><div class="ws-empty">法宝槽</div></div>
+  <div class="weapon-slot" id="ws9"><div class="ws-empty">法宝槽</div></div>
 </div>
 <div class="bottom-bar">
   <button class="speed-toggle-btn" id="speed-toggle-btn" onclick="cycleSpeed()">1x ▶</button>
@@ -889,6 +893,165 @@ const WEAPONS={
     onEquip(G,lv,stars){G.spawnMult=(G.spawnMult||1)*0.5;G.killSpawn=(G.killSpawn||0)+0.6*(stars+1);}},
   life_drain:{name:'吞灵噬魄',type:'evolvePassive',maxLv:3,sourceWeapon:'bio_leech',desc:['大幅增强汲灵，每秒自动回灵'],
     onEquip(G,lv,stars){G.leechLv=(G.leechLv||0)+3*(stars+1);G.regenRate=(G.regenRate||0)+0.05*(stars+1);}},
+  // ══════ 新武器 (v7.1) ══════
+  // —— 攻击·灵刃乱舞 ——
+  blade_storm:{name:'灵刃乱舞',type:'attack',maxLv:3,
+    desc:['每秒12道灵刃·高频切割'],
+    evolve:'blade_vortex',
+    onFire(G,lv,stars){playSound('hit');
+      const n=12,dmg=(0.9+lv*0.4)*(G.buffs.atk||1);
+      for(let i=0;i<n;i++){
+        const a=Math.random()*Math.PI*2;
+        addProj(G,G.mx,G.my,Math.cos(a)*4.5,Math.sin(a)*4.5,{dmg,r:2,color:'#cc88ff',life:25,pierce:false,isBlade:true});
+      }
+    },cd:[28,22,18],},
+  blade_vortex:{name:'旋涡灵刃',type:'evolve',maxLv:3,sourceWeapon:'blade_storm',
+    desc:['旋转刃环持续切割'],
+    update(G,lv,ws,stars){
+      const count=10+stars*5,dmg=(2.0+stars*1.5)*(G.buffs.atk||1),r=50+stars*20;
+      ws.vortexAng=(ws.vortexAng||0)+0.04+stars*0.02;
+      ws.blades=ws.blades||Array.from({length:count},(_,i)=>({a:i/count*Math.PI*2}));
+      ws.blades.length=count;
+      ws.blades.forEach((b,i)=>{
+        b.a=ws.vortexAng+i/count*Math.PI*2;
+        b.x=G.mx+Math.cos(b.a)*r;b.y=G.my+Math.sin(b.a)*r;
+        G.enemies.forEach(e=>{if(Math.hypot(e.x-b.x,e.y-b.y)<e.sz/2+6){e.hp-=dmg/(e.defMult||1);addPt(G,b.x,b.y,'#cc88ff',1,1);}});
+        if(G.boss&&Math.hypot(G.boss.x-b.x,G.boss.y-b.y)<G.boss.sz/2+6)G.boss.hp-=dmg*0.7;
+      });
+      ws.bladeR=r;ws.bladeCount=count;},},
+  // —— 攻击·魂弹术 ——
+  soul_bullet:{name:'魂弹术',type:'attack',maxLv:3,
+    desc:['慢速大魂弹·命中爆裂'],
+    evolve:'soul_burst',
+    onFire(G,lv,stars){playSound('sync');
+      const tgt=nearestEnemy(G);if(!tgt)return;
+      const ang=Math.atan2(tgt.y-G.my,tgt.x-G.mx)+(Math.random()-0.5)*0.4;
+      const dmg=(4+lv*2)*(G.buffs.atk||1);
+      addProj(G,G.mx,G.my,Math.cos(ang)*3.5,Math.sin(ang)*3.5,{dmg,r:8,color:'#ffdd88',life:80,isSoulBullet:true,soulBurstDmg:dmg*0.4});
+    },cd:[65,52,40],},
+  soul_burst:{name:'魂爆',type:'evolve',maxLv:3,sourceWeapon:'soul_bullet',
+    desc:['全场随机落雷魂爆'],
+    onFire(G,lv,stars){screenShake(10);playSound('thunder');
+      const bolts=16,dmg=(8+stars*4)*(G.buffs.atk||1),chainN=1+stars;
+      for(let i=0;i<bolts;i++){
+        const tx=Math.random()*W,ty=Math.random()*H;
+        addExplosionWave(G,tx,ty,25,'#ffdd44');
+        addPt(G,tx,ty,'#ffcc00',8,2);
+        G.enemies.forEach(e=>{if(Math.hypot(e.x-tx,e.y-ty)<40){e.hp-=dmg/(e.defMult||1);e.slowTimer=Math.max(e.slowTimer||0,60);}});
+        if(G.boss&&Math.hypot(G.boss.x-tx,G.boss.y-ty)<50)G.boss.hp-=dmg*0.8;
+      }
+      // Chain lightning between random pairs
+      for(let j=0;j<chainN*4;j++){
+        const e1=G.enemies[Math.floor(Math.random()*G.enemies.length)];
+        const e2=G.enemies[Math.floor(Math.random()*G.enemies.length)];
+        if(e1&&e2&&e1!==e2){addArc(G,e2.x,e2.y,stars);e2.hp-=dmg*0.3/(e2.defMult||1);}
+      }
+    },cd:[120,100,80],},
+  // —— 攻击·虚空枪刺 ——
+  void_lance:{name:'虚空枪刺',type:'attack',maxLv:3,
+    desc:['超长穿透·Boss专克'],
+    evolve:'void_ray',
+    onFire(G,lv,stars){playSound('boss');screenShake(3);
+      const ang=(nearestEnemy(G)?Math.atan2(nearestEnemy(G).y-G.my,nearestEnemy(G).x-G.mx):0);
+      const dmg=(5+lv*3)*(G.buffs.atk||1);
+      addProj(G,G.mx,G.my,Math.cos(ang)*12,Math.sin(ang)*12,{dmg,r:2,color:'#8844cc',life:100,pierce:true,isVoidLance:true});
+    },cd:[180,150,120],},
+  void_ray:{name:'虚空裂缝',type:'evolve',maxLv:3,sourceWeapon:'void_lance',
+    desc:['持续横扫光束'],
+    update(G,lv,ws,stars){
+      ws.rayTimer=(ws.rayTimer||0)+1;
+      if(ws.rayTimer%120===0||!ws.rayAng){
+        const tgt=nearestEnemy(G);
+        ws.rayAng=tgt?Math.atan2(tgt.y-G.my,tgt.x-G.mx):ws.rayAng||0;
+      }
+      const ang=ws.rayAng;const len=300,width=12+stars*4;
+      const dmgPerFrame=(0.4+stars*0.2)*(G.buffs.atk||1);
+      G.enemies.forEach(e=>{
+        const dx=e.x-G.mx,dy=e.y-G.my;
+        const projDist=dx*Math.cos(ang)+dy*Math.sin(ang);
+        const perpDist=Math.abs(-dx*Math.sin(ang)+dy*Math.cos(ang));
+        if(projDist>0&&projDist<len&&perpDist<width+e.sz/2){
+          e.hp-=dmgPerFrame/(e.defMult||1);
+          if(G.elapsed%6===0)addPt(G,e.x,e.y,'#8844cc',2,1);
+        }
+      });
+      if(G.boss){
+        const b=G.boss;const dx=b.x-G.mx,dy=b.y-G.my;
+        const projDist=dx*Math.cos(ang)+dy*Math.sin(ang);
+        const perpDist=Math.abs(-dx*Math.sin(ang)+dy*Math.cos(ang));
+        if(projDist>0&&projDist<len&&perpDist<width+b.sz/2)b.hp-=dmgPerFrame*0.6;
+      }
+      ws.rayLen=len;ws.rayW=width;},},
+  // —— 攻击·寒冰封印 ——
+  frost_seal:{name:'寒冰封印',type:'attack',maxLv:3,
+    desc:['冻结控制·2秒冰封'],
+    evolve:'blizzard_field',
+    onFire(G,lv,stars){playSound('sync');
+      const tgt=nearestEnemy(G);if(!tgt)return;
+      const ang=Math.atan2(tgt.y-G.my,tgt.x-G.mx)+(Math.random()-0.5)*0.3;
+      const dmg=(1.5+lv*0.6)*(G.buffs.atk||1);
+      addProj(G,G.mx,G.my,Math.cos(ang)*3,Math.sin(ang)*3,{dmg,r:5,color:'#88CCFF',life:70,isFrost:true,freeze:120});
+    },cd:[80,65,50],},
+  blizzard_field:{name:'冰域领域',type:'evolve',maxLv:3,sourceWeapon:'frost_seal',
+    desc:['全场持续减速+冰DOT'],
+    onFire(G,lv,stars){screenShake(4);playSound('poison');
+      G.enemies.forEach(e=>{e.slowTimer=Math.max(e.slowTimer||0,240);e.frostDot=Math.max(e.frostDot||0,120+stars*40);});
+      if(G.boss){G.boss.slowTimer=Math.max(G.boss.slowTimer||0,180);G.boss.frostDot=Math.max(G.boss.frostDot||0,80);}
+      const frostDmg=(1.2+stars*0.8)*(G.buffs.atk||1);
+      // DOT tick via per-frame in the update loop below — store for use in _update
+      ws.frostDmg=frostDmg;},
+    cd:[150,120,100],
+    update(G,lv,ws,stars){if(!ws.frostDmg)return;
+      if(G.elapsed%30===0){
+        const dmg=ws.frostDmg||(1.2+stars*0.8)*(G.buffs.atk||1);
+        G.enemies.forEach(e=>{if(e.frostDot>0){e.frostDot--;e.hp-=dmg/(e.defMult||1);if(G.elapsed%60===0)addPt(G,e.x,e.y,'#88CCFF',2,0.8);}});
+        if(G.boss&&G.boss.frostDot>0){G.boss.frostDot--;G.boss.hp-=dmg*0.5;}
+      }},},
+  // —— 环绕·雷罡护体 ——
+  thunder_ring:{name:'雷罡护体',type:'orbit',maxLv:3,
+    desc:['闪电护体环·触链连诛'],
+    evolve:'storm_cage',
+    update(G,lv,ws,stars){
+      const count=4+lv*2,dmg=(1.0+lv*0.5)*(G.buffs.atk||1),r=35+lv*5;
+      ws.orbitAngle=(ws.orbitAngle||0)+0.06+lv*0.01;
+      ws.orbs=ws.orbs||Array.from({length:count},(_,i)=>({a:i/count*Math.PI*2}));
+      ws.orbs.length=count;
+      ws.orbs.forEach((o,i)=>{
+        o.a=ws.orbitAngle+i/count*Math.PI*2;
+        o.x=G.mx+Math.cos(o.a)*r;o.y=G.my+Math.sin(o.a)*r;
+        // 触碰跳链
+        G.enemies.forEach(e=>{if(Math.hypot(e.x-o.x,e.y-o.y)<e.sz/2+8){
+          e.hp-=dmg/(e.defMult||1);addPt(G,o.x,o.y,'#4488FF',3,2);
+          // 跳链到附近敌人
+          G.enemies.forEach(e2=>{if(e2!==e&&Math.hypot(e2.x-e.x,e2.y-e.y)<60){e2.hp-=dmg*0.6/(e2.defMult||1);addArc(G,e2.x,e2.y,0);}});
+        }});
+        if(G.boss&&Math.hypot(G.boss.x-o.x,G.boss.y-o.y)<G.boss.sz/2+8){G.boss.hp-=dmg*0.8;addPt(G,o.x,o.y,'#4488FF',3,2);}
+      });
+      ws.thunderOrbs=true;},},
+  storm_cage:{name:'雷狱',type:'evolve',maxLv:3,sourceWeapon:'thunder_ring',
+    desc:['呼吸式雷环·全场跳链'],
+    update(G,lv,ws,stars){
+      ws.cageTimer=(ws.cageTimer||0)+1;
+      const period=120-stars*15;
+      const phase=(ws.cageTimer%period)/period; // 0→1, 呼吸周期
+      const minR=20,maxR=80+stars*30;
+      const r=minR+(maxR-minR)*Math.sin(phase*Math.PI); // 正弦呼吸
+      ws.cageRadius=r;
+      // 每次呼吸完成（phase归零）触发全场跳链
+      if(ws.cageTimer%period===0&&ws.cageTimer>0){
+        playSound('thunder');screenShake(6);
+        const chainDmg=(3+stars*2)*(G.buffs.atk||1);
+        G.enemies.forEach(e=>{
+          e.hp-=chainDmg/(e.defMult||1);e.slowTimer=Math.max(e.slowTimer||0,60);
+          addPt(G,e.x,e.y,'#ffcc00',4,2);
+          // 跳链到附近
+          const near=G.enemies.filter(e2=>e2!==e&&Math.hypot(e2.x-e.x,e2.y-e.y)<80);
+          near.slice(0,3+stars).forEach(e2=>{
+            e2.hp-=chainDmg*0.5/(e2.defMult||1);addArc(G,e2.x,e2.y,stars);
+          });
+        });
+        if(G.boss){G.boss.hp-=chainDmg*1.5;addPt(G,G.boss.x,G.boss.y,'#ffcc00',6,3);}
+      }},},
   death_sync:{name:'道心归一',type:'evolvePassive',maxLv:3,sourceWeapon:'berserker_soul',desc:['道心不灭，低血量暴怒自愈'],
     onEquip(G,lv,stars){G.deathSync=true;G.berserkerLv=(G.berserkerLv||0)+2*(stars+1);}},
 };
@@ -1261,6 +1424,11 @@ const TREASURE_POOL=[
   {wid:'shell_armor',  name:'金刚法盾',icon:'🛡', qmod:-1, desc:'灵虫血量+80%·减伤'},
   {wid:'hive_expand',  name:'洞府宝鉴',icon:'🏯', qmod:-1, desc:'魔军上限+8·精英魔率+'},
   {wid:'rapid_spawn',  name:'灵虫灵卵',icon:'🥚', qmod:-1, desc:'孵化间隔-30%·斩杀孵化'},
+  {wid:'blade_storm',  name:'灵刃玉符',icon:'🔪', qmod:1,  desc:'每秒12道灵刃·高频切割'},
+  {wid:'soul_bullet',  name:'魂弹法珠',icon:'💫', qmod:1,  desc:'慢速大魂弹·命中爆裂8向'},
+  {wid:'void_lance',   name:'虚空刺枪',icon:'🗡', qmod:1,  desc:'超长穿透·Boss专克·CD长'},
+  {wid:'frost_seal',   name:'寒冰道符',icon:'❄️', qmod:0,  desc:'冻结控制·2秒冰封·稳场'},
+  {wid:'thunder_ring', name:'雷罡法环',icon:'⚡', qmod:0,  desc:'闪电护体环·触链连诛'},
 ];
 
 function rollQuality(qmod=0){
@@ -1447,7 +1615,7 @@ function initGame(){
     infection:0,eliteFlash:0,slimePools:[],infectionMap:[],
     comboMilestone:0,pendingUpgrade:0,
     keys:{},paused:true,dead:false,won:false,upgrading:false,
-    slots:Array(6).fill(null).map(()=>({id:null,lv:0,timer:0,state:{},stars:0})),
+    slots:Array(10).fill(null).map(()=>({id:null,lv:0,timer:0,state:{},stars:0})),
     pendingStarFor:{},
     bossPhase:0,boss:null,bossMode:false,bossTriggered:[false,false,false],
     spawnTimer:0,bugTimer:0,
@@ -1889,9 +2057,9 @@ function _update(){
   // ── 敌人行动 ──
   G.enemies.forEach(e=>{
     if(e.poison>0&&!e.immuneDot){e.poison--;if(e.poison%16===0){e.hp-=0.6/e.defMult;addPt(G,e.x,e.y,'#639922',2,0.7);}}
-    if(e.kbCd>0)e.kbCd--;if(e.slowTimer>0)e.slowTimer--;
+    if(e.kbCd>0)e.kbCd--;if(e.slowTimer>0)e.slowTimer--;if(e.freezeTimer>0)e.freezeTimer--;
     const spdMult=e.slowTimer>0?0.3:1;
-    e.vx*=0.88;e.vy*=0.88;
+    if(e.freezeTimer>0){e.vx*=0.3;e.vy*=0.3;}else{e.vx*=0.88;e.vy*=0.88;}
     if(e.rage&&e.rage>1){e.spd=Math.min(e.spd*1.0006,e.spd*1.45);}
 
     // 护盾虫：护盾恢复
@@ -2070,6 +2238,17 @@ function _update(){
             addArc(G,ct.x,ct.y,0);
           }
         }
+        // 魂弹爆裂：命中后8方向小弹
+        if(p.isSoulBullet){
+          const burstDmg=p.soulBurstDmg||p.dmg*0.4;
+          for(let si=0;si<8;si++){
+            const sa=si/8*Math.PI*2;const ss=3+Math.random()*2;
+            addProj(G,p.x,p.y,Math.cos(sa)*ss,Math.sin(sa)*ss,{dmg:burstDmg,r:2,color:'#ffdd44',life:25});
+          }
+          addExplosionWave(G,p.x,p.y,30,'#ffdd88');
+        }
+        // 冻结：命中使敌人定身
+        if(p.isFrost&&p.freeze>0){e.freezeTimer=Math.max(e.freezeTimer||0,p.freeze);e.slowTimer=Math.max(e.slowTimer||0,p.freeze+60);addPt(G,e.x,e.y,'#88CCFF',6,2);}
         p._pierced++;if(p._pierced>totalPierce){dp.push(i);recycleProj(p);}
       }
     };
@@ -3466,7 +3645,14 @@ function draw(){
   // 环绕武器
   G.slots.forEach(sl=>{
     if(!sl.id)return;
-    if(sl.state.orbs){sl.state.orbs.forEach(o=>{const col=sl.stars>=2?'#FF00FF':sl.stars>=1?'#FF8800':sl.id==='orbit_storm'?'#00FFB3':'#5DCAA5';ctx.fillStyle=col;ctx.globalAlpha=0.9;ctx.beginPath();ctx.arc(o.x,o.y,sl.stars>=1?7:5,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;});}
+    // 通用orbs渲染（orbit_bugs, orbit_storm, thunder_ring）
+    if(sl.state.orbs){const isThunder=sl.id==='thunder_ring'||sl.id==='storm_cage';sl.state.orbs.forEach(o=>{const col=isThunder?'#4488FF':sl.stars>=2?'#FF00FF':sl.stars>=1?'#FF8800':sl.id==='orbit_storm'?'#00FFB3':'#5DCAA5';ctx.fillStyle=col;ctx.shadowBlur=isThunder?8:0;ctx.shadowColor=isThunder?'#4488FF':'';ctx.globalAlpha=0.9;ctx.beginPath();ctx.arc(o.x,o.y,sl.stars>=1?7:5,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;ctx.shadowBlur=0;});}
+    // 旋涡灵刃：紫色旋转刃片
+    if(sl.id==='blade_vortex'&&sl.state.blades){const r=sl.state.bladeR||50;const blades=sl.state.blades;ctx.save();ctx.globalAlpha=0.7;ctx.strokeStyle='#cc88ff';ctx.lineWidth=1.5;ctx.shadowBlur=5;ctx.shadowColor='#cc88ff';ctx.beginPath();ctx.arc(G.mx,G.my,r,0,Math.PI*2);ctx.stroke();ctx.restore();blades.forEach(b=>{ctx.save();ctx.globalAlpha=0.85;ctx.fillStyle='#cc88ff';ctx.shadowBlur=4;ctx.shadowColor='#cc88ff';ctx.beginPath();ctx.arc(b.x,b.y,3,0,Math.PI*2);ctx.fill();ctx.restore();});}
+    // 雷狱：呼吸雷环
+    if(sl.id==='storm_cage'&&sl.state.cageRadius){const cr=sl.state.cageRadius;ctx.save();ctx.globalAlpha=0.3+0.1*Math.sin(G.elapsed*0.1);ctx.strokeStyle='#ffaa00';ctx.lineWidth=2.5;ctx.shadowBlur=12;ctx.shadowColor='#ffaa00';ctx.setLineDash([8,4]);ctx.beginPath();ctx.arc(G.mx,G.my,cr,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);ctx.restore();}
+    // 虚空裂缝：持续光束
+    if(sl.id==='void_ray'&&sl.state.rayLen){const ang=sl.state.rayAng||0;const len=sl.state.rayLen||300;const w=sl.state.rayW||12;ctx.save();ctx.globalAlpha=0.35+0.08*Math.sin(G.elapsed*0.15);ctx.strokeStyle='#8844cc';ctx.lineWidth=w*0.5;ctx.shadowBlur=20;ctx.shadowColor='#8844cc';ctx.beginPath();ctx.moveTo(G.mx,G.my);ctx.lineTo(G.mx+Math.cos(ang)*len,G.my+Math.sin(ang)*len);ctx.stroke();ctx.globalAlpha=0.15;ctx.lineWidth=w;ctx.stroke();ctx.restore();}
     if(sl.state.towers){
       const towers=sl.state.towers;
       // 轨道圆（淡）
