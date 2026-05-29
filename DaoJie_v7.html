@@ -780,9 +780,9 @@ const WEAPONS={
   },
   hive_expand:{name:'洞府扩建',type:'passive',maxLv:3,desc:['魔军上限+8','再+8','精英魔率+30%'],evolve:'hive_fortress',
     onEquip(G,lv){G.swarmBonus=(G.swarmBonus||0)+8;}},
-  shell_armor:{name:'金刚护体',type:'passive',maxLv:3,desc:['灵兽血量+80%','再+80%','减伤20%'],evolve:'iron_carapace',
+  shell_armor:{name:'金刚护体',type:'passive',maxLv:3,desc:['灵虫血量+80%','再+80%','减伤20%'],evolve:'iron_carapace',
     onEquip(G,lv){G.bugHpMult=(G.bugHpMult||1)*1.8;if(lv>=3)G.dmgReduce=(G.dmgReduce||0)+0.2;}},
-  rapid_spawn:{name:'灵兽孵化',type:'passive',maxLv:3,desc:['孵化间隔-30%','再-25%','斩杀孵化+40%'],evolve:'swarm_surge',
+  rapid_spawn:{name:'灵虫孵化',type:'passive',maxLv:3,desc:['孵化间隔-30%','再-25%','斩杀孵化+40%'],evolve:'swarm_surge',
     onEquip(G,lv){G.spawnMult=(G.spawnMult||1)*(lv===1?0.7:0.75);if(lv>=3)G.killSpawn=(G.killSpawn||0)+0.4;}},
   bio_leech:{name:'汲灵诀',type:'passive',maxLv:3,desc:['斩敌汲灵回血','汲灵翻倍','攻伐汲灵'],evolve:'life_drain',
     onEquip(G,lv){G.leechLv=(G.leechLv||0)+1;}},
@@ -881,9 +881,9 @@ const WEAPONS={
         G.enemies.forEach(e=>{if(Math.hypot(e.x-G.mx,e.y-G.my)<r){e.hp-=dmg*atkMult+(G.buffs.dmgFlat||0);if(ws.ringTimer%12===0)addPt(G,e.x,e.y,'#E85D24',2,1.5);}});
         if(G.boss&&Math.hypot(G.boss.x-G.mx,G.boss.y-G.my)<r)G.boss.hp-=dmg*0.5+(G.buffs.dmgFlat||0);}
       ws.drawR=r;ws.stars=stars;},},
-  hive_fortress:{name:'本命道宫',type:'evolvePassive',maxLv:3,sourceWeapon:'hive_expand',desc:['魔军上限大幅提升，精英虫比例+'],
+  hive_fortress:{name:'本命道宫',type:'evolvePassive',maxLv:3,sourceWeapon:'hive_expand',desc:['魔军上限大幅提升，精英灵虫比例+'],
     onEquip(G,lv,stars){G.swarmBonus=(G.swarmBonus||0)+16*(stars+1);G.eliteRate=(G.eliteRate||0.1)+0.1*(stars+1);}},
-  iron_carapace:{name:'金刚真身',type:'evolvePassive',maxLv:3,sourceWeapon:'shell_armor',desc:['灵兽血量翻倍，减伤大幅提升'],
+  iron_carapace:{name:'金刚真身',type:'evolvePassive',maxLv:3,sourceWeapon:'shell_armor',desc:['灵虫血量翻倍，减伤大幅提升'],
     onEquip(G,lv,stars){G.bugHpMult=(G.bugHpMult||1)*2*(stars+1);G.dmgReduce=Math.min(0.6,(G.dmgReduce||0)+0.15*(stars+1));}},
   swarm_surge:{name:'万魂幡',type:'evolvePassive',maxLv:3,sourceWeapon:'rapid_spawn',desc:['万魂幡旗展开，斩杀大量孵化'],
     onEquip(G,lv,stars){G.spawnMult=(G.spawnMult||1)*0.5;G.killSpawn=(G.killSpawn||0)+0.6*(stars+1);}},
@@ -1258,9 +1258,9 @@ const TREASURE_POOL=[
   {wid:'flame_tower',  name:'丹火剑匣',icon:'🔥', qmod:0,  desc:'丹火剑台·等距环绕'},
   {wid:'bio_leech',    name:'汲灵血玉',icon:'💉', qmod:-1, desc:'斩敌汲灵·持续回血'},
   {wid:'berserker_soul',name:'狂道血晶',icon:'🩸',qmod:1,  desc:'无伤道力暴涨·受伤暴怒'},
-  {wid:'shell_armor',  name:'金刚法盾',icon:'🛡', qmod:-1, desc:'灵兽血量+80%·减伤'},
+  {wid:'shell_armor',  name:'金刚法盾',icon:'🛡', qmod:-1, desc:'灵虫血量+80%·减伤'},
   {wid:'hive_expand',  name:'洞府宝鉴',icon:'🏯', qmod:-1, desc:'魔军上限+8·精英魔率+'},
-  {wid:'rapid_spawn',  name:'灵兽灵卵',icon:'🥚', qmod:-1, desc:'孵化间隔-30%·斩杀孵化'},
+  {wid:'rapid_spawn',  name:'灵虫灵卵',icon:'🥚', qmod:-1, desc:'孵化间隔-30%·斩杀孵化'},
 ];
 
 function rollQuality(qmod=0){
@@ -2102,7 +2102,7 @@ function _update(){
   if(G.xp>=G.xpNext){G.xp-=G.xpNext;G.xpNext=Math.floor(G.xpNext*1.38/(G.xpBoost||1));G.lv++;screenShake(4);playSound('levelup');showUpgrade();return;}
   if((G.pendingUpgrade||0)>0&&!G.upgrading){G.pendingUpgrade--;showUpgrade();return;}
   if(G.mhp<=0){doGameover();return;}
-  if(G.bugs.length===0&&G.enemies.length>10)applyPlayerDamage(G,0.06); // 无虫惩罚加重
+  if(G.bugs.length===0&&G.enemies.length>10)applyPlayerDamage(G,0.06); // 无灵虫惩罚加重
   updateBuffToast();
   updateHUD();
 }
@@ -3625,7 +3625,7 @@ function draw(){
     // V13: 高combo combo数字脉动更强烈
     const scale=1+Math.sin(G.elapsed*0.2)*0.07*(1+G.comboTier*0.05);
     ctx.translate(W/2,78);ctx.scale(scale,scale);ctx.textAlign='center';ctx.shadowColor=tc;ctx.shadowBlur=16+G.comboTier*4;ctx.fillStyle=tc;
-    const tierNames=['','热身','狩猎','侵蚀','暴走','母巢同步','污染扩张','世界侵蚀','虫巢暴走'];
+    const tierNames=['','热身','狩猎','侵蚀','暴走','母巢同步','污染扩张','世界侵蚀','灵虫暴走'];
     const tierLabel=G.comboTier>0?' ['+tierNames[G.comboTier]+']':'';
     ctx.font='bold 26px Arial';ctx.fillText(G.combo+' 连斩'+tierLabel,0,0);ctx.restore();
   }
