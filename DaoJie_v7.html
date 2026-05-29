@@ -589,7 +589,7 @@ resizeCanvas();
 window.addEventListener('resize',resizeCanvas);
 
 const FPS=60,TOTAL=540;
-const BOSS_AT=[240,420,600]; // v14: Boss时机后移，给玩家更多成长时间
+const BOSS_AT=[180,360,510]; // 3个Boss均匀分布在9分钟内
 let SPEED=1,manualPaused=false;
 const SPEEDS=[1,1.5,2,3];
 let speedIdx=0;
@@ -1242,11 +1242,11 @@ const QUALITY_DEFS=[
 // 品质对各武器的真实加成（装备后持续生效）
 const QUALITY_BONUS={
   white:  {atkMult:1.0,  cdMult:1.0,  dmgFlat:0,   spdMult:1.0,  critRate:0,    comboHit:0, splashR:0,  pierce:0, reflect:0,    hpMult:1.0,  shield:0,  leechRate:0,    dodgeFrames:0, dmgReduce:0,    revive:false, comboSpeed:1.0,  comboDmg:0,    evolveRate:1.0,  xpBoost:1.0,  starDmg:0,    evolveRange:1.0,  extra:''},
-  green:  {atkMult:1.15, cdMult:0.92, dmgFlat:0.5, spdMult:1.0,  critRate:0.04, comboHit:1, splashR:30, pierce:1, reflect:0.05,  hpMult:1.15, shield:5,  leechRate:0.02,  dodgeFrames:900,dmgReduce:0.03,  revive:false, comboSpeed:1.05, comboDmg:0.02,  evolveRate:1.10,  xpBoost:1.10, starDmg:0.04,  evolveRange:1.0,   extra:'攻伐+15%'},
-  blue:   {atkMult:1.3,  cdMult:0.85, dmgFlat:1.2, spdMult:1.05, critRate:0.08, comboHit:1, splashR:50, pierce:1, reflect:0.10,  hpMult:1.30, shield:12, leechRate:0.04,  dodgeFrames:750,dmgReduce:0.06,  revive:false, comboSpeed:1.08, comboDmg:0.04,  evolveRate:1.20,  xpBoost:1.20, starDmg:0.07,  evolveRange:1.0,   extra:'攻伐+30%·冷却-15%'},
-  purple: {atkMult:1.55, cdMult:0.75, dmgFlat:2.5, spdMult:1.1,  critRate:0.12, comboHit:2, splashR:70, pierce:2, reflect:0.15,  hpMult:1.55, shield:25, leechRate:0.08,  dodgeFrames:600,dmgReduce:0.12,  revive:false, comboSpeed:1.12, comboDmg:0.07,  evolveRate:1.35,  xpBoost:1.35, starDmg:0.12,  evolveRange:1.05,  extra:'攻伐+55%·冷却-25%·移速+10%'},
-  gold:   {atkMult:1.9,  cdMult:0.62, dmgFlat:5.0, spdMult:1.15, critRate:0.18, comboHit:2, splashR:90, pierce:3, reflect:0.22,  hpMult:1.90, shield:45, leechRate:0.14,  dodgeFrames:420,dmgReduce:0.20,  revive:false, comboSpeed:1.18, comboDmg:0.10,  evolveRate:1.50,  xpBoost:1.50, starDmg:0.20,  evolveRange:1.10,  extra:'攻伐+90%·冷却-38%·移速+15%'},
-  red:    {atkMult:2.6,  cdMult:0.45, dmgFlat:10,  spdMult:1.25, critRate:0.25, comboHit:3, splashR:120,pierce:5, reflect:0.30,  hpMult:2.60, shield:80, leechRate:0.25,  dodgeFrames:300,dmgReduce:0.30,  revive:true,  comboSpeed:1.25, comboDmg:0.15,  evolveRate:1.80,  xpBoost:1.80, starDmg:0.30,  evolveRange:1.20,  extra:'⚡全属性暴涨·冷却砍半·移速+25%'},
+  green:  {atkMult:1.15, cdMult:0.92, dmgFlat:0.5, spdMult:1.0,  critRate:0.02, comboHit:1, splashR:25, pierce:1, reflect:0.03,  hpMult:1.10, shield:3,  leechRate:0.01,  dodgeFrames:0, dmgReduce:0.02,  revive:false, comboSpeed:1.02, comboDmg:0.01,  evolveRate:1.05,  xpBoost:1.05, starDmg:0.02,  evolveRange:1.0,   extra:'攻伐+15%'},
+  blue:   {atkMult:1.3,  cdMult:0.85, dmgFlat:1.2, spdMult:1.05, critRate:0.04, comboHit:1, splashR:40, pierce:1, reflect:0.05,  hpMult:1.20, shield:7,  leechRate:0.02,  dodgeFrames:0, dmgReduce:0.04,  revive:false, comboSpeed:1.04, comboDmg:0.02,  evolveRate:1.10,  xpBoost:1.10, starDmg:0.04,  evolveRange:1.0,   extra:'攻伐+30%·冷却-15%'},
+  purple: {atkMult:1.55, cdMult:0.75, dmgFlat:2.5, spdMult:1.1,  critRate:0.07, comboHit:1, splashR:55, pierce:1, reflect:0.08,  hpMult:1.35, shield:15, leechRate:0.04,  dodgeFrames:900,dmgReduce:0.07,  revive:false, comboSpeed:1.06, comboDmg:0.03,  evolveRate:1.18,  xpBoost:1.18, starDmg:0.07,  evolveRange:1.0,   extra:'攻伐+55%·冷却-25%·移速+10%'},
+  gold:   {atkMult:1.9,  cdMult:0.62, dmgFlat:5.0, spdMult:1.15, critRate:0.10, comboHit:2, splashR:70, pierce:2, reflect:0.12,  hpMult:1.50, shield:25, leechRate:0.07,  dodgeFrames:750,dmgReduce:0.10,  revive:false, comboSpeed:1.09, comboDmg:0.05,  evolveRate:1.30,  xpBoost:1.30, starDmg:0.10,  evolveRange:1.05,  extra:'攻伐+90%·冷却-38%·移速+15%'},
+  red:    {atkMult:2.6,  cdMult:0.45, dmgFlat:10,  spdMult:1.25, critRate:0.14, comboHit:2, splashR:80, pierce:3, reflect:0.18,  hpMult:1.80, shield:40, leechRate:0.12,  dodgeFrames:600,dmgReduce:0.15,  revive:true,  comboSpeed:1.12, comboDmg:0.08,  evolveRate:1.50,  xpBoost:1.50, starDmg:0.15,  evolveRange:1.10,  extra:'⚡全属性暴涨·冷却砍半·移速+25%'},
 };
 
 // 法宝池（映射到真实weapon id）
