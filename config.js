@@ -4,8 +4,8 @@
 // ══════════════════════════════════════════
 
 // ── 游戏常量 ──
-const FPS=60,TOTAL=540;
-const BOSS_AT=[180,360,540]; // 3/6/9分钟各一个Boss
+const FPS=60,TOTAL=780;
+const BOSS_AT=[180,360,540,720]; // 3/6/9/12分钟，第4Boss元婴期解锁
 const SPEEDS=[1,1.5,2,3];
 
 // ── 时间提示 ──
@@ -514,6 +514,46 @@ const BOSS_DEFS=[
       // V13阶段3：UI腐蚀 + 世界脉冲加速
       if(phase>=2){G.worldCorrupt=true;G.uiCorrupt=Math.min(1,(G.uiCorrupt||0)+0.004);}
       if(phase>=1){G.worldPulseActive=true;}
+    }
+  },
+  // 元婴期专属Boss（realmIdx>=3解锁）
+  {
+    name:'元婴道身',hp:3600,spd:0.45,sz:62,col:'#FFCC33',reward:20,
+    chargeTimer:0,chargeCd:120,charging:false,chargeDir:{x:0,y:0},chargeSpd:0,
+    bulletTimer:0,bulletCd:50,bulletAngle:0,splitTimer:0,splitCd:180,
+    beamTimer:0,beamCd:320,beamActive:false,beamDur:0,beamAngle:0,
+    phaseDesc:['道身降世','元婴出窍','天人五衰'],
+    update(G,boss){
+      const sec=Math.floor(G.elapsed/60);
+      // 阶段切换
+      if(boss.hp<boss.maxhp*0.6&&boss._phase<1){boss._phase=1;G.infection=Math.min(1,(G.infection||0)+0.3);showAlert('💫 元婴道身出窍！','#FFCC33');}
+      if(boss.hp<boss.maxhp*0.25&&boss._phase<2){boss._phase=2;G.worldCorrupt=true;G.overmind=true;showAlert('⚡ 天人五衰·万法寂灭','#ff3322');}
+      // 阶段1+：弹幕扇形散射
+      boss.bulletTimer++;
+      if(boss.bulletTimer>=boss.bulletCd&&boss._phase>=0){
+        boss.bulletTimer=0;boss.bulletAngle+=0.6;
+        for(let i=0;i<(boss._phase>=1?8:5);i++){
+          const ang=boss.bulletAngle+i*Math.PI*2/(boss._phase>=1?8:5);
+          addProj(G,boss.x,boss.y,Math.cos(ang)*3.5,Math.sin(ang)*3.5,{r:4,color:'#FFCC33',life:90,dmg:1.5,isBossBullet:true});
+        }
+      }
+      // 阶段1+：分身突进
+      boss.chargeTimer++;
+      if(boss.chargeTimer>=boss.chargeCd&&boss._phase>=1&&!boss.charging){
+        boss.chargeTimer=0;boss.charging=true;
+        const ang=Math.atan2(G.my-boss.y,G.mx-boss.x);
+        boss.chargeDir={x:Math.cos(ang)*8,y:Math.sin(ang)*8};boss.chargeSpd=8;
+        setTimeout(()=>{if(boss.hp>0){boss.charging=false;addExplosionWave(G,boss.x,boss.y,50,'#FFCC33');if(Math.hypot(G.mx-boss.x,G.my-boss.y)<60)applyPlayerDamage(G,8);}},600);
+      }
+      // 阶段2：全场金雷
+      if(boss._phase>=2&&G.elapsed%90===0){
+        for(let i=0;i<4;i++){
+          const tx=Math.random()*G.mx*2,ty=Math.random()*G.my*2;
+          addExplosionWave(G,tx,ty,25,'#FFCC33');
+          if(Math.hypot(G.mx-tx,G.my-ty)<35)applyPlayerDamage(G,3);
+          G.bugs.forEach(b=>{if(Math.hypot(b.x-tx,b.y-ty)<35)b.hp-=4;});
+        }
+      }
     }
   },
 ];

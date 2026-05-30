@@ -1105,7 +1105,7 @@ function initGame(){
     keys:{},paused:true,dead:false,won:false,upgrading:false,
     slots:Array(10).fill(null).map(()=>({id:null,lv:0,timer:0,state:{},stars:0})),
     pendingStarFor:{},
-    bossPhase:0,boss:null,bossMode:false,bossTriggered:[false,false,false],
+    bossPhase:0,boss:null,bossMode:false,bossTriggered:[false,false,false,false],
     spawnTimer:0,bugTimer:0,
     swarmBonus:0,bugHpMult:1,spawnMult:1,killSpawn:0,leechLv:0,dmgReduce:_baseDmgReduce,regenRate:0,eliteRate:0.1,
     baseAtkMult:_baseAtk,baseSpdMult:_baseSpd,baseCdMult:_baseCd,baseDmgFlat:_baseDmgFlat,
@@ -1362,7 +1362,8 @@ function _update(){
   if(phaseLabelEl)phaseLabelEl.textContent=phaseNames[phaseIdx];
 
   if(!G.bossMode){
-    for(let i=0;i<3;i++){if(!G.bossTriggered[i]&&sec>=BOSS_AT[i]){G.bossTriggered[i]=true;triggerBoss(i);return;}}
+    const bossCount=(getProgress().realmIdx>=3)?4:3;
+    for(let i=0;i<bossCount;i++){if(!G.bossTriggered[i]&&sec>=BOSS_AT[i]){G.bossTriggered[i]=true;triggerBoss(i);return;}}
   }
 
   // 移动
@@ -1657,7 +1658,8 @@ function _update(){
       document.getElementById('boss-wrap').classList.remove('show');
       document.getElementById('boss-phase-dots').textContent='';
       setTimeout(resizeCanvas,10);
-      if(bi>=2){doVictory();return;}
+      const reqBoss=(getProgress().realmIdx>=3)?3:2;
+      if(bi>=reqBoss){doVictory();return;}
       showUpgrade();return;
     }
   }
