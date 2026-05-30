@@ -1098,7 +1098,7 @@ function initGame(){
   G={
     mx:W/2,my:H/2,mhp:_totalHp,mmaxhp:_totalHp,
     bugs:[],enemies:[],projs:[],pts:[],arcs:[],
-    xp:0,xpNext:Math.floor(25/(_baseXpBoost||1)),lv:1,kills:0,elapsed:0,
+    xp:0,xpNext:25,lv:1,kills:0,elapsed:0,
     combo:0,comboTimer:0,comboTier:0,damageTexts:[],waves:[],
     infection:0,eliteFlash:0,slimePools:[],infectionMap:[],
     comboMilestone:0,pendingUpgrade:0,
@@ -1157,6 +1157,7 @@ let _gameFirstLoad=true;
 // ── 法宝效果辅助函数 ──
 function applyPlayerDamage(G,amount){
   if(!amount||amount<=0)return;
+  amount*=(1-(G.dmgReduce||0)); // 减伤对所有伤害生效(含Boss)
   if(G.dodgeTimer>0)return;
   if(G.shieldHp>0){
     if(G.shieldHp>=amount){G.shieldHp-=amount;return;}
@@ -1624,7 +1625,7 @@ function _update(){
     else{e.x=Math.max(-e.sz,Math.min(W+e.sz,e.x+e.vx));e.y=Math.max(-e.sz,Math.min(H+e.sz,e.y+e.vy));}
     const d2=Math.hypot(G.mx-e.x,G.my-e.y);
     e.hitCd=(e.hitCd||0);if(e.hitCd>0)e.hitCd--;
-    if(d2<14&&e.hitCd<=0){e.hitCd=35;const dmgDealt=e.atk*(1-(G.dmgReduce||0));applyPlayerDamage(G,dmgDealt);applyReflect(G,dmgDealt);G.combo=0;G.comboTimer=0;G.comboMilestone=0;G.pendingUpgrade=0;G.noDmgTimer=0;screenShake(4);playSound('hurt');addPt(G,G.mx,G.my,'#E24B4A',3,1.5);addDamageText(G,G.mx+(Math.random()-0.5)*12,G.my-14,'-'+Math.ceil(dmgDealt),'#ff3333',15);}
+    if(d2<14&&e.hitCd<=0){e.hitCd=35;const dmgDealt=e.atk;applyPlayerDamage(G,dmgDealt);applyReflect(G,dmgDealt);G.combo=0;G.comboTimer=0;G.comboMilestone=0;G.pendingUpgrade=0;G.noDmgTimer=0;screenShake(4);playSound('hurt');addPt(G,G.mx,G.my,'#E24B4A',3,1.5);addDamageText(G,G.mx+(Math.random()-0.5)*12,G.my-14,'-'+Math.ceil(dmgDealt),'#ff3333',15);}
     if(e.hasKB&&e.kbCd<=0){G.bugs.forEach(b=>{if(Math.hypot(b.x-e.x,b.y-e.y)<e.sz/2+6){knockback(b,e.x,e.y,4);e.kbCd=45;addPt(G,b.x,b.y,'#EF9F27',3,1.5);}});}
   });
 
