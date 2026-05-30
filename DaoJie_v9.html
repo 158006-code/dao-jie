@@ -1093,8 +1093,16 @@ function initGame(){
   const _isReplay=!!_pendingReplayProgress;
   let _origProg=null;
   if(_isReplay){_origProg=getProgress();saveProgress({..._origProg,realmIdx:_pendingReplayProgress.realmIdx,stageCleared:_pendingReplayProgress.stageCleared});_pendingReplayProgress=null;}
+  // 关卡差异化规则
+  const _prog3=getProgress();
+  const _currentRealm=Math.min(_prog3.realmIdx,REALMS.length-1);
+  const _currentStage=Math.min(_prog3.stageCleared||0,REALMS[_currentRealm].stages-1);
+  const _stageNode=STAGE_MAP.find(s=>s.realm===_currentRealm&&s.stage===_currentStage);
+  const _stageCfg=_stageNode?STAGE_CONFIGS[_stageNode.type]:STAGE_CONFIGS.normal;
+
   // 更新总战次
-  const _prog=getProgress();_prog.totalRuns=(_prog.totalRuns||0)+1;saveProgress(_prog);
+  const _prog=_prog3;_prog.totalRuns=(_prog.totalRuns||0)+1;saveProgress(_prog);
+  const _bossEarly=_stageCfg.bossEarly||0;
   G={
     mx:W/2,my:H/2,mhp:_totalHp,mmaxhp:_totalHp,
     bugs:[],enemies:[],projs:[],pts:[],arcs:[],
@@ -1107,7 +1115,7 @@ function initGame(){
     pendingStarFor:{},
     bossPhase:0,boss:null,bossMode:false,bossTriggered:[false,false,false,false],
     spawnTimer:0,bugTimer:0,
-    swarmBonus:0,bugHpMult:1,spawnMult:1,killSpawn:0,leechLv:0,dmgReduce:_baseDmgReduce,regenRate:0,eliteRate:0.1,
+    swarmBonus:0,bugHpMult:1*_stageCfg.enemyHpMult,spawnMult:1,killSpawn:0,leechLv:0,dmgReduce:_baseDmgReduce,regenRate:0,eliteRate:0.1*_stageCfg.eliteRateMult,
     baseAtkMult:_baseAtk,baseSpdMult:_baseSpd,baseCdMult:_baseCd,baseDmgFlat:_baseDmgFlat,
     phase:0,_raf:null,
     buffs:{atk:1.2*_baseAtk,spd:1.15*_baseSpd},
@@ -1131,7 +1139,7 @@ function initGame(){
     pierceCount:_basePierce,reflectRate:_baseReflect,
     shieldHp:_baseShield,shieldBase:_baseShield,leechRate:_baseLeechRate,
     dodgeFrames:_baseDodgeFrames,dodgeCd:0,dodgeTimer:0,
-    _isReplay:_isReplay,_origProg:_origProg,revive:_baseRevive,reviveConsumed:false,blizzardFlash:0,
+    _isReplay:_isReplay,_origProg:_origProg,stageType:_stageNode?.type||'normal',timeLimit:_stageCfg.timeLimit,bossEarly:_bossEarly,revive:_baseRevive,reviveConsumed:false,blizzardFlash:0,
     comboSpeedBonus:_baseComboSpeed,comboDmgBonus:_baseComboDmg,
     evolveRateBonus:_baseEvolveRate,xpBoost:_baseXpBoost,
     starDmgBonus:_baseStarDmg,evolveRangeBonus:_baseEvolveRange,
@@ -1363,7 +1371,7 @@ function _update(){
 
   if(!G.bossMode){
     const bossCount=(getProgress().realmIdx>=3)?4:3;
-    for(let i=0;i<bossCount;i++){if(!G.bossTriggered[i]&&sec>=BOSS_AT[i]){G.bossTriggered[i]=true;triggerBoss(i);return;}}
+    for(let i=0;i<bossCount;i++){if(!G.bossTriggered[i]&&sec>=BOSS_AT[i]-(G.bossEarly||0)){G.bossTriggered[i]=true;triggerBoss(i);return;}}
   }
 
   // 移动
@@ -1800,6 +1808,7 @@ function _update(){
 
   if(G.xp>=G.xpNext){G.xp-=G.xpNext;G.xpNext=Math.floor(G.xpNext*1.38/(G.xpBoost||1));G.lv++;screenShake(4);playSound('levelup');showUpgrade();return;}
   if((G.pendingUpgrade||0)>0&&!G.upgrading){G.pendingUpgrade--;showUpgrade();return;}
+  if(G.timeLimit>0&&G.elapsed/FPS>=G.timeLimit){G.won=false;doGameover();return;} // 特殊章限时
   if(G.mhp<=0){doGameover();return;}
   if(G.bugs.length===0&&G.enemies.length>10)applyPlayerDamage(G,0.06); // 无灵虫惩罚加重
   updateBuffToast();

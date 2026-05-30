@@ -632,6 +632,14 @@ const STAGE_MAP=[
   {id:'s19', realm:4,stage:4,type:'boss',   dropMin:'purple',dropMax:'red'},
 ];
 
+// 关卡差异化规则
+const STAGE_CONFIGS={
+  normal:  {enemyHpMult:1.0, eliteRateMult:1.0, bossEarly:0, timeLimit:0,    desc:'标准'},
+  elite:   {enemyHpMult:1.5, eliteRateMult:3.0, bossEarly:0, timeLimit:0,    desc:'敌人HP×1.5·精英率×3'},
+  boss:    {enemyHpMult:1.2, eliteRateMult:1.5, bossEarly:30,timeLimit:0,    desc:'Boss提前30秒'},
+  special: {enemyHpMult:1.0, eliteRateMult:2.0, bossEarly:0, timeLimit:120,  desc:'限时120秒·击杀达标解锁成就'},
+};
+
 // ══════ 配置校验器 ══════
 (function validateConfig(){
   const errors=[];
