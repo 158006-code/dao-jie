@@ -1090,9 +1090,9 @@ function initGame(){
   const _totalHp=Math.round(60*_baseHpMult);
   _baseDmgReduce=Math.min(0.6,_baseDmgReduce);
   // 重打关卡：临时切换进度，不保存
-  const _isReplay=!!G._replayProgress;
+  const _isReplay=!!_pendingReplayProgress;
   let _origProg=null;
-  if(_isReplay){_origProg=getProgress();const rp=G._replayProgress;saveProgress({..._origProg,realmIdx:rp.realmIdx,stageCleared:rp.stageCleared});G._replayProgress=null;}
+  if(_isReplay){_origProg=getProgress();saveProgress({..._origProg,realmIdx:_pendingReplayProgress.realmIdx,stageCleared:_pendingReplayProgress.stageCleared});_pendingReplayProgress=null;}
   // 更新总战次
   const _prog=getProgress();_prog.totalRuns=(_prog.totalRuns||0)+1;saveProgress(_prog);
   G={
@@ -2734,6 +2734,9 @@ function renderStageMap(){
   },200);
 }
 
+let _replayStageId=null;
+let _pendingReplayProgress=null;
+
 function selectStage(stageId){
   const node=STAGE_MAP.find(s=>s.id===stageId);
   if(!node)return;
@@ -2745,7 +2748,7 @@ function selectStage(stageId){
 
   if(isCurrent){startBattle();return;}
   if(isCleared){
-    G._replayStageId=stageId;
+    _replayStageId=stageId;
     startBattle();
     return;
   }
@@ -2956,9 +2959,10 @@ function startBattle(){
   pendingEquip=getSelectedEquipItem();
   pendingEquip2=getSelectedEquipItem2();
   // 重打关卡：临时设置进度
-  if(G&&G._replayStageId){
-    const node=STAGE_MAP.find(s=>s.id===G._replayStageId);
-    if(node){G._replayProgress={realmIdx:node.realm,stageCleared:node.stage};}
+  if(_replayStageId){
+    const node=STAGE_MAP.find(s=>s.id===_replayStageId);
+    if(node){_pendingReplayProgress={realmIdx:node.realm,stageCleared:node.stage};}
+    _replayStageId=null;
   }
   initGame();
 }
