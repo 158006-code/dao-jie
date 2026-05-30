@@ -569,6 +569,29 @@ const REALMS=[
   {name:'化神期',sub:'道法自然',stages:5,icon:'💫',stageNames:['化神渡劫','万象归一','天魔降临','道心归一','飞升证道']},
 ];
 
+// 关卡地图（按境界展开的线性节点）
+const STAGE_MAP=[
+  {id:'s1',  realm:0,stage:0,type:'normal', dropMin:'white',dropMax:'green'},
+  {id:'s2',  realm:0,stage:1,type:'elite',  dropMin:'green',dropMax:'blue'},
+  {id:'s3',  realm:0,stage:2,type:'boss',   dropMin:'blue', dropMax:'purple'},
+  {id:'s4',  realm:1,stage:0,type:'normal', dropMin:'white',dropMax:'green'},
+  {id:'s5',  realm:1,stage:1,type:'special',dropMin:'green',dropMax:'gold'},
+  {id:'s6',  realm:1,stage:2,type:'boss',   dropMin:'blue', dropMax:'purple'},
+  {id:'s7',  realm:2,stage:0,type:'normal', dropMin:'white',dropMax:'green'},
+  {id:'s8',  realm:2,stage:1,type:'elite',  dropMin:'green',dropMax:'blue'},
+  {id:'s9',  realm:2,stage:2,type:'special',dropMin:'green',dropMax:'gold'},
+  {id:'s10', realm:2,stage:3,type:'boss',   dropMin:'purple',dropMax:'gold'},
+  {id:'s11', realm:3,stage:0,type:'normal', dropMin:'white',dropMax:'green'},
+  {id:'s12', realm:3,stage:1,type:'elite',  dropMin:'green',dropMax:'blue'},
+  {id:'s13', realm:3,stage:2,type:'special',dropMin:'green',dropMax:'gold'},
+  {id:'s14', realm:3,stage:3,type:'boss',   dropMin:'purple',dropMax:'gold'},
+  {id:'s15', realm:4,stage:0,type:'normal', dropMin:'white',dropMax:'green'},
+  {id:'s16', realm:4,stage:1,type:'elite',  dropMin:'green',dropMax:'blue'},
+  {id:'s17', realm:4,stage:2,type:'normal', dropMin:'white',dropMax:'green'},
+  {id:'s18', realm:4,stage:3,type:'special',dropMin:'green',dropMax:'gold'},
+  {id:'s19', realm:4,stage:4,type:'boss',   dropMin:'purple',dropMax:'red'},
+];
+
 // ══════ 配置校验器 ══════
 (function validateConfig(){
   const errors=[];

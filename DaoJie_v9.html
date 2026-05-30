@@ -358,6 +358,29 @@ canvas{display:block;background:#04060f;touch-action:none;width:100%;flex:1;min-
 .signin-claim-btn{background:linear-gradient(135deg,#9B59B6,#7B1FA2);color:#fff;border:none;border-radius:10px;padding:12px 32px;font-size:15px;font-weight:700;cursor:pointer;letter-spacing:0.06em;box-shadow:0 0 20px rgba(155,89,182,0.5);display:block;width:100%;margin-bottom:8px}
 .signin-claim-btn:active{transform:scale(0.96)}
 .signin-skip-btn{font-size:11px;color:#443366;cursor:pointer;background:none;border:none;padding:4px}
+/* 关卡地图 */
+.stage-map-section{flex:1;overflow-y:auto;padding:8px 16px 16px}
+.stage-map-realm{font-size:11px;font-weight:700;color:#7766aa;padding:12px 0 6px;letter-spacing:0.12em;border-bottom:1px solid rgba(120,80,200,0.15);margin-bottom:10px}
+.stage-map-nodes{display:flex;flex-direction:column;gap:0;position:relative}
+.stage-map-node{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;background:rgba(0,0,0,0.4);border:1.5px solid #1a2a1a;cursor:pointer;transition:all 0.15s;position:relative;margin-bottom:2px}
+.stage-map-node:active{transform:scale(0.97)}
+.stage-map-node::before{content:'';position:absolute;left:18px;top:-4px;width:2px;height:4px;background:#1a2a1a}
+.stage-map-node:first-child::before{display:none}
+.stage-map-node .sm-icon{font-size:18px;flex-shrink:0;width:24px;text-align:center}
+.stage-map-node .sm-info{flex:1;min-width:0}
+.stage-map-node .sm-name{font-size:11px;font-weight:600;color:#ccc}
+.stage-map-node .sm-drop{font-size:8px;color:#554;margin-top:1px}
+.stage-map-node .sm-badge{font-size:12px;flex-shrink:0}
+.stage-map-node.cleared{opacity:0.55;border-color:#1a2a1a}
+.stage-map-node.cleared .sm-name{color:#555}
+.stage-map-node.current{border-color:#E8D44D;box-shadow:0 0 12px rgba(232,212,77,0.25);animation:smPulse 2s ease-in-out infinite}
+.stage-map-node.locked{opacity:0.3;pointer-events:none;border-color:#111}
+.stage-map-node.locked .sm-name{color:#333}
+.stage-map-node.elite{border-color:#5aafff44}
+.stage-map-node.boss{border-color:#E24B4A44}
+.stage-map-node.special{border-color:#EF9F2744}
+.stage-map-node.cleared.elite,.stage-map-node.cleared.boss,.stage-map-node.cleared.special{border-color:#1a2a1a}
+@keyframes smPulse{0%,100%{box-shadow:0 0 8px rgba(232,212,77,0.2)}50%{box-shadow:0 0 16px rgba(232,212,77,0.4)}}
 </style>
 <script src="config.js"></script>
 </head>
@@ -520,15 +543,11 @@ canvas{display:block;background:#04060f;touch-action:none;width:100%;flex:1;min-
     <div class="char-realm-stages" id="char-realm-stages"></div>
   </div>
   <div class="char-stage-section">
-    <div class="char-section-title">⚔ 当前关卡</div>
-    <div class="char-stage-card" onclick="startBattle()">
-      <div class="char-stage-icon" id="char-stage-icon">🌊</div>
-      <div class="char-stage-info">
-        <div class="char-stage-name" id="char-stage-name">渡劫·第一关</div>
-        <div class="char-stage-desc" id="char-stage-desc">在乱流中生存，击败Boss证道</div>
-      </div>
-      <div class="char-stage-badge" id="char-stage-badge">进入</div>
+    <div class="char-section-title" style="display:flex;justify-content:space-between;align-items:center">
+      <span>⚔ 关卡地图</span>
+      <span style="font-size:9px;color:#665" id="stage-map-current-label"></span>
     </div>
+    <div class="stage-map-section" id="stage-map-section"></div>
   </div>
   <!-- 战前配装 -->
   <div class="equip-section">
@@ -1070,6 +1089,10 @@ function initGame(){
   _applyEquip(pendingEquip2);
   const _totalHp=Math.round(60*_baseHpMult);
   _baseDmgReduce=Math.min(0.6,_baseDmgReduce);
+  // 重打关卡：临时切换进度，不保存
+  const _isReplay=!!G._replayProgress;
+  let _origProg=null;
+  if(_isReplay){_origProg=getProgress();const rp=G._replayProgress;saveProgress({..._origProg,realmIdx:rp.realmIdx,stageCleared:rp.stageCleared});G._replayProgress=null;}
   // 更新总战次
   const _prog=getProgress();_prog.totalRuns=(_prog.totalRuns||0)+1;saveProgress(_prog);
   G={
@@ -1108,7 +1131,7 @@ function initGame(){
     pierceCount:_basePierce,reflectRate:_baseReflect,
     shieldHp:_baseShield,shieldBase:_baseShield,leechRate:_baseLeechRate,
     dodgeFrames:_baseDodgeFrames,dodgeCd:0,dodgeTimer:0,
-    revive:_baseRevive,reviveConsumed:false,blizzardFlash:0,
+    _isReplay:_isReplay,_origProg:_origProg,revive:_baseRevive,reviveConsumed:false,blizzardFlash:0,
     comboSpeedBonus:_baseComboSpeed,comboDmgBonus:_baseComboDmg,
     evolveRateBonus:_baseEvolveRate,xpBoost:_baseXpBoost,
     starDmgBonus:_baseStarDmg,evolveRangeBonus:_baseEvolveRange,
@@ -2170,11 +2193,16 @@ function doVictory(){
   G.won=true;
   const p=getProgress();
   p.totalWins=(p.totalWins||0)+1;
-  const ri=Math.min(p.realmIdx,REALMS.length-1);
-  const realm=REALMS[ri];
-  p.stageCleared=(p.stageCleared||0)+1;
-  if(p.stageCleared>=realm.stages){p.realmIdx=Math.min(ri+1,REALMS.length-1);p.stageCleared=0;}
-  saveProgress(p);
+  if(G._isReplay&&G._origProg){
+    // 重打：恢复原始进度
+    saveProgress({...G._origProg,totalWins:p.totalWins,totalRuns:p.totalRuns});
+  } else {
+    const ri=Math.min(p.realmIdx,REALMS.length-1);
+    const realm=REALMS[ri];
+    p.stageCleared=(p.stageCleared||0)+1;
+    if(p.stageCleared>=realm.stages){p.realmIdx=Math.min(ri+1,REALMS.length-1);p.stageCleared=0;}
+    saveProgress(p);
+  }
   const newRealm=REALMS[Math.min(p.realmIdx,REALMS.length-1)];
   const wlist=G.slots.filter(s=>s.id).map(s=>`${WEAPONS[s.id].name}${s.stars?starStr(s.stars):''}Lv.${s.lv}`).join(' ');
 
@@ -2662,13 +2690,65 @@ function showCharPage(){
   document.getElementById('char-realm-bar-txt').textContent=`${cleared} / ${realm.stages} 关卡`;
   const stagesEl=document.getElementById('char-realm-stages');
   stagesEl.innerHTML=realm.stageNames.map((n,i)=>`<span style="color:${i<cleared?'#1D9E75':i===cleared?'#E8D44D':'#334'}">${i<cleared?'✓':i===cleared?'▶':i+1}</span>`).join('');
-  const nextStage=realm.stageNames[Math.min(stage,realm.stageNames.length-1)];
-  document.getElementById('char-stage-icon').textContent=realm.icon;
-  document.getElementById('char-stage-name').textContent=`${realm.name} · ${nextStage}`;
-  document.getElementById('char-stage-desc').textContent=`在乱流中生存${stage+1}分钟，击败Boss方可证道`;
+  renderStageMap();
   renderEquipBar();
   renderCharVault();
   initHeroCanvas();
+}
+
+function renderStageMap(){
+  const p=getProgress();
+  const currentRealm=Math.min(p.realmIdx,REALMS.length-1);
+  const currentStage=Math.min(p.stageCleared||0,REALMS[currentRealm].stages-1);
+  const totalCleared=STAGE_MAP.reduce((c,n,i)=>{if(i<STAGE_MAP.findIndex(s=>s.realm===currentRealm&&s.stage===currentStage))c++;return c;},0)+(p.stageCleared>0?1:0);
+  document.getElementById('stage-map-current-label').textContent=`进度 ${Math.round(STAGE_MAP.findIndex(s=>s.realm===currentRealm&&s.stage===currentStage)/STAGE_MAP.length*100)}%`;
+
+  const typeIcon={normal:'⬜',elite:'🟣',boss:'👑',special:'✨'};
+  const typeLabel={normal:'普通',elite:'精英',boss:'Boss',special:'特殊'};
+  const scroll=document.getElementById('stage-map-section');
+  let lastRealm=-1;
+  let html='';
+  STAGE_MAP.forEach((node,idx)=>{
+    const realm=REALMS[node.realm];
+    if(node.realm!==lastRealm){
+      html+=`<div class="stage-map-realm">${realm.icon} ${realm.name}</div>`;
+      lastRealm=node.realm;
+    }
+    let status='locked';
+    if(node.realm<currentRealm||(node.realm===currentRealm&&node.stage<currentStage))status='cleared';
+    else if(node.realm===currentRealm&&node.stage===currentStage)status='current';
+    const rName=realm.stageNames[node.stage]||'关卡';
+    const badge=status==='cleared'?'✓':status==='current'?'▶':'🔒';
+    const dropText=node.type==='boss'?'地品保底':node.type==='special'?'天品概率':node.type==='elite'?'玄品概率':'凡/灵掉落';
+    html+=`<div class="stage-map-node ${status} ${node.type}" onclick="selectStage('${node.id}')">
+      <div class="sm-icon">${typeIcon[node.type]}</div>
+      <div class="sm-info"><div class="sm-name">${rName}</div><div class="sm-drop">${typeLabel[node.type]} · ${dropText}</div></div>
+      <div class="sm-badge">${badge}</div></div>`;
+  });
+  scroll.innerHTML=html;
+
+  // 滚动到当前关卡
+  setTimeout(()=>{
+    const cur=scroll.querySelector('.stage-map-node.current');
+    if(cur)cur.scrollIntoView({behavior:'smooth',block:'center'});
+  },200);
+}
+
+function selectStage(stageId){
+  const node=STAGE_MAP.find(s=>s.id===stageId);
+  if(!node)return;
+  const p=getProgress();
+  const currentRealm=Math.min(p.realmIdx,REALMS.length-1);
+  const currentStage=Math.min(p.stageCleared||0,REALMS[currentRealm].stages-1);
+  const isCurrent=node.realm===currentRealm&&node.stage===currentStage;
+  const isCleared=node.realm<currentRealm||(node.realm===currentRealm&&node.stage<currentStage);
+
+  if(isCurrent){startBattle();return;}
+  if(isCleared){
+    G._replayStageId=stageId;
+    startBattle();
+    return;
+  }
 }
 
 function closeCharPage(){
@@ -2873,8 +2953,13 @@ let pendingEquip2=null;
 function startBattle(){
   hideHomePage();
   closeCharPage();
-  pendingEquip=getSelectedEquipItem(); // null = 没有法宝，走原始 gacha 流程
+  pendingEquip=getSelectedEquipItem();
   pendingEquip2=getSelectedEquipItem2();
+  // 重打关卡：临时设置进度
+  if(G&&G._replayStageId){
+    const node=STAGE_MAP.find(s=>s.id===G._replayStageId);
+    if(node){G._replayProgress={realmIdx:node.realm,stageCleared:node.stage};}
+  }
   initGame();
 }
 
