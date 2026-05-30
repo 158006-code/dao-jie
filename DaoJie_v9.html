@@ -1139,7 +1139,7 @@ function initGame(){
     pierceCount:_basePierce,reflectRate:_baseReflect,
     shieldHp:_baseShield,shieldBase:_baseShield,leechRate:_baseLeechRate,
     dodgeFrames:_baseDodgeFrames,dodgeCd:0,dodgeTimer:0,
-    _isReplay:_isReplay,_origProg:_origProg,stageType:_stageNode?.type||'normal',timeLimit:_stageCfg.timeLimit,bossEarly:_bossEarly,revive:_baseRevive,reviveConsumed:false,blizzardFlash:0,
+    _isReplay:_isReplay,_origProg:_origProg,timeLimit:_stageCfg.timeLimit,bossEarly:_bossEarly,revive:_baseRevive,reviveConsumed:false,blizzardFlash:0,
     comboSpeedBonus:_baseComboSpeed,comboDmgBonus:_baseComboDmg,
     evolveRateBonus:_baseEvolveRate,xpBoost:_baseXpBoost,
     starDmgBonus:_baseStarDmg,evolveRangeBonus:_baseEvolveRange,
@@ -1927,8 +1927,11 @@ function updateHUD(){
   document.getElementById('h-lv').textContent=G.lv;
   document.getElementById('xp-bar').style.width=Math.min(100,G.xp/G.xpNext*100)+'%';
   if(!G.bossMode){
-    const sl=Math.max(0,TOTAL-Math.floor(G.elapsed/FPS));
-    document.getElementById('h-time').textContent=`${Math.floor(sl/60)}:${(sl%60).toString().padStart(2,'0')}`;
+    const maxTime=G.timeLimit>0?G.timeLimit:TOTAL;
+    const sl=Math.max(0,maxTime-Math.floor(G.elapsed/FPS));
+    document.getElementById('h-time').textContent=`${Math.floor(sl/60)}:${(sl%60).toString().padStart(2,'0')}`+(G.timeLimit>0?' ⏳':'');
+    if(G.timeLimit>0&&sl<=30)document.getElementById('h-time').style.color='#ff6644';
+    else if(!G.bossMode)document.getElementById('h-time').style.color='#D4B8FF';
   } else {
     document.getElementById('h-time').textContent='⚡BOSS';
   }
