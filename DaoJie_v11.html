@@ -361,7 +361,7 @@ canvas{display:block;background:#04060f;touch-action:none;width:100%;flex:1;min-
 .progress-code-btn{flex:1;font-size:9px;color:#7766aa;background:rgba(120,80,200,0.08);border:1px solid rgba(120,80,200,0.2);border-radius:6px;padding:6px 8px;cursor:pointer;white-space:nowrap}
 .progress-code-btn:active{background:rgba(120,80,200,0.2)}
 /* 法宝合成 */
-.synthesis-overlay{position:fixed;top:0;left:0;width:100%;height:100%;z-index:71;display:none;justify-content:center;align-items:center;background:rgba(0,0,0,0.88)}
+.synthesis-overlay{position:fixed;top:0;left:0;width:100%;height:100%;z-index:202;display:none;justify-content:center;align-items:center;background:rgba(0,0,0,0.88)}
 .synthesis-overlay.show{display:flex}
 .synthesis-panel{background:#0c0c14;border:1px solid #9B59B688;border-radius:14px;padding:20px;width:92%;max-width:380px;text-align:center}
 .sy-title{font-size:16px;font-weight:700;color:#D4B8FF;margin-bottom:12px}
@@ -3074,15 +3074,15 @@ let _synthGroup=null,_synthSlots=[null,null,null],_synthAdBoost=false;
 
 function openSynthesis(){
   const vault=getVault();
+  if(!vault||!vault.length){showBuffToast('❌ 仓库为空','#ff6644');return;}
   const groups={};
   vault.forEach((item,i)=>{
     const key=item.name+'|'+item.quality;
     if(!groups[key])groups[key]={items:[],name:item.name,quality:item.quality,qualityColor:item.qualityColor,qualityName:item.qualityName,icon:item.icon};
     groups[key].items.push(i);
   });
-  // 仅显示≥3件的组
   const valid=Object.values(groups).filter(g=>g.items.length>=3);
-  if(!valid.length){showBuffToast('❌ 没有可合成的法宝（需3件同名同品质）','#ff6644');return;}
+  if(!valid.length){showBuffToast('❌ 需3件同名同品质才能合成','#ff6644');return;}
   _synthGroup=valid;_synthSlots=[null,null,null];_synthAdBoost=false;
   renderSynthUI();
   document.getElementById('synthesis-overlay').classList.add('show');
