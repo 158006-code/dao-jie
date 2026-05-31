@@ -543,6 +543,7 @@ canvas{display:block;background:#04060f;touch-action:none;width:100%;flex:1;min-
         <div class="home-game-sub">寻道大千 · 法宝天降</div>
       </div>
       <button class="home-char-btn" id="home-char-btn" onclick="showCharPage()">修士档案 ›<span class="char-vault-dot" id="char-vault-dot"></span></button>
+      <button class="home-char-btn" onclick="showVaultPage()" style="margin-left:8px">🏺 仓库 ›</button>
     </div>
     <div class="home-center">
       <div class="fish-hint" id="fish-hint">☝ 点击灵河，垂钓法宝</div>
@@ -2366,18 +2367,22 @@ function showAdMock(type){
     });
   } else if(type==='double'){
     showRewardedAd('double',()=>{
-      // 通关双倍：复制 lastDrops → 入库 → 播放二次掉落动画
       const drops=G.lastDrops||[];
-      drops.forEach(d=>saveToVault(d.t,d.q,d.b));
+      if(!drops.length)return;
+      // 直接追加到仓库（绕过saveToVault的容量限制）
+      const vault=getVault();
+      drops.forEach(d=>{
+        const t=d.t,q=d.q,b=d.b;
+        vault.push({wid:t.wid,name:t.name,icon:t.icon,desc:t.desc,quality:q.id,qualityName:q.name,qualityColor:q.color,cardClass:q.cardClass,atkMult:b.atkMult,cdMult:b.cdMult,dmgFlat:b.dmgFlat||0,extra:b.extra||'',spdMult:b.spdMult,critRate:b.critRate||0,comboHit:b.comboHit||0,splashR:b.splashR||0,pierce:b.pierce||0,reflect:b.reflect||0,hpMult:b.hpMult||1,shield:b.shield||0,leechRate:b.leechRate||0,dodgeFrames:b.dodgeFrames||0,dmgReduce:b.dmgReduce||0,revive:b.revive||false,comboSpeed:b.comboSpeed||1,comboDmg:b.comboDmg||0,evolveRate:b.evolveRate||1,xpBoost:b.xpBoost||1,starDmg:b.starDmg||0,evolveRange:b.evolveRange||1,effects:t.effects||[],qualityMult:b.qualityMult||1,date:new Date().toLocaleDateString('zh-CN')});
+      });
+      try{localStorage.setItem('daojie_vault',JSON.stringify(vault));}catch(e){}
+      updateVaultDot();
       document.getElementById('btn-ad-double').style.display='none';
       document.getElementById('drop-post-btns').style.display='none';
       document.getElementById('drop-post-btns').classList.remove('show');
-      if(drops.length){
-        const names=drops.map(d=>`${d.q.name}【${d.t.icon}${d.t.name}】`).join(' ');
-        showResultToast(`✦ 奖励翻倍！额外获得 ${names}`,'#EF9F27');
-        // 播放二次掉落动画（不再显示广告按钮）
-        setTimeout(()=>showDropAnimation(drops,false),400);
-      }
+      const names=drops.map(d=>`${d.q.name}【${d.t.icon}${d.t.name}】`).join(' ');
+      showResultToast(`✦ 奖励翻倍！额外获得 ${names}`,'#EF9F27');
+      setTimeout(()=>showDropAnimation(drops,false),400);
     });
   }
 }
@@ -2423,7 +2428,7 @@ function resetResultPanel(){
 // 境界系统（永久进度）
 // ══════════════════════════════════════════
 function getProgress(){try{const raw=localStorage.getItem('daojie_progress')||sessionStorage.getItem('daojie_progress')||'{"realmIdx":0,"stageCleared":0,"totalWins":0,"totalRuns":0}';return JSON.parse(raw);}catch(e){return{realmIdx:0,stageCleared:0,totalWins:0,totalRuns:0};}}
-function saveProgress(p){try{localStorage.setItem('daojie_progress',JSON.stringify(p));}catch(e){console.warn('saveProgress failed:',e.message);try{sessionStorage.setItem('daojie_progress',JSON.stringify(p));}catch(e2){}}}
+function saveProgress(p){const s=JSON.stringify(p);try{localStorage.setItem('daojie_progress',s);}catch(e){}try{sessionStorage.setItem('daojie_progress',s);}catch(e2){}}
 
 // ══════ 成就系统 ══════
 function getAchievements(){try{return JSON.parse(localStorage.getItem('daojie_achieve')||'[]');}catch(e){return[];}}
@@ -2858,6 +2863,14 @@ function resetFishing(){
 // 角色主线页
 // ══════════════════════════════════════════
 let heroAnim=null,heroT=0;
+function showVaultPage(){
+  showCharPage();
+  setTimeout(()=>{
+    const vault=document.querySelector('.char-vault-section');
+    if(vault)vault.scrollIntoView({behavior:'smooth',block:'start'});
+  },300);
+}
+
 function showCharPage(){
   document.getElementById('char-overlay').classList.add('show');
   const {realm,ri,stage,p}=getCurrentStageInfo();
