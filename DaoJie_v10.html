@@ -360,6 +360,30 @@ canvas{display:block;background:#04060f;touch-action:none;width:100%;flex:1;min-
 .signin-skip-btn{font-size:11px;color:#443366;cursor:pointer;background:none;border:none;padding:4px}
 .progress-code-btn{flex:1;font-size:9px;color:#7766aa;background:rgba(120,80,200,0.08);border:1px solid rgba(120,80,200,0.2);border-radius:6px;padding:6px 8px;cursor:pointer;white-space:nowrap}
 .progress-code-btn:active{background:rgba(120,80,200,0.2)}
+/* 法宝合成 */
+.synthesis-overlay{position:fixed;top:0;left:0;width:100%;height:100%;z-index:71;display:none;justify-content:center;align-items:center;background:rgba(0,0,0,0.88)}
+.synthesis-overlay.show{display:flex}
+.synthesis-panel{background:#0c0c14;border:1px solid #9B59B688;border-radius:14px;padding:20px;width:92%;max-width:380px;text-align:center}
+.sy-title{font-size:16px;font-weight:700;color:#D4B8FF;margin-bottom:12px}
+.sy-slots{display:flex;gap:8px;justify-content:center;margin-bottom:14px}
+.sy-slot{width:64px;height:80px;border:2px dashed #333;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all 0.2s;background:rgba(0,0,0,0.5)}
+.sy-slot.filled{border-color:#9B59B688;background:rgba(155,89,182,0.1)}
+.sy-slot .ss-icon{font-size:20px}
+.sy-slot .ss-name{font-size:7px;color:#999;margin-top:3px;text-align:center;line-height:1.2}
+.sy-odds{font-size:10px;color:#887;margin-bottom:10px}
+.sy-odds span{color:#EF9F27;font-weight:700}
+.sy-btn-row{display:flex;gap:8px}
+.sy-btn{flex:1;padding:10px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;border:none}
+.sy-btn.confirm{background:#9B59B6;color:#fff}
+.sy-btn.confirm:disabled{background:#333;color:#555;pointer-events:none}
+.sy-btn.cancel{background:#1a1a2a;color:#666}
+.sy-btn.ad{background:#E8A020;color:#fff;font-size:11px}
+.sy-btn:active{transform:scale(0.96)}
+.sy-pick-list{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px;max-height:120px;overflow-y:auto;justify-content:center}
+.sy-pick-item{padding:4px 8px;font-size:9px;border-radius:6px;cursor:pointer;border:1px solid #333;color:#999;background:rgba(0,0,0,0.4)}
+.sy-pick-item.chosen{border-color:#9B59B6;color:#D4B8FF;background:rgba(155,89,182,0.15)}
+@keyframes syMerge{0%{transform:scale(1);opacity:1}50%{transform:scale(0.3);opacity:0.5}100%{transform:scale(0);opacity:0}}
+@keyframes syBurst{0%{transform:scale(0);opacity:0}60%{transform:scale(1.3);opacity:1}100%{transform:scale(1);opacity:1}}
 /* 关卡地图 */
 .stage-map-section{flex:1;overflow-y:auto;padding:8px 16px 16px}
 .stage-map-realm{font-size:11px;font-weight:700;color:#7766aa;padding:12px 0 6px;letter-spacing:0.12em;border-bottom:1px solid rgba(120,80,200,0.15);margin-bottom:10px}
@@ -478,6 +502,25 @@ canvas{display:block;background:#04060f;touch-action:none;width:100%;flex:1;min-
   </div>
 </div>
 
+<!-- 法宝合成 -->
+<div class="synthesis-overlay" id="synthesis-overlay">
+  <div class="synthesis-panel">
+    <div class="sy-title">⚗ 法宝合成</div>
+    <div class="sy-pick-list" id="sy-pick-list"></div>
+    <div class="sy-slots" id="sy-slots">
+      <div class="sy-slot" onclick="pickSynthSlot(0)"><div class="ss-icon">+</div></div>
+      <div class="sy-slot" onclick="pickSynthSlot(1)"><div class="ss-icon">+</div></div>
+      <div class="sy-slot" onclick="pickSynthSlot(2)"><div class="ss-icon">+</div></div>
+    </div>
+    <div class="sy-odds">成功率 <span id="sy-odds">85%</span> | 跳级率 <span id="sy-jump">20%</span></div>
+    <div class="sy-btn-row">
+      <button class="sy-btn ad" onclick="synthWatchAd()">📺 广告·保底</button>
+      <button class="sy-btn confirm" id="sy-confirm-btn" disabled onclick="confirmSynthesis()">⚗ 合成</button>
+      <button class="sy-btn cancel" onclick="closeSynthesis()">取消</button>
+    </div>
+  </div>
+</div>
+
 <!-- 广告 mock 弹窗 -->
 <div class="ad-overlay" id="ad-overlay">
   <div class="ad-box">
@@ -566,7 +609,7 @@ canvas{display:block;background:#04060f;touch-action:none;width:100%;flex:1;min-
       <div class="equip-none-hint">尚无法宝·前往灵河垂钓</div>
     </div>
   </div>
-  <div class="char-section-title" style="padding:6px 16px 4px;flex-shrink:0">🏺 法宝仓库 <span id="vault-count-label" style="color:#443;font-size:9px"></span></div>
+  <div class="char-section-title" style="padding:6px 16px 4px;flex-shrink:0;display:flex;justify-content:space-between;align-items:center"><span>🏺 法宝仓库 <span id="vault-count-label" style="color:#443;font-size:9px"></span></span><button class="progress-code-btn" style="flex:0;font-size:9px;padding:3px 8px" onclick="openSynthesis()">⚗ 合成</button></div>
   <div class="char-vault-section">
     <div class="char-vault-grid" id="char-vault-grid">
       <div class="char-vault-empty">尚无法宝·前往灵河垂钓</div>
@@ -2938,6 +2981,114 @@ function getSelectedEquipItem2(){
   const matches=vault.filter(v=>v.name===name&&v.quality===quality);
   if(!matches.length)return null;
   return matches.reduce((best,v)=>(v.atkMult||1)>(best.atkMult||1)?v:best);
+}
+
+// ══════ 法宝合成 ══════
+let _synthGroup=null,_synthSlots=[null,null,null],_synthAdBoost=false;
+
+function openSynthesis(){
+  const vault=getVault();
+  const groups={};
+  vault.forEach((item,i)=>{
+    const key=item.name+'|'+item.quality;
+    if(!groups[key])groups[key]={items:[],name:item.name,quality:item.quality,qualityColor:item.qualityColor,qualityName:item.qualityName,icon:item.icon};
+    groups[key].items.push(i);
+  });
+  // 仅显示≥3件的组
+  const valid=Object.values(groups).filter(g=>g.items.length>=3);
+  if(!valid.length){showBuffToast('❌ 没有可合成的法宝（需3件同名同品质）','#ff6644');return;}
+  _synthGroup=valid;_synthSlots=[null,null,null];_synthAdBoost=false;
+  renderSynthUI();
+  document.getElementById('synthesis-overlay').classList.add('show');
+}
+
+function renderSynthUI(){
+  const list=document.getElementById('sy-pick-list');
+  list.innerHTML=_synthGroup.map((g,i)=>{
+    const idx=_synthSlots.findIndex(s=>s&&s.groupIdx===i);
+    const cls=idx>=0?' chosen':'';
+    return `<div class="sy-pick-item${cls}" onclick="pickSynthGroup(${i})">${g.icon} ${g.name}<br>${g.qualityName} ×${g.items.length-((idx>=0?1:0))}</div>`;
+  }).join('');
+  // 更新槽位
+  for(let i=0;i<3;i++){
+    const slot=document.querySelectorAll('.sy-slot')[i];
+    if(_synthSlots[i]){
+      const g=_synthGroup[_synthSlots[i].groupIdx];
+      slot.className='sy-slot filled';
+      slot.innerHTML=`<div class="ss-icon">${g.icon}</div><div class="ss-name">${g.name}<br>${g.qualityName}</div>`;
+    }else{
+      slot.className='sy-slot';
+      slot.innerHTML='<div class="ss-icon">+</div>';
+    }
+  }
+  // 按钮状态
+  document.getElementById('sy-confirm-btn').disabled=_synthSlots.filter(s=>s).length<3;
+  // 成功率
+  const qName=_synthSlots[0]?_synthGroup[_synthSlots[0].groupIdx].quality:'white';
+  const baseOdds=qName==='red'?0:qName==='gold'?60:qName==='purple'?75:qName==='blue'?85:qName==='green'?90:95;
+  const odds=_synthAdBoost?Math.min(100,baseOdds+20):baseOdds;
+  document.getElementById('sy-odds').textContent=odds+'%';
+  document.getElementById('sy-jump').textContent=qName==='red'?'0%':'20%';
+}
+
+function pickSynthGroup(idx){
+  // 同组已选中？取消
+  const existing=_synthSlots.findIndex(s=>s&&s.groupIdx===idx);
+  if(existing>=0){_synthSlots[existing]=null;renderSynthUI();return;}
+  // 找空槽
+  const empty=_synthSlots.findIndex(s=>!s);
+  if(empty>=0){_synthSlots[empty]={groupIdx:idx};renderSynthUI();}
+}
+
+function pickSynthSlot(slotIdx){
+  if(_synthSlots[slotIdx]){_synthSlots[slotIdx]=null;renderSynthUI();}
+}
+
+function closeSynthesis(){
+  document.getElementById('synthesis-overlay').classList.remove('show');
+}
+
+function synthWatchAd(){
+  showRewardedAd('synth',()=>{_synthAdBoost=true;renderSynthUI();showBuffToast('📺 广告·合成成功率+20%','#E8A020');});
+}
+
+function confirmSynthesis(){
+  if(_synthSlots.filter(s=>s).length<3)return;
+  const groups=_synthSlots.map(s=>_synthGroup[s.groupIdx]);
+  const vault=getVault();
+  // 消耗：每组移除1件
+  const removed=[];
+  groups.forEach(g=>{
+    // 找最高atkMult的移除（保留差的）
+    let bestIdx=-1,bestVal=-1;
+    g.items.forEach(i=>{const v=vault[i];const val=v.atkMult||1;if(val>bestVal){bestVal=val;bestIdx=i;}});
+    removed.push(vault[bestIdx]);vault.splice(bestIdx,1);
+  });
+  // 生成新法宝
+  const base=removed[0];
+  const qIdx=QUALITY_DEFS.findIndex(q=>q.id===base.quality);
+  // 20%跳级
+  const jump=Math.random()<0.2&&qIdx<QUALITY_DEFS.length-2&&base.quality!=='red';
+  const newQ=QUALITY_DEFS[jump?Math.min(qIdx+2,QUALITY_DEFS.length-1):Math.min(qIdx+1,QUALITY_DEFS.length-1)];
+  const t=TREASURE_POOL.find(x=>x.wid===base.wid)||TREASURE_POOL[0];
+  const b=QUALITY_BONUS[newQ.id];
+  // 成功率判定
+  const baseOdds=base.quality==='red'?0:base.quality==='gold'?60:base.quality==='purple'?75:base.quality==='blue'?85:base.quality==='green'?90:95;
+  const odds=_synthAdBoost?Math.min(100,baseOdds+20):baseOdds;
+  if(Math.random()*100>=odds){
+    showBuffToast('❌ 合成失败！法宝损毁','#ff4444');
+    try{localStorage.setItem('daojie_vault',JSON.stringify(vault));}catch(e){}
+    closeSynthesis();renderCharVault();updateVaultDot();return;
+  }
+  // 成功
+  saveToVault(t,newQ,b);
+  showBuffToast(`⚗ 合成成功！${jump?'✨ 跳级！':''}获得 ${newQ.name}${t.name}`,'#EF9F27');
+  // 动画
+  const slots=document.querySelectorAll('.sy-slot');
+  slots.forEach(s=>{if(s.classList.contains('filled')){s.style.animation='syMerge 0.4s forwards';}});
+  setTimeout(()=>{
+    closeSynthesis();renderCharVault();updateVaultDot();
+  },500);
 }
 
 function renderCharVault(){
