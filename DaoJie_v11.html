@@ -2511,7 +2511,8 @@ function rerollQuality(key){
     requestAnimationFrame(()=>{pop.style.transform='translateY(0)';});
     const animName=up>0?'rrGlow':up===0?'rrShake':'rrCrack';
     const animDur=up>0?'0.7s':up===0?'0.4s':'0.5s';
-    document.getElementById('rr-close-btn').onclick=()=>{pop.style.transform='translateY(100%)';setTimeout(()=>{pop.remove();renderCharVault();updateVaultDot();setTimeout(()=>{const cards=document.querySelectorAll('.char-vault-card');const last=cards[cards.length-1];if(last){last.style.animation=animName+' '+animDur+' ease-out';last.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(()=>{last.style.animation='';},parseFloat(animDur)*1000);}},150);},400);};
+    const newKey=item.name+'|'+newQ.id;
+    document.getElementById('rr-close-btn').onclick=()=>{pop.style.transform='translateY(100%)';setTimeout(()=>{pop.remove();renderCharVault();updateVaultDot();setTimeout(()=>{var cards=document.querySelectorAll('.char-vault-card');for(var ci=0;ci<cards.length;ci++){var c=cards[ci],n=c.querySelector('.char-vault-card-name'),q=c.querySelector('.char-vault-card-q');if(n&&q&&n.textContent===t.name&&q.textContent===newQ.name){c.style.animation=animName+' '+animDur+' ease-out';c.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(function(){c.style.animation='';},parseFloat(animDur)*1000);break;}}},150);},400);};
   });
 }
 
