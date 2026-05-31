@@ -2361,9 +2361,8 @@ const AD_ACTIONS={
     onSuccess(){const d=G.lastDrops||[];d.forEach(d=>saveToVault(d.t,d.q,d.b));document.getElementById('btn-ad-save').style.display='none';
       if(d.length){const n=d.map(d=>d.q.name+'【'+d.t.icon+d.t.name+'】').join(' ');showResultToast('✦ 法宝已保留！获得 '+n,'#9B59B6');}}},
   double:{label:'📺 观看广告·法宝×2',desc:'道心坚韧·奖励加倍！\n观看完成后本局法宝奖励翻倍。',
-    onSuccess(){const d=G.lastDrops||[];if(!d.length)return;const v=getVault();
-      d.forEach(d=>{const t=d.t,q=d.q,b=d.b;v.push({wid:t.wid,name:t.name,icon:t.icon,desc:t.desc,quality:q.id,qualityName:q.name,qualityColor:q.color,cardClass:q.cardClass,atkMult:b.atkMult,cdMult:b.cdMult,dmgFlat:b.dmgFlat||0,extra:b.extra||'',spdMult:b.spdMult,critRate:b.critRate||0,comboHit:b.comboHit||0,splashR:b.splashR||0,pierce:b.pierce||0,reflect:b.reflect||0,hpMult:b.hpMult||1,shield:b.shield||0,leechRate:b.leechRate||0,dodgeFrames:b.dodgeFrames||0,dmgReduce:b.dmgReduce||0,revive:b.revive||false,comboSpeed:b.comboSpeed||1,comboDmg:b.comboDmg||0,evolveRate:b.evolveRate||1,xpBoost:b.xpBoost||1,starDmg:b.starDmg||0,evolveRange:b.evolveRange||1,effects:t.effects||[],qualityMult:b.qualityMult||1,date:new Date().toLocaleDateString('zh-CN')});});
-      try{localStorage.setItem('daojie_vault',JSON.stringify(v));}catch(e){}updateVaultDot();
+    onSuccess(){const d=G.lastDrops||[];if(!d.length)return;
+      d.forEach(d=>saveToVault(d.t,d.q,d.b));updateVaultDot();
       document.getElementById('btn-ad-double').style.display='none';document.getElementById('drop-post-btns').style.display='none';document.getElementById('drop-post-btns').classList.remove('show');
       const n=d.map(d=>d.q.name+'【'+d.t.icon+d.t.name+'】').join(' ');showResultToast('✦ 奖励翻倍！额外获得 '+n,'#EF9F27');setTimeout(()=>showDropAnimation(d,false),400);}},
   expand:{label:'📺 观看广告·仓库扩容',desc:'观看完成后仓库永久+5格',
