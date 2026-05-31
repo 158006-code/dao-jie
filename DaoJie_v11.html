@@ -3767,8 +3767,8 @@ CV.addEventListener('touchstart',e=>{
 CV.addEventListener('touchmove',e=>{e.preventDefault();if(!touchStart||!G)return;const r=CV.getBoundingClientRect();const tx=e.touches[0].clientX-r.left,ty=e.touches[0].clientY-r.top;G.mx=Math.max(14,Math.min(W-14,G.mx+(tx-touchStart.x)*0.5));G.my=Math.max(14,Math.min(H-14,G.my+(ty-touchStart.y)*0.5));touchStart={x:tx,y:ty};},{passive:false});
 CV.addEventListener('touchend',e=>{e.preventDefault();touchStart=null;},{passive:false});
 
-// 页面启动（DOM就绪后）
-window.addEventListener('DOMContentLoaded',()=>{appStart();});
+// 页面启动
+if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',appStart);}else{appStart();}
 </script>
 </body>
 </html>
