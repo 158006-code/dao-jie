@@ -2,7 +2,7 @@
 // 道劫：万法失控 — 配置数据层
 // ⛔ 仅修改此区域内数值/名称/配置
 // ✅ 新增法宝: 仅 TREASURE_POOL + QUALITY_BONUS
-// ✅ 新增武器: 仅 WEAPONS (纯数据, 函数在效果执行器)
+// ✅ 新增武器: WEAPONS(含onFire/update行为函数,改数值安全,改逻辑需注明)
 // ✅ 新增关卡: 仅 STAGE_MAP + STAGE_CONFIGS
 // ✅ 平衡调整: 仅 QUALITY_BONUS + ENEMY_TYPES
 // ⛔ 禁止在此文件定义业务逻辑函数(除validator)

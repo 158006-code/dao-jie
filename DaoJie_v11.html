@@ -2326,10 +2326,9 @@ let _adType=null,_adTimer=null,_adProgress=0,_adOnSuccess=null;
 
 function showRewardedAd(type,onSuccess){
   _adType=type;_adOnSuccess=onSuccess;_adProgress=0;
-  const titles={save:'📺 观看广告·保留法宝',double:'📺 观看广告·法宝×2',equip2:'📺 观看广告·额外法宝槽',expand:'📺 观看广告·仓库扩容',signin:'📺 观看广告·领取法宝'};
-  const descs={save:'战斗虽败，法宝不失！\n观看完成后本局掉落法宝将保留入库。',double:'道心坚韧·奖励加倍！\n观看完成后本局法宝奖励翻倍。',equip2:'道心坚定·双宝护体！\n观看完成后解锁第二法宝槽，双倍加成入局。',expand:'观看完成后仓库永久+5格',signin:'观看完成后今日法宝奖励入库'};
-  document.getElementById('ad-box-title').textContent=titles[type]||'📺 观看广告';
-  document.getElementById('ad-box-desc').textContent=descs[type]||'即将获得奖励';
+  const ad=AD_ACTIONS[type];
+  document.getElementById('ad-box-title').textContent=(ad&&ad.label)||'📺 观看广告';
+  document.getElementById('ad-box-desc').textContent=(ad&&ad.desc)||'即将获得奖励';
   document.getElementById('ad-progress-fill').style.width='0%';
   document.getElementById('ad-claim-btn').style.display='none';
   document.getElementById('ad-overlay').classList.add('show');
@@ -2362,28 +2361,20 @@ function onAdSkip(){
 // ══════ 广告动作注册表（新增广告=加一个key，不动其他代码）══════
 // showRewardedAd(type, onSuccess) 是统一入口，接入真实SDK只改此函数
 const AD_ACTIONS={
-  save:{ // 战败保命
+  save:{label:'📺 观看广告·保留法宝',desc:'战斗虽败，法宝不失！\n观看完成后本局掉落法宝将保留入库。',
     trigger(){stopSaveCountdown();},
-    onSuccess(){
-      const drops=G.lastDrops||[];
-      drops.forEach(d=>saveToVault(d.t,d.q,d.b));
-      document.getElementById('btn-ad-save').style.display='none';
-      if(drops.length){const names=drops.map(d=>d.q.name+'【'+d.t.icon+d.t.name+'】').join(' ');showResultToast('✦ 法宝已保留！获得 '+names,'#9B59B6');}
-    }
-  },
-  double:{ // 通关双倍
-    onSuccess(){
-      const drops=G.lastDrops||[];
-      if(!drops.length)return;
-      const vault=getVault();
-      drops.forEach(d=>{const t=d.t,q=d.q,b=d.b;vault.push({wid:t.wid,name:t.name,icon:t.icon,desc:t.desc,quality:q.id,qualityName:q.name,qualityColor:q.color,cardClass:q.cardClass,atkMult:b.atkMult,cdMult:b.cdMult,dmgFlat:b.dmgFlat||0,extra:b.extra||'',spdMult:b.spdMult,critRate:b.critRate||0,comboHit:b.comboHit||0,splashR:b.splashR||0,pierce:b.pierce||0,reflect:b.reflect||0,hpMult:b.hpMult||1,shield:b.shield||0,leechRate:b.leechRate||0,dodgeFrames:b.dodgeFrames||0,dmgReduce:b.dmgReduce||0,revive:b.revive||false,comboSpeed:b.comboSpeed||1,comboDmg:b.comboDmg||0,evolveRate:b.evolveRate||1,xpBoost:b.xpBoost||1,starDmg:b.starDmg||0,evolveRange:b.evolveRange||1,effects:t.effects||[],qualityMult:b.qualityMult||1,date:new Date().toLocaleDateString('zh-CN')});});
-      try{localStorage.setItem('daojie_vault',JSON.stringify(vault));}catch(e){}
-      updateVaultDot();
+    onSuccess(){const d=G.lastDrops||[];d.forEach(d=>saveToVault(d.t,d.q,d.b));document.getElementById('btn-ad-save').style.display='none';
+      if(d.length){const n=d.map(d=>d.q.name+'【'+d.t.icon+d.t.name+'】').join(' ');showResultToast('✦ 法宝已保留！获得 '+n,'#9B59B6');}}},
+  double:{label:'📺 观看广告·法宝×2',desc:'道心坚韧·奖励加倍！\n观看完成后本局法宝奖励翻倍。',
+    onSuccess(){const d=G.lastDrops||[];if(!d.length)return;const v=getVault();
+      d.forEach(d=>{const t=d.t,q=d.q,b=d.b;v.push({wid:t.wid,name:t.name,icon:t.icon,desc:t.desc,quality:q.id,qualityName:q.name,qualityColor:q.color,cardClass:q.cardClass,atkMult:b.atkMult,cdMult:b.cdMult,dmgFlat:b.dmgFlat||0,extra:b.extra||'',spdMult:b.spdMult,critRate:b.critRate||0,comboHit:b.comboHit||0,splashR:b.splashR||0,pierce:b.pierce||0,reflect:b.reflect||0,hpMult:b.hpMult||1,shield:b.shield||0,leechRate:b.leechRate||0,dodgeFrames:b.dodgeFrames||0,dmgReduce:b.dmgReduce||0,revive:b.revive||false,comboSpeed:b.comboSpeed||1,comboDmg:b.comboDmg||0,evolveRate:b.evolveRate||1,xpBoost:b.xpBoost||1,starDmg:b.starDmg||0,evolveRange:b.evolveRange||1,effects:t.effects||[],qualityMult:b.qualityMult||1,date:new Date().toLocaleDateString('zh-CN')});});
+      try{localStorage.setItem('daojie_vault',JSON.stringify(v));}catch(e){}updateVaultDot();
       document.getElementById('btn-ad-double').style.display='none';document.getElementById('drop-post-btns').style.display='none';document.getElementById('drop-post-btns').classList.remove('show');
-      const names=drops.map(d=>d.q.name+'【'+d.t.icon+d.t.name+'】').join(' ');showResultToast('✦ 奖励翻倍！额外获得 '+names,'#EF9F27');
-      setTimeout(()=>showDropAnimation(drops,false),400);
-    }
-  }
+      const n=d.map(d=>d.q.name+'【'+d.t.icon+d.t.name+'】').join(' ');showResultToast('✦ 奖励翻倍！额外获得 '+n,'#EF9F27');setTimeout(()=>showDropAnimation(d,false),400);}},
+  expand:{label:'📺 观看广告·仓库扩容',desc:'观看完成后仓库永久+5格',
+    onSuccess(){const c=getVaultCapacity();if(c>=100)return;setVaultCapacity(Math.min(100,c+5));setVaultExpansions(getVaultExpansions()+1);showResultToast('📦 仓库已扩容至 '+Math.min(100,c+5)+' 格！','#D4B8FF');renderCharVault();updateVaultDot();}},
+  signin:{label:'📺 观看广告·领取法宝',desc:'观看完成后今日法宝奖励入库',
+    onSuccess(){}} // 回调由doDailySignin动态设置
 };
 
 function showAdMock(type){
