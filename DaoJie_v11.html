@@ -384,6 +384,13 @@ canvas{display:block;background:#04060f;touch-action:none;width:100%;flex:1;min-
 .sy-pick-item.chosen{border-color:#9B59B6;color:#D4B8FF;background:rgba(155,89,182,0.15)}
 @keyframes syMerge{0%{transform:scale(1);opacity:1}50%{transform:scale(0.3);opacity:0.5}100%{transform:scale(0);opacity:0}}
 @keyframes syBurst{0%{transform:scale(0);opacity:0}60%{transform:scale(1.3);opacity:1}100%{transform:scale(1);opacity:1}}
+/* 重鉴动画 */
+@keyframes rrGlow{0%{box-shadow:0 0 0px gold}50%{box-shadow:0 0 20px gold,inset 0 0 10px rgba(255,215,0,0.3)}100%{box-shadow:0 0 0px gold}}
+@keyframes rrShake{0%,100%{transform:translateX(0)}20%{transform:translateX(-3px)}40%{transform:translateX(3px)}60%{transform:translateX(-2px)}80%{transform:translateX(2px)}}
+@keyframes rrCrack{0%{clip-path:inset(0 0 0 0)}30%{clip-path:inset(0 45% 50% 0)}60%{clip-path:inset(50% 0 0 45%)}100%{clip-path:inset(0 0 0 0)}}
+.char-vault-card.rr-glow{animation:rrGlow 0.7s ease-out}
+.char-vault-card.rr-shake{animation:rrShake 0.4s ease-out}
+.char-vault-card.rr-crack{animation:rrCrack 0.5s ease-out}
 /* 关卡地图 */
 .stage-map-section{padding:8px 16px 16px;max-height:260px;overflow-y:auto}
 .stage-map-realm{font-size:11px;font-weight:700;color:#7766aa;padding:12px 0 6px;letter-spacing:0.12em;border-bottom:1px solid rgba(120,80,200,0.15);margin-bottom:10px}
@@ -2502,7 +2509,8 @@ function rerollQuality(key){
     pop.innerHTML='<div style="font-size:11px;color:#7766aa;margin-bottom:12px">🔮 品质重鉴结果</div><div style="font-size:14px;color:'+oldQ.color+';text-decoration:line-through;margin-bottom:2px">'+oldQ.name+'</div><div style="font-size:16px;color:'+newQ.color+';font-weight:700">'+resLabel+'</div><div style="font-size:32px;margin:8px 0">'+t.icon+'</div><div style="font-size:14px;font-weight:700;color:#ccc">'+t.name+'</div><div style="font-size:12px;font-weight:700;color:'+newQ.color+';margin-top:2px">'+newQ.name+'</div><button id="rr-close-btn" style="margin-top:16px;background:#9B59B6;color:#fff;border:none;border-radius:10px;padding:12px 40px;font-size:14px;font-weight:700;cursor:pointer">✓ 收入囊中</button>';
     document.body.appendChild(pop);
     requestAnimationFrame(()=>{pop.style.transform='translateY(0)';});
-    document.getElementById('rr-close-btn').onclick=()=>{pop.style.transform='translateY(100%)';setTimeout(()=>{pop.remove();renderCharVault();updateVaultDot();},400);};
+    const animClass=up>0?'rr-glow':up===0?'rr-shake':'rr-crack';
+    document.getElementById('rr-close-btn').onclick=()=>{pop.style.transform='translateY(100%)';setTimeout(()=>{pop.remove();renderCharVault();updateVaultDot();setTimeout(()=>{const cards=document.querySelectorAll('.char-vault-card');const last=cards[cards.length-1];if(last){last.style.animation=animClass+' 0.7s ease-out';last.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(()=>{last.style.animation='';},700);}},100);},400);};
   });
 }
 
