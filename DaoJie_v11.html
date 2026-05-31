@@ -2509,8 +2509,9 @@ function rerollQuality(key){
     pop.innerHTML='<div style="font-size:11px;color:#7766aa;margin-bottom:12px">🔮 品质重鉴结果</div><div style="font-size:14px;color:'+oldQ.color+';text-decoration:line-through;margin-bottom:2px">'+oldQ.name+'</div><div style="font-size:16px;color:'+newQ.color+';font-weight:700">'+resLabel+'</div><div style="font-size:32px;margin:8px 0">'+t.icon+'</div><div style="font-size:14px;font-weight:700;color:#ccc">'+t.name+'</div><div style="font-size:12px;font-weight:700;color:'+newQ.color+';margin-top:2px">'+newQ.name+'</div><button id="rr-close-btn" style="margin-top:16px;background:#9B59B6;color:#fff;border:none;border-radius:10px;padding:12px 40px;font-size:14px;font-weight:700;cursor:pointer">✓ 收入囊中</button>';
     document.body.appendChild(pop);
     requestAnimationFrame(()=>{pop.style.transform='translateY(0)';});
-    const animClass=up>0?'rr-glow':up===0?'rr-shake':'rr-crack';
-    document.getElementById('rr-close-btn').onclick=()=>{pop.style.transform='translateY(100%)';setTimeout(()=>{pop.remove();renderCharVault();updateVaultDot();setTimeout(()=>{const cards=document.querySelectorAll('.char-vault-card');const last=cards[cards.length-1];if(last){last.style.animation=animClass+' 0.7s ease-out';last.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(()=>{last.style.animation='';},700);}},100);},400);};
+    const animName=up>0?'rrGlow':up===0?'rrShake':'rrCrack';
+    const animDur=up>0?'0.7s':up===0?'0.4s':'0.5s';
+    document.getElementById('rr-close-btn').onclick=()=>{pop.style.transform='translateY(100%)';setTimeout(()=>{pop.remove();renderCharVault();updateVaultDot();setTimeout(()=>{const cards=document.querySelectorAll('.char-vault-card');const last=cards[cards.length-1];if(last){last.style.animation=animName+' '+animDur+' ease-out';last.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(()=>{last.style.animation='';},parseFloat(animDur)*1000);}},150);},400);};
   });
 }
 
