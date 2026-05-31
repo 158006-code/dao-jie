@@ -1118,6 +1118,11 @@ function initGame(){
   const _stageNode=STAGE_MAP.find(s=>s.realm===_currentRealm&&s.stage===_currentStage);
   const _stageCfg=_stageNode?STAGE_CONFIGS[_stageNode.type]:STAGE_CONFIGS.normal;
 
+  // Boss配置：练气期仅2个Boss(6分钟)，其他不变
+  let _localBossAt=[...BOSS_AT];
+  if(_currentRealm===0)_localBossAt=BOSS_AT.slice(0,2); // 练气: [180,360]
+  if(_currentRealm<3)_localBossAt=_localBossAt.slice(0,3); // 非元婴: 最多3个
+
   // 更新总战次
   const _prog=_prog3;_prog.totalRuns=(_prog.totalRuns||0)+1;saveProgress(_prog);
   const _bossEarly=_stageCfg.bossEarly||0;
@@ -1131,7 +1136,7 @@ function initGame(){
     keys:{},paused:true,dead:false,won:false,upgrading:false,
     slots:Array(10).fill(null).map(()=>({id:null,lv:0,timer:0,state:{},stars:0})),
     pendingStarFor:{},
-    bossPhase:0,boss:null,bossMode:false,bossTriggered:[false,false,false,false],
+    _bossAt:_localBossAt,bossPhase:0,boss:null,bossMode:false,bossTriggered:Array(_localBossAt.length).fill(false),
     spawnTimer:0,bugTimer:0,
     swarmBonus:0,bugHpMult:1*_stageCfg.enemyHpMult,spawnMult:1,killSpawn:0,leechLv:0,dmgReduce:_baseDmgReduce,regenRate:0,eliteRate:0.1*_stageCfg.eliteRateMult,
     baseAtkMult:_baseAtk,baseSpdMult:_baseSpd,baseCdMult:_baseCd,baseDmgFlat:_baseDmgFlat,
@@ -1388,8 +1393,8 @@ function _update(){
   if(phaseLabelEl)phaseLabelEl.textContent=phaseNames[phaseIdx];
 
   if(!G.bossMode){
-    const bossCount=(getProgress().realmIdx>=3)?4:3;
-    for(let i=0;i<bossCount;i++){if(!G.bossTriggered[i]&&sec>=BOSS_AT[i]-(G.bossEarly||0)){G.bossTriggered[i]=true;triggerBoss(i);return;}}
+    const bossAt=G._bossAt||BOSS_AT;
+    for(let i=0;i<bossAt.length;i++){if(!G.bossTriggered[i]&&sec>=bossAt[i]-(G.bossEarly||0)){G.bossTriggered[i]=true;triggerBoss(i);return;}}
   }
 
   // 移动
@@ -1684,7 +1689,7 @@ function _update(){
       document.getElementById('boss-wrap').classList.remove('show');
       document.getElementById('boss-phase-dots').textContent='';
       setTimeout(resizeCanvas,10);
-      const reqBoss=(getProgress().realmIdx>=3)?3:2;
+      const reqBoss=(G._bossAt||BOSS_AT).length-1;
       if(bi>=reqBoss){doVictory();return;}
       showUpgrade();return;
     }
@@ -1945,8 +1950,8 @@ function updateHUD(){
   document.getElementById('h-lv').textContent=G.lv;
   document.getElementById('xp-bar').style.width=Math.min(100,G.xp/G.xpNext*100)+'%';
   if(!G.bossMode){
-    const bossCount=G.bossTriggered.length;
-    const maxTime=G.timeLimit>0?G.timeLimit:BOSS_AT[bossCount-1]||BOSS_AT[2];
+    const bossAt=G._bossAt||BOSS_AT;
+    const maxTime=G.timeLimit>0?G.timeLimit:bossAt[bossAt.length-1];
     const sl=Math.max(0,maxTime-Math.floor(G.elapsed/FPS));
     document.getElementById('h-time').textContent=`${Math.floor(sl/60)}:${(sl%60).toString().padStart(2,'0')}`+(G.timeLimit>0?' ⏳':'');
     if(G.timeLimit>0&&sl<=30)document.getElementById('h-time').style.color='#ff6644';
