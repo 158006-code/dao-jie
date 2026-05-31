@@ -2368,12 +2368,6 @@ const AD_ACTIONS={
       const n=d.map(d=>d.q.name+'【'+d.t.icon+d.t.name+'】').join(' ');showResultToast('✦ 奖励翻倍！额外获得 '+n,'#EF9F27');setTimeout(()=>showDropAnimation(d,false),400);}},
   expand:{label:'📺 观看广告·仓库扩容',desc:'观看完成后仓库永久+5格',
     onSuccess(){const c=getVaultCapacity();if(c>=100)return;setVaultCapacity(Math.min(100,c+5));setVaultExpansions(getVaultExpansions()+1);showResultToast('📦 仓库已扩容至 '+Math.min(100,c+5)+' 格！','#D4B8FF');renderCharVault();updateVaultDot();}},
-  signin:{label:'📺 观看广告·领取法宝',desc:'观看完成后今日法宝奖励入库',
-    onSuccess(){}}, // 回调由doDailySignin动态设置
-  reroll:{label:'📺 观看广告·品质重鉴',desc:'观看完成后重新鉴定法宝品质'},
-  equip2:{label:'📺 观看广告·额外法宝槽',desc:'道心坚定·双宝护体！\n观看完成后解锁第二法宝槽'},
-  synth:{label:'📺 观看广告·合成保底',desc:'观看完成后合成成功率+20%',
-    onSuccess(){_synthAdBoost=true;renderSynthUI();showBuffToast('📺 广告·合成成功率+20%','#E8A020');}},
   equip2:{label:'📺 观看广告·额外法宝槽',desc:'道心坚定·双宝护体！\n观看完成后解锁第二法宝槽',
     onSuccess(){equipSlot2Unlocked=true;renderEquipBar();}},
   signin:{label:'📺 观看广告·领取法宝',desc:'观看完成后今日法宝奖励入库',
@@ -2385,8 +2379,27 @@ const AD_ACTIONS={
       if(ds.streak===7){const goldQ=QUALITY_DEFS[4];const goldT=TREASURE_POOL[Math.floor(Math.random()*TREASURE_POOL.length)];const goldB=QUALITY_BONUS[goldQ.id];saveToVault(goldT,goldQ,goldB);msg+='\n🔥 连签7天！额外天品【'+goldT.icon+goldT.name+'】';}
       closeDailySignin();showResultToast(msg,qDef.color);updateVaultDot();
     }},
+  synth:{label:'📺 观看广告·合成保底',desc:'观看完成后合成成功率+20%',
+    onSuccess(){_synthAdBoost=true;renderSynthUI();showBuffToast('📺 广告·合成成功率+20%','#E8A020');}},
   reroll:{label:'📺 观看广告·品质重鉴',desc:'观看完成后重新鉴定法宝品质',
-    onSuccess(data){}} // data由rerollQuality传入,回调在rerollQuality内动态设置
+    onSuccess(key){
+      const vault2=getVault();const [name,quality]=key.split('|');
+      const idx2=vault2.findIndex(v=>v.name===name&&v.quality===quality);if(idx2<0)return;
+      const item=vault2[idx2];const qIdx=QUALITY_DEFS.findIndex(q=>q.id===item.quality);
+      const r=Math.random();const up=r<0.15?2:r<0.50?1:0;
+      const newQIdx=Math.min(qIdx+up,QUALITY_DEFS.length-1);const newQ=QUALITY_DEFS[newQIdx];
+      const t=TREASURE_POOL.find(x=>x.wid===item.wid)||TREASURE_POOL[0];const b=QUALITY_BONUS[newQ.id];
+      vault2.splice(idx2,1);try{localStorage.setItem('daojie_vault',JSON.stringify(vault2));}catch(e){}
+      saveToVault(t,newQ,b);
+      const rrData=getRerollData();rrData[key]=todayStr();saveRerollData(rrData);
+      const oldQ=QUALITY_DEFS[qIdx];const resLabel=up>1?'✨ 跳级！':up>0?'⬆ 升品！':'➡ 未变';
+      const pop=document.createElement('div');
+      pop.style.cssText='position:fixed;bottom:0;left:0;right:0;z-index:250;background:linear-gradient(0deg,rgba(4,6,20,0.98),rgba(10,8,30,0.92));padding:24px 20px 40px;text-align:center;transform:translateY(100%);transition:transform 0.35s ease-out';
+      pop.innerHTML='<div style="font-size:11px;color:#7766aa;margin-bottom:12px">🔮 品质重鉴结果</div><div style="font-size:14px;color:'+oldQ.color+';text-decoration:line-through;margin-bottom:2px">'+oldQ.name+'</div><div style="font-size:16px;color:'+newQ.color+';font-weight:700">'+resLabel+'</div><div style="font-size:32px;margin:8px 0">'+t.icon+'</div><div style="font-size:14px;font-weight:700;color:#ccc">'+t.name+'</div><div style="font-size:12px;font-weight:700;color:'+newQ.color+';margin-top:2px">'+newQ.name+'</div><button id="rr-close-btn" style="margin-top:16px;background:#9B59B6;color:#fff;border:none;border-radius:10px;padding:12px 40px;font-size:14px;font-weight:700;cursor:pointer">✓ 收入囊中</button>';
+      document.body.appendChild(pop);requestAnimationFrame(()=>{pop.style.transform='translateY(0)';});
+      const animName=up>0?'rrGlow':up===0?'rrShake':'rrCrack';const animDur=up>0?'0.7s':up===0?'0.4s':'0.5s';
+      document.getElementById('rr-close-btn').onclick=()=>{pop.style.transform='translateY(100%)';setTimeout(()=>{pop.remove();renderCharVault();updateVaultDot();setTimeout(()=>{var cards=document.querySelectorAll('.char-vault-card');for(var ci=0;ci<cards.length;ci++){var c=cards[ci],n=c.querySelector('.char-vault-card-name'),q=c.querySelector('.char-vault-card-q');if(n&&q&&n.textContent===t.name&&q.textContent===newQ.name){c.style.animation=animName+' '+animDur+' ease-out';c.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(function(){c.style.animation='';},parseFloat(animDur)*1000);break;}}},150);},400);};
+    }}
 };
 
 let _adData=null; // showAdMock参数传递
@@ -2494,40 +2507,7 @@ function rerollQuality(key){
   const [name,quality]=key.split('|');
   const idx=vault.findIndex(v=>v.name===name&&v.quality===quality);
   if(idx<0)return;
-  showRewardedAd('reroll',()=>{
-    const vault2=getVault();
-    const idx2=vault2.findIndex(v=>v.name===name&&v.quality===quality);
-    if(idx2<0)return;
-    const item=vault2[idx2];
-    const qIdx=QUALITY_DEFS.findIndex(q=>q.id===item.quality);
-    const r=Math.random();
-    const up=r<0.15?2:r<0.50?1:0;
-    const newQIdx=Math.min(qIdx+up,QUALITY_DEFS.length-1);
-    const newQ=QUALITY_DEFS[newQIdx];
-    const t=TREASURE_POOL.find(x=>x.wid===item.wid)||TREASURE_POOL[0];
-    const b=QUALITY_BONUS[newQ.id];
-    // 先移除旧件持久化
-    vault2.splice(idx2,1);
-    try{localStorage.setItem('daojie_vault',JSON.stringify(vault2));}catch(e){}
-    // 再加新件
-    saveToVault(t,newQ,b);
-    // 记录今日已鉴
-    const rrData=getRerollData();
-    rrData[key]=todayStr();
-    saveRerollData(rrData);
-    // 结果弹窗(全局)
-    const oldQ=QUALITY_DEFS[qIdx];
-    const resLabel=up>1?'✨ 跳级！':up>0?'⬆ 升品！':'➡ 未变';
-    const pop=document.createElement('div');
-    pop.style.cssText='position:fixed;bottom:0;left:0;right:0;z-index:250;background:linear-gradient(0deg,rgba(4,6,20,0.98),rgba(10,8,30,0.92));padding:24px 20px 40px;text-align:center;transform:translateY(100%);transition:transform 0.35s ease-out';
-    pop.innerHTML='<div style="font-size:11px;color:#7766aa;margin-bottom:12px">🔮 品质重鉴结果</div><div style="font-size:14px;color:'+oldQ.color+';text-decoration:line-through;margin-bottom:2px">'+oldQ.name+'</div><div style="font-size:16px;color:'+newQ.color+';font-weight:700">'+resLabel+'</div><div style="font-size:32px;margin:8px 0">'+t.icon+'</div><div style="font-size:14px;font-weight:700;color:#ccc">'+t.name+'</div><div style="font-size:12px;font-weight:700;color:'+newQ.color+';margin-top:2px">'+newQ.name+'</div><button id="rr-close-btn" style="margin-top:16px;background:#9B59B6;color:#fff;border:none;border-radius:10px;padding:12px 40px;font-size:14px;font-weight:700;cursor:pointer">✓ 收入囊中</button>';
-    document.body.appendChild(pop);
-    requestAnimationFrame(()=>{pop.style.transform='translateY(0)';});
-    const animName=up>0?'rrGlow':up===0?'rrShake':'rrCrack';
-    const animDur=up>0?'0.7s':up===0?'0.4s':'0.5s';
-    const newKey=item.name+'|'+newQ.id;
-    document.getElementById('rr-close-btn').onclick=()=>{pop.style.transform='translateY(100%)';setTimeout(()=>{pop.remove();renderCharVault();updateVaultDot();setTimeout(()=>{var cards=document.querySelectorAll('.char-vault-card');for(var ci=0;ci<cards.length;ci++){var c=cards[ci],n=c.querySelector('.char-vault-card-name'),q=c.querySelector('.char-vault-card-q');if(n&&q&&n.textContent===t.name&&q.textContent===newQ.name){c.style.animation=animName+' '+animDur+' ease-out';c.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(function(){c.style.animation='';},parseFloat(animDur)*1000);break;}}},150);},400);};
-  });
+  showAdMock('reroll',key);
 }
 
 function exportProgress(){
