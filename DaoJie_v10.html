@@ -2459,6 +2459,40 @@ function showAchievementPopup(a,t,q){
   setTimeout(()=>{pop.style.transform='translate(-50%,-50%) scale(0)';setTimeout(()=>pop.remove(),500);},3000);
 }
 
+// ══════ 品质重鉴 ══════
+function getRerollData(){try{return JSON.parse(localStorage.getItem('daojie_reroll')||'{}');}catch(e){return{};}}
+function saveRerollData(d){try{localStorage.setItem('daojie_reroll',JSON.stringify(d));}catch(e){}}
+
+function rerollQuality(key){
+  const vault=getVault();
+  const [name,quality]=key.split('|');
+  const idx=vault.findIndex(v=>v.name===name&&v.quality===quality);
+  if(idx<0)return;
+  showRewardedAd('reroll',()=>{
+    const vault2=getVault();
+    const idx2=vault2.findIndex(v=>v.name===name&&v.quality===quality);
+    if(idx2<0)return;
+    const item=vault2[idx2];
+    const qIdx=QUALITY_DEFS.findIndex(q=>q.id===item.quality);
+    // 滚品质：50%原样，35%升1，15%升2（不降）
+    const r=Math.random();
+    const up=r<0.15?2:r<0.50?1:0;
+    const newQIdx=Math.min(qIdx+up,QUALITY_DEFS.length-1);
+    const newQ=QUALITY_DEFS[newQIdx];
+    const t=TREASURE_POOL.find(x=>x.wid===item.wid)||TREASURE_POOL[0];
+    const b=QUALITY_BONUS[newQ.id];
+    // 替换
+    vault2.splice(idx2,1);
+    saveToVault(t,newQ,b);
+    // 记录今日已鉴
+    const rrData=getRerollData();
+    rrData[key]=todayStr();
+    saveRerollData(rrData);
+    renderCharVault();updateVaultDot();
+    showBuffToast(`🔮 ${up>1?'✨跳级！':up>0?'升品！':'未变'} → ${newQ.name}`,'#EF9F27');
+  });
+}
+
 function exportProgress(){
   const p=getProgress();
   const code=btoa(JSON.stringify(p));
@@ -3159,13 +3193,21 @@ function renderCharVault(){
       <div class="ce-title">仓库已达上限 (100格)</div>
     </div>
   `:'');
-  grid.innerHTML=merged.map(item=>`<div class="char-vault-card ${item.cardClass||''}" style="position:relative">
+  grid.innerHTML=merged.map(item=>{
+    const key=item.name+'|'+item.quality;
+    const canReroll=(item.quality==='white'||item.quality==='green');
+    const rrData=getRerollData();
+    const todayDone=canReroll&&rrData[key]===todayStr();
+    const rrLabel=todayDone?'明日可鉴':canReroll?'⋯':'';
+    const rrTitle=todayDone?'今日已鉴定':canReroll?'看广告·重新鉴定品质':'';
+    return`<div class="char-vault-card ${item.cardClass||''}" style="position:relative">
     ${item.count>1?`<div style="position:absolute;top:3px;right:4px;background:rgba(0,0,0,0.85);color:#E8D44D;font-size:10px;font-weight:700;border:1px solid #E8D44D55;border-radius:8px;padding:0 5px;line-height:16px">×${item.count}</div>`:''}
+    ${rrLabel?`<div onclick="event.stopPropagation();rerollQuality('${key}')" style="position:absolute;top:3px;left:4px;font-size:${todayDone?'8px':'14px'};color:${todayDone?'#444':'#EF9F27'};cursor:${todayDone?'default':'pointer'};background:rgba(0,0,0,0.7);border-radius:4px;padding:1px 5px;line-height:${todayDone?'14px':'18px'}" title="${rrTitle}">${rrLabel}</div>`:''}
     <div class="char-vault-card-icon">${item.icon||'⚡'}</div>
     <div class="char-vault-card-name">${item.name}</div>
     <div class="char-vault-card-q" style="color:${item.qualityColor}">${item.qualityName}</div>
     <div class="char-vault-card-atk">×${(item.atkMult||1).toFixed(1)}</div>
-  </div>`).join('')+expandHTML;
+  </div>`}).join('')+expandHTML;
 }
 
 function initHeroCanvas(){
