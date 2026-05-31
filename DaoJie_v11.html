@@ -2494,16 +2494,15 @@ function rerollQuality(key){
     const rrData=getRerollData();
     rrData[key]=todayStr();
     saveRerollData(rrData);
-    // 结果弹窗
+    // 结果弹窗(全局)
     const oldQ=QUALITY_DEFS[qIdx];
     const resLabel=up>1?'✨ 跳级！':up>0?'⬆ 升品！':'➡ 未变';
-    const panel=document.getElementById('catch-panel');
-    document.getElementById('catch-label').textContent='🔮 品质重鉴结果';
-    document.getElementById('catch-card').innerHTML='<div class="gc-quality" style="color:'+oldQ.color+'">'+oldQ.name+'</div><div style="font-size:24px;margin:6px 0">↓</div><div class="gc-quality" style="color:'+newQ.color+'">'+resLabel+'</div><div class="gc-icon" style="font-size:28px">'+t.icon+'</div><div class="gc-name">'+t.name+'</div><div class="gc-quality" style="color:'+newQ.color+'">'+newQ.name+'</div>';
-    panel.style.display='';
-    requestAnimationFrame(()=>{panel.classList.add('show');});
-    document.getElementById('catch-keep-btn').onclick=()=>{panel.classList.remove('show');setTimeout(()=>{panel.style.display='none';document.getElementById('catch-skip-btn').style.display='';renderCharVault();updateVaultDot();},400);};
-    document.getElementById('catch-skip-btn').style.display='none';
+    const pop=document.createElement('div');
+    pop.style.cssText='position:fixed;bottom:0;left:0;right:0;z-index:250;background:linear-gradient(0deg,rgba(4,6,20,0.98),rgba(10,8,30,0.92));padding:24px 20px 40px;text-align:center;transform:translateY(100%);transition:transform 0.35s ease-out';
+    pop.innerHTML='<div style="font-size:11px;color:#7766aa;margin-bottom:12px">🔮 品质重鉴结果</div><div style="font-size:14px;color:'+oldQ.color+';text-decoration:line-through;margin-bottom:2px">'+oldQ.name+'</div><div style="font-size:16px;color:'+newQ.color+';font-weight:700">'+resLabel+'</div><div style="font-size:32px;margin:8px 0">'+t.icon+'</div><div style="font-size:14px;font-weight:700;color:#ccc">'+t.name+'</div><div style="font-size:12px;font-weight:700;color:'+newQ.color+';margin-top:2px">'+newQ.name+'</div><button id="rr-close-btn" style="margin-top:16px;background:#9B59B6;color:#fff;border:none;border-radius:10px;padding:12px 40px;font-size:14px;font-weight:700;cursor:pointer">✓ 收入囊中</button>';
+    document.body.appendChild(pop);
+    requestAnimationFrame(()=>{pop.style.transform='translateY(0)';});
+    document.getElementById('rr-close-btn').onclick=()=>{pop.style.transform='translateY(100%)';setTimeout(()=>{pop.remove();renderCharVault();updateVaultDot();},400);};
   });
 }
 
