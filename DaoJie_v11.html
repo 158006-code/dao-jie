@@ -2494,8 +2494,16 @@ function rerollQuality(key){
     const rrData=getRerollData();
     rrData[key]=todayStr();
     saveRerollData(rrData);
-    renderCharVault();updateVaultDot();
-    showBuffToast(`🔮 ${up>1?'✨跳级！':up>0?'升品！':'未变'} → ${newQ.name}`,'#EF9F27');
+    // 结果弹窗
+    const oldQ=QUALITY_DEFS[qIdx];
+    const resLabel=up>1?'✨ 跳级！':up>0?'⬆ 升品！':'➡ 未变';
+    const panel=document.getElementById('catch-panel');
+    document.getElementById('catch-label').textContent='🔮 品质重鉴结果';
+    document.getElementById('catch-card').innerHTML='<div class="gc-quality" style="color:'+oldQ.color+'">'+oldQ.name+'</div><div style="font-size:24px;margin:6px 0">↓</div><div class="gc-quality" style="color:'+newQ.color+'">'+resLabel+'</div><div class="gc-icon" style="font-size:28px">'+t.icon+'</div><div class="gc-name">'+t.name+'</div><div class="gc-quality" style="color:'+newQ.color+'">'+newQ.name+'</div>';
+    panel.style.display='';
+    requestAnimationFrame(()=>{panel.classList.add('show');});
+    document.getElementById('catch-keep-btn').onclick=()=>{panel.classList.remove('show');setTimeout(()=>{panel.style.display='none';document.getElementById('catch-skip-btn').style.display='';renderCharVault();updateVaultDot();},400);};
+    document.getElementById('catch-skip-btn').style.display='none';
   });
 }
 
