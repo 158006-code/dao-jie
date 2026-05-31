@@ -427,6 +427,7 @@ canvas{display:block;background:#04060f;touch-action:none;width:100%;flex:1;min-
 <div class="bottom-bar">
   <button class="speed-toggle-btn" id="speed-toggle-btn" onclick="cycleSpeed()">1x ▶</button>
   <div class="bottom-mid" id="phase-label"></div>
+  <button class="pause-btn" id="quit-battle-btn" onclick="quitBattle()" style="background:#1a0a0a;border-color:#E24B4A44;color:#E24B4A">退出</button>
   <button class="pause-btn" id="pause-btn" onclick="togglePause()">暂停战斗</button>
 </div>
 <div class="upgrade-overlay" id="upgrade-overlay">
@@ -627,6 +628,17 @@ function cycleSpeed(){
   const btn=document.getElementById('speed-toggle-btn');
   btn.textContent=labels[speedIdx];btn.classList.toggle('active',speedIdx>0);
 }
+function quitBattle(){
+  if(!G||G.dead||G.won)return;
+  if(!confirm('确定退出当前战斗？\n本次进度不会保存。'))return;
+  G.paused=true;G.dead=true;
+  document.getElementById('result').classList.remove('show');
+  document.getElementById('boss-wrap').classList.remove('show');
+  cancelAnimationFrame(G._raf);
+  G=null;
+  showHomePage();
+}
+
 function togglePause(){
   if(G&&(G.dead||G.won))return;
   if(G&&G.upgrading)return;
@@ -1933,7 +1945,8 @@ function updateHUD(){
   document.getElementById('h-lv').textContent=G.lv;
   document.getElementById('xp-bar').style.width=Math.min(100,G.xp/G.xpNext*100)+'%';
   if(!G.bossMode){
-    const maxTime=G.timeLimit>0?G.timeLimit:TOTAL;
+    const bossCount=G.bossTriggered.length;
+    const maxTime=G.timeLimit>0?G.timeLimit:BOSS_AT[bossCount-1]||BOSS_AT[2];
     const sl=Math.max(0,maxTime-Math.floor(G.elapsed/FPS));
     document.getElementById('h-time').textContent=`${Math.floor(sl/60)}:${(sl%60).toString().padStart(2,'0')}`+(G.timeLimit>0?' ⏳':'');
     if(G.timeLimit>0&&sl<=30)document.getElementById('h-time').style.color='#ff6644';
