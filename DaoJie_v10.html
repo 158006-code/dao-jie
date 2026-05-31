@@ -2431,7 +2431,7 @@ function saveAchievements(a){try{localStorage.setItem('daojie_achieve',JSON.stri
 
 function checkAchievements(G){
   if(!G||G._isReplay)return;
-  const p=getProgress();p.totalTreasures=getVault().length;
+  const p=getProgress();p.totalTreasures=Math.max(p.totalTreasures||0,getVault().length);
   const stats={kills:G.kills||0,maxCombo:G._maxCombo||0};
   const done=getAchievements();let changed=false;
   ACHIEVEMENTS.forEach(a=>{
@@ -2474,15 +2474,16 @@ function rerollQuality(key){
     if(idx2<0)return;
     const item=vault2[idx2];
     const qIdx=QUALITY_DEFS.findIndex(q=>q.id===item.quality);
-    // 滚品质：50%原样，35%升1，15%升2（不降）
     const r=Math.random();
     const up=r<0.15?2:r<0.50?1:0;
     const newQIdx=Math.min(qIdx+up,QUALITY_DEFS.length-1);
     const newQ=QUALITY_DEFS[newQIdx];
     const t=TREASURE_POOL.find(x=>x.wid===item.wid)||TREASURE_POOL[0];
     const b=QUALITY_BONUS[newQ.id];
-    // 替换
+    // 先移除旧件持久化
     vault2.splice(idx2,1);
+    try{localStorage.setItem('daojie_vault',JSON.stringify(vault2));}catch(e){}
+    // 再加新件
     saveToVault(t,newQ,b);
     // 记录今日已鉴
     const rrData=getRerollData();
@@ -3127,40 +3128,42 @@ function synthWatchAd(){
 function confirmSynthesis(){
   if(_synthSlots.filter(s=>s).length<3)return;
   const groups=_synthSlots.map(s=>_synthGroup[s.groupIdx]);
-  const vault=getVault();
-  // 消耗：每组移除1件
-  const removed=[];
+  // 收集待移除索引（降序排列防移位）
+  const rmIdx=[];
   groups.forEach(g=>{
-    // 找最高atkMult的移除（保留差的）
     let bestIdx=-1,bestVal=-1;
-    g.items.forEach(i=>{const v=vault[i];const val=v.atkMult||1;if(val>bestVal){bestVal=val;bestIdx=i;}});
-    removed.push(vault[bestIdx]);vault.splice(bestIdx,1);
+    g.items.forEach(i=>{const v=getVault()[i];const val=v.atkMult||1;if(val>bestVal){bestVal=val;bestIdx=i;}});
+    if(bestIdx>=0&&!rmIdx.includes(bestIdx))rmIdx.push(bestIdx);
   });
-  // 生成新法宝
-  const base=removed[0];
+  rmIdx.sort((a,b)=>b-a); // 降序：先删高位，不低位
+  if(rmIdx.length<3){closeSynthesis();return;}
+
+  // 先用临时品判定成功率（不动仓库）
+  const vault=getVault();
+  const base=vault[rmIdx[2]]; // 最低索引=保留的最高品质参考
   const qIdx=QUALITY_DEFS.findIndex(q=>q.id===base.quality);
-  // 20%跳级
+  const baseOdds=base.quality==='red'?0:base.quality==='gold'?60:base.quality==='purple'?75:base.quality==='blue'?85:base.quality==='green'?90:95;
+  const odds=_synthAdBoost?Math.min(100,baseOdds+20):baseOdds;
+
+  if(Math.random()*100>=odds){
+    showBuffToast('❌ 合成失败！法宝无损','#ff4444');
+    closeSynthesis();renderCharVault();return;
+  }
+  // 成功：移除3件（降序安全）→保存→加新件
+  const vault2=getVault();
+  rmIdx.forEach(i=>vault2.splice(i,1));
+  try{localStorage.setItem('daojie_vault',JSON.stringify(vault2));}catch(e){}
+
   const jump=Math.random()<0.2&&qIdx<QUALITY_DEFS.length-2&&base.quality!=='red';
   const newQ=QUALITY_DEFS[jump?Math.min(qIdx+2,QUALITY_DEFS.length-1):Math.min(qIdx+1,QUALITY_DEFS.length-1)];
   const t=TREASURE_POOL.find(x=>x.wid===base.wid)||TREASURE_POOL[0];
   const b=QUALITY_BONUS[newQ.id];
-  // 成功率判定
-  const baseOdds=base.quality==='red'?0:base.quality==='gold'?60:base.quality==='purple'?75:base.quality==='blue'?85:base.quality==='green'?90:95;
-  const odds=_synthAdBoost?Math.min(100,baseOdds+20):baseOdds;
-  if(Math.random()*100>=odds){
-    showBuffToast('❌ 合成失败！法宝损毁','#ff4444');
-    try{localStorage.setItem('daojie_vault',JSON.stringify(vault));}catch(e){}
-    closeSynthesis();renderCharVault();updateVaultDot();return;
-  }
-  // 成功
   saveToVault(t,newQ,b);
   showBuffToast(`⚗ 合成成功！${jump?'✨ 跳级！':''}获得 ${newQ.name}${t.name}`,'#EF9F27');
-  // 动画
+
   const slots=document.querySelectorAll('.sy-slot');
   slots.forEach(s=>{if(s.classList.contains('filled')){s.style.animation='syMerge 0.4s forwards';}});
-  setTimeout(()=>{
-    closeSynthesis();renderCharVault();updateVaultDot();
-  },500);
+  setTimeout(()=>{closeSynthesis();renderCharVault();updateVaultDot();},500);
 }
 
 function renderCharVault(){
