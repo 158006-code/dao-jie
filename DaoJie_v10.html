@@ -358,6 +358,8 @@ canvas{display:block;background:#04060f;touch-action:none;width:100%;flex:1;min-
 .signin-claim-btn{background:linear-gradient(135deg,#9B59B6,#7B1FA2);color:#fff;border:none;border-radius:10px;padding:12px 32px;font-size:15px;font-weight:700;cursor:pointer;letter-spacing:0.06em;box-shadow:0 0 20px rgba(155,89,182,0.5);display:block;width:100%;margin-bottom:8px}
 .signin-claim-btn:active{transform:scale(0.96)}
 .signin-skip-btn{font-size:11px;color:#443366;cursor:pointer;background:none;border:none;padding:4px}
+.progress-code-btn{flex:1;font-size:9px;color:#7766aa;background:rgba(120,80,200,0.08);border:1px solid rgba(120,80,200,0.2);border-radius:6px;padding:6px 8px;cursor:pointer;white-space:nowrap}
+.progress-code-btn:active{background:rgba(120,80,200,0.2)}
 /* 关卡地图 */
 .stage-map-section{flex:1;overflow-y:auto;padding:8px 16px 16px}
 .stage-map-realm{font-size:11px;font-weight:700;color:#7766aa;padding:12px 0 6px;letter-spacing:0.12em;border-bottom:1px solid rgba(120,80,200,0.15);margin-bottom:10px}
@@ -541,6 +543,10 @@ canvas{display:block;background:#04060f;touch-action:none;width:100%;flex:1;min-
       <div class="char-realm-bar-txt" id="char-realm-bar-txt">0 / 3 关卡</div>
     </div>
     <div class="char-realm-stages" id="char-realm-stages"></div>
+    <div style="display:flex;gap:6px;padding:4px 0">
+      <button class="progress-code-btn" onclick="exportProgress()" title="复制存档码到剪贴板">📋 导出存档</button>
+      <button class="progress-code-btn" onclick="importProgress()" title="从存档码恢复进度">📥 导入存档</button>
+    </div>
   </div>
   <div class="char-stage-section">
     <div class="char-section-title" style="display:flex;justify-content:space-between;align-items:center">
@@ -2353,6 +2359,25 @@ function resetResultPanel(){
 // ══════════════════════════════════════════
 function getProgress(){try{return JSON.parse(localStorage.getItem('daojie_progress')||'{"realmIdx":0,"stageCleared":0,"totalWins":0,"totalRuns":0}');}catch(e){return{realmIdx:0,stageCleared:0,totalWins:0,totalRuns:0};}}
 function saveProgress(p){try{localStorage.setItem('daojie_progress',JSON.stringify(p));}catch(e){}}
+
+function exportProgress(){
+  const p=getProgress();
+  const code=btoa(JSON.stringify(p));
+  if(navigator.clipboard){navigator.clipboard.writeText(code).then(()=>showBuffToast('📋 存档码已复制！','#88ccff'));}
+  else{prompt('复制此存档码:',code);}
+}
+
+function importProgress(){
+  const code=prompt('粘贴存档码：','');
+  if(!code)return;
+  try{
+    const p=JSON.parse(atob(code));
+    if(p.realmIdx==null||p.stageCleared==null)throw new Error('invalid');
+    saveProgress(p);
+    showCharPage();
+    showBuffToast('✅ 存档已恢复！','#44ee66');
+  }catch(e){showBuffToast('❌ 存档码无效','#ff4444');}
+}
 function getCurrentStageInfo(){
   const p=getProgress();
   const ri=Math.min(p.realmIdx,REALMS.length-1);
