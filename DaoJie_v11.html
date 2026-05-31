@@ -2374,7 +2374,10 @@ const AD_ACTIONS={
   expand:{label:'📺 观看广告·仓库扩容',desc:'观看完成后仓库永久+5格',
     onSuccess(){const c=getVaultCapacity();if(c>=100)return;setVaultCapacity(Math.min(100,c+5));setVaultExpansions(getVaultExpansions()+1);showResultToast('📦 仓库已扩容至 '+Math.min(100,c+5)+' 格！','#D4B8FF');renderCharVault();updateVaultDot();}},
   signin:{label:'📺 观看广告·领取法宝',desc:'观看完成后今日法宝奖励入库',
-    onSuccess(){}} // 回调由doDailySignin动态设置
+    onSuccess(){}}, // 回调由doDailySignin动态设置
+  reroll:{label:'📺 观看广告·品质重鉴',desc:'观看完成后重新鉴定法宝品质'},
+  equip2:{label:'📺 观看广告·额外法宝槽',desc:'道心坚定·双宝护体！\n观看完成后解锁第二法宝槽'},
+  synth:{label:'📺 观看广告·合成保底',desc:'观看完成后合成成功率+20%'}
 };
 
 function showAdMock(type){
@@ -2386,18 +2389,7 @@ function showAdMock(type){
 
 // ══════ 仓库扩容广告 ══════
 function showVaultExpandAd(){
-  showRewardedAd('expand',()=>{
-    const cap=getVaultCapacity();
-    if(cap>=100)return;
-    const newCap=Math.min(100,cap+5);
-    setVaultCapacity(newCap);
-    const exps=getVaultExpansions()+1;
-    setVaultExpansions(exps);
-    const remaining=Math.floor((100-newCap)/5);
-    showResultToast(`📦 仓库已扩容至 ${newCap} 格！`,'#D4B8FF');
-    renderCharVault(); // 刷新网格+按钮状态
-    updateVaultDot();  // 如果扩容后不再满，清除红点
-  });
+  showAdMock('expand');
 }
 
 function showResultToast(msg,color){
