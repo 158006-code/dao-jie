@@ -2223,6 +2223,7 @@ function doVictory(){
     p.stageCleared=(p.stageCleared||0)+1;
     if(p.stageCleared>=realm.stages){p.realmIdx=Math.min(ri+1,REALMS.length-1);p.stageCleared=0;}
     saveProgress(p);
+    showBuffToast('💾 进度已保存','#44ee66');
   }
   const newRealm=REALMS[Math.min(p.realmIdx,REALMS.length-1)];
   const wlist=G.slots.filter(s=>s.id).map(s=>`${WEAPONS[s.id].name}${s.stars?starStr(s.stars):''}Lv.${s.lv}`).join(' ');
@@ -2357,8 +2358,8 @@ function resetResultPanel(){
 // ══════════════════════════════════════════
 // 境界系统（永久进度）
 // ══════════════════════════════════════════
-function getProgress(){try{return JSON.parse(localStorage.getItem('daojie_progress')||'{"realmIdx":0,"stageCleared":0,"totalWins":0,"totalRuns":0}');}catch(e){return{realmIdx:0,stageCleared:0,totalWins:0,totalRuns:0};}}
-function saveProgress(p){try{localStorage.setItem('daojie_progress',JSON.stringify(p));}catch(e){}}
+function getProgress(){try{const raw=localStorage.getItem('daojie_progress')||sessionStorage.getItem('daojie_progress')||'{"realmIdx":0,"stageCleared":0,"totalWins":0,"totalRuns":0}';return JSON.parse(raw);}catch(e){return{realmIdx:0,stageCleared:0,totalWins:0,totalRuns:0};}}
+function saveProgress(p){try{localStorage.setItem('daojie_progress',JSON.stringify(p));}catch(e){console.warn('saveProgress failed:',e.message);try{sessionStorage.setItem('daojie_progress',JSON.stringify(p));}catch(e2){}}}
 
 function exportProgress(){
   const p=getProgress();
@@ -2499,6 +2500,11 @@ function showHomePage(){
   document.getElementById('char-overlay').classList.remove('show');
   initFishingCanvas();
   updateVaultDot();
+  // 主页显示当前进度
+  const p=getProgress();
+  const realm=REALMS[Math.min(p.realmIdx,REALMS.length-1)];
+  const stageName=realm.stageNames[Math.min(p.stageCleared||0,realm.stages-1)];
+  document.getElementById('home-char-btn').innerHTML=`修士档案 ›<span class="char-vault-dot" id="char-vault-dot"></span><br><span style="font-size:8px;color:#665">${realm.icon} ${realm.name}·${p.stageCleared}/${realm.stages}</span>`;
   // 每日签到检测
   const ds=getDailySignin();
   if(ds.lastDate!==todayStr()){
