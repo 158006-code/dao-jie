@@ -640,6 +640,16 @@ const STAGE_CONFIGS={
   special: {enemyHpMult:1.0, eliteRateMult:2.0, bossEarly:0, timeLimit:120,  desc:'限时120秒·击杀达标解锁成就'},
 };
 
+// 成就系统
+const ACHIEVEMENTS=[
+  {id:'first_win',  name:'破劫初显', icon:'🌟', desc:'首次通关',           reward:'灵品法宝×1',quality:'green', check(p,stats){return (p.totalWins||0)>=1;}},
+  {id:'kill_500',   name:'魔军灭世', icon:'💀', desc:'单局击杀500',        reward:'玄品×1',     quality:'blue',  check(p,stats){return (stats.kills||0)>=500;}},
+  {id:'hoard_30',   name:'法宝巨贾', icon:'💎', desc:'收集30件法宝',        reward:'玄品×1',     quality:'blue',  check(p,stats){return (p.totalTreasures||0)>=30;}},
+  {id:'combo_200',  name:'连斩三千', icon:'🔥', desc:'单局连斩≥200',        reward:'地品×1',     quality:'purple',check(p,stats){return (stats.maxCombo||0)>=200;}},
+  {id:'realm_3',    name:'金丹飞升', icon:'⚡', desc:'首次到达金丹期',       reward:'天品×1',     quality:'gold',   check(p,stats){return (p.realmIdx||0)>=2;}},
+  {id:'boss_5',     name:'万法归一', icon:'👑', desc:'连续5次通关',          reward:'神品×1',     quality:'red',    check(p,stats){return (p.bossStreak||0)>=5;}},
+];
+
 // ══════ 配置校验器 ══════
 (function validateConfig(){
   const errors=[];

@@ -1318,6 +1318,7 @@ function _update(){
 
   // ── 连斩系统（连斩数只作战斗加成，不代表境界）──
   if(G.comboTimer>0){G.comboTimer--;}else{G.combo=0;}
+  if(G.combo>(G._maxCombo||0))G._maxCombo=G.combo;
   const prevTier=G.comboTier||0;
   G.comboTier=0;
   if(G.combo>=10)G.comboTier=1;if(G.combo>=25)G.comboTier=2;if(G.combo>=50)G.comboTier=3;
@@ -2084,7 +2085,7 @@ function doGameover(){
     return;
   }
   G.dead=true;
-  const p=getProgress();saveProgress(p);
+  const p=getProgress();p.bossStreak=0;saveProgress(p);
   const wlist=G.slots.filter(s=>s.id).map(s=>`${WEAPONS[s.id].name}${s.stars?starStr(s.stars):''}Lv.${s.lv}`).join(' ');
   const {realm}=getCurrentStageInfo();
   document.getElementById('r-title').textContent='☠ 渡劫失败·道消魂散';
@@ -2282,9 +2283,11 @@ function doVictory(){
     const ri=Math.min(p.realmIdx,REALMS.length-1);
     const realm=REALMS[ri];
     p.stageCleared=(p.stageCleared||0)+1;
+    p.bossStreak=(p.bossStreak||0)+1;
     if(p.stageCleared>=realm.stages){p.realmIdx=Math.min(ri+1,REALMS.length-1);p.stageCleared=0;}
     saveProgress(p);
     showBuffToast('💾 进度已保存','#44ee66');
+    checkAchievements(G);
   }
   const newRealm=REALMS[Math.min(p.realmIdx,REALMS.length-1)];
   const wlist=G.slots.filter(s=>s.id).map(s=>`${WEAPONS[s.id].name}${s.stars?starStr(s.stars):''}Lv.${s.lv}`).join(' ');
@@ -2421,6 +2424,40 @@ function resetResultPanel(){
 // ══════════════════════════════════════════
 function getProgress(){try{const raw=localStorage.getItem('daojie_progress')||sessionStorage.getItem('daojie_progress')||'{"realmIdx":0,"stageCleared":0,"totalWins":0,"totalRuns":0}';return JSON.parse(raw);}catch(e){return{realmIdx:0,stageCleared:0,totalWins:0,totalRuns:0};}}
 function saveProgress(p){try{localStorage.setItem('daojie_progress',JSON.stringify(p));}catch(e){console.warn('saveProgress failed:',e.message);try{sessionStorage.setItem('daojie_progress',JSON.stringify(p));}catch(e2){}}}
+
+// ══════ 成就系统 ══════
+function getAchievements(){try{return JSON.parse(localStorage.getItem('daojie_achieve')||'[]');}catch(e){return[];}}
+function saveAchievements(a){try{localStorage.setItem('daojie_achieve',JSON.stringify(a));}catch(e){}}
+
+function checkAchievements(G){
+  if(!G||G._isReplay)return;
+  const p=getProgress();p.totalTreasures=getVault().length;
+  const stats={kills:G.kills||0,maxCombo:G._maxCombo||0};
+  const done=getAchievements();let changed=false;
+  ACHIEVEMENTS.forEach(a=>{
+    if(done.includes(a.id))return;
+    if(a.check(p,stats)){
+      done.push(a.id);changed=true;
+      const t=TREASURE_POOL[Math.floor(Math.random()*TREASURE_POOL.length)];
+      const q=QUALITY_DEFS.find(qd=>qd.id===a.quality);if(!q)return;
+      const b=QUALITY_BONUS[a.quality];
+      saveToVault(t,q,b);
+      showAchievementPopup(a,t,q);
+    }
+  });
+  if(changed)saveAchievements(done);
+  const cntEl=document.getElementById('achieve-count');
+  if(cntEl)cntEl.textContent='🏆'+done.length;
+}
+
+function showAchievementPopup(a,t,q){
+  const pop=document.createElement('div');
+  pop.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);z-index:80;background:#0c0c14;border:2px solid '+q.color+';border-radius:16px;padding:24px;text-align:center;transition:transform 0.5s cubic-bezier(0.175,0.885,0.32,1.275);pointer-events:none';
+  pop.innerHTML=`<div style="font-size:40px">${a.icon}</div><div style="font-size:18px;font-weight:700;color:#EF9F27;margin:8px 0">${a.name}！</div><div style="font-size:11px;color:#888">${a.desc}</div><div style="font-size:13px;font-weight:700;margin-top:8px;color:${q.color}">🏆 ${a.reward}</div>`;
+  document.body.appendChild(pop);
+  requestAnimationFrame(()=>{pop.style.transform='translate(-50%,-50%) scale(1)';});
+  setTimeout(()=>{pop.style.transform='translate(-50%,-50%) scale(0)';setTimeout(()=>pop.remove(),500);},3000);
+}
 
 function exportProgress(){
   const p=getProgress();
@@ -2565,7 +2602,8 @@ function showHomePage(){
   const p=getProgress();
   const realm=REALMS[Math.min(p.realmIdx,REALMS.length-1)];
   const stageName=realm.stageNames[Math.min(p.stageCleared||0,realm.stages-1)];
-  document.getElementById('home-char-btn').innerHTML=`修士档案 ›<span class="char-vault-dot" id="char-vault-dot"></span><br><span style="font-size:8px;color:#665">${realm.icon} ${realm.name}·${p.stageCleared}/${realm.stages}</span>`;
+  const aCnt=getAchievements().length;
+  document.getElementById('home-char-btn').innerHTML=`修士档案 ›<span class="char-vault-dot" id="char-vault-dot"></span><br><span style="font-size:8px;color:#665">${realm.icon} ${realm.name}·${p.stageCleared}/${realm.stages}</span><br><span style="font-size:7px;color:#EF9F27" id="achieve-count">🏆${aCnt}</span>`;
   // 每日签到检测
   const ds=getDailySignin();
   if(ds.lastDate!==todayStr()){
