@@ -2495,14 +2495,7 @@ function rerollQuality(key){
     rrData[key]=todayStr();
     saveRerollData(rrData);
     renderCharVault();updateVaultDot();
-    // 滚动到新法宝位置+高亮提示
-    setTimeout(()=>{
-      const cards=document.querySelectorAll('.char-vault-card');
-      const last=cards[cards.length-1];
-      if(last){last.scrollIntoView({behavior:'smooth',block:'center'});last.style.boxShadow='0 0 20px '+newQ.color;setTimeout(()=>last.style.boxShadow='',2000);}
-    },150);
-    const resText=up>1?'✨ 跳级！':up>0?'⬆ 升品！':'➡ 品质未变';
-    showBuffToast(`🔮 ${resText} ${newQ.name}${t.icon}${t.name}`,'#EF9F27');
+    showBuffToast(`🔮 ${up>1?'✨跳级！':up>0?'升品！':'未变'} → ${newQ.name}`,'#EF9F27');
   });
 }
 
@@ -3225,11 +3218,11 @@ function renderCharVault(){
     const canReroll=(item.quality==='white'||item.quality==='green');
     const rrData=getRerollData();
     const todayDone=canReroll&&rrData[key]===todayStr();
-    const rrLabel=todayDone?'✓已鉴':canReroll?'品质重鉴':'';
+    const rrLabel=todayDone?'明日可鉴':canReroll?'⋯':'';
     const rrTitle=todayDone?'今日已鉴定':canReroll?'看广告·重新鉴定品质':'';
     return`<div class="char-vault-card ${item.cardClass||''}" style="position:relative">
     ${item.count>1?`<div style="position:absolute;top:3px;right:4px;background:rgba(0,0,0,0.85);color:#E8D44D;font-size:10px;font-weight:700;border:1px solid #E8D44D55;border-radius:8px;padding:0 5px;line-height:16px">×${item.count}</div>`:''}
-    ${rrLabel?`<div onclick="event.stopPropagation();rerollQuality('${key}')" style="position:absolute;top:3px;left:4px;font-size:${todayDone?'7px':'9px'};color:${todayDone?'#444':'#EF9F27'};cursor:${todayDone?'default':'pointer'};background:rgba(0,0,0,0.85);border:1px solid ${todayDone?'#222':'#EF9F2733'};border-radius:4px;padding:1px 5px;line-height:14px;font-weight:700" title="${rrTitle}">${rrLabel}</div>`:''}`
+    ${rrLabel?`<div onclick="event.stopPropagation();rerollQuality('${key}')" style="position:absolute;top:3px;left:4px;font-size:${todayDone?'8px':'14px'};color:${todayDone?'#444':'#EF9F27'};cursor:${todayDone?'default':'pointer'};background:rgba(0,0,0,0.7);border-radius:4px;padding:1px 5px;line-height:${todayDone?'14px':'18px'}" title="${rrTitle}">${rrLabel}</div>`:''}
     <div class="char-vault-card-icon">${item.icon||'⚡'}</div>
     <div class="char-vault-card-name">${item.name}</div>
     <div class="char-vault-card-q" style="color:${item.qualityColor}">${item.qualityName}</div>
