@@ -3172,11 +3172,14 @@ function confirmSynthesis(){
   const t=TREASURE_POOL.find(x=>x.wid===base.wid)||TREASURE_POOL[0];
   const b=QUALITY_BONUS[newQ.id];
   saveToVault(t,newQ,b);
-  showBuffToast(`⚗ 合成成功！${jump?'✨ 跳级！':''}获得 ${newQ.name}${t.name}`,'#EF9F27');
-
-  const slots=document.querySelectorAll('.sy-slot');
-  slots.forEach(s=>{if(s.classList.contains('filled')){s.style.animation='syMerge 0.4s forwards';}});
-  setTimeout(()=>{closeSynthesis();renderCharVault();updateVaultDot();},500);
+  closeSynthesis();
+  renderCharVault();updateVaultDot();
+  // 滚动到仓库底部显示新法宝
+  setTimeout(()=>{
+    const grid=document.getElementById('char-vault-grid');
+    if(grid)grid.lastElementChild?.scrollIntoView({behavior:'smooth',block:'end'});
+  },200);
+  showBuffToast(`⚗ 合成成功！${jump?'✨ 跳级！':''}获得 ${newQ.name}${t.icon}${t.name}`,'#EF9F27');
 }
 
 function renderCharVault(){
