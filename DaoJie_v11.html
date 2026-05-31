@@ -2643,14 +2643,15 @@ function doDailySignin(){
 function showHomePage(){
   document.getElementById('home-overlay').classList.add('show');
   document.getElementById('char-overlay').classList.remove('show');
-  initFishingCanvas();
+  try{initFishingCanvas();}catch(e){}
   updateVaultDot();
-  // 主页显示当前进度
-  const p=getProgress();
-  const realm=REALMS[Math.min(p.realmIdx,REALMS.length-1)];
-  const stageName=realm.stageNames[Math.min(p.stageCleared||0,realm.stages-1)];
-  const aCnt=getAchievements().length;
-  document.getElementById('home-char-btn').innerHTML=`修士档案 ›<span class="char-vault-dot" id="char-vault-dot"></span><br><span style="font-size:8px;color:#665">${realm.icon} ${realm.name}·${p.stageCleared}/${realm.stages}</span><br><span style="font-size:7px;color:#EF9F27" id="achieve-count">🏆${aCnt}</span>`;
+  // 主页显示当前进度（config.js未加载时跳过）
+  try{
+    const p=getProgress();
+    const realm=REALMS[Math.min(p.realmIdx,REALMS.length-1)];
+    const aCnt=getAchievements().length;
+    document.getElementById('home-char-btn').innerHTML=`修士档案 ›<span class="char-vault-dot" id="char-vault-dot"></span><br><span style="font-size:8px;color:#665">${realm.icon} ${realm.name}·${p.stageCleared}/${realm.stages}</span><br><span style="font-size:7px;color:#EF9F27" id="achieve-count">🏆${aCnt}</span>`;
+  }catch(e){}
   // 每日签到检测
   const ds=getDailySignin();
   if(ds.lastDate!==todayStr()){
@@ -3766,8 +3767,8 @@ CV.addEventListener('touchstart',e=>{
 CV.addEventListener('touchmove',e=>{e.preventDefault();if(!touchStart||!G)return;const r=CV.getBoundingClientRect();const tx=e.touches[0].clientX-r.left,ty=e.touches[0].clientY-r.top;G.mx=Math.max(14,Math.min(W-14,G.mx+(tx-touchStart.x)*0.5));G.my=Math.max(14,Math.min(H-14,G.my+(ty-touchStart.y)*0.5));touchStart={x:tx,y:ty};},{passive:false});
 CV.addEventListener('touchend',e=>{e.preventDefault();touchStart=null;},{passive:false});
 
-// 页面启动
-appStart();
+// 页面启动（DOM就绪后）
+window.addEventListener('DOMContentLoaded',()=>{appStart();});
 </script>
 </body>
 </html>
