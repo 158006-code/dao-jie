@@ -1,0 +1,2101 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>虫潮：失控进化 v22</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:#050a05}
+body{display:flex;flex-direction:column;align-items:center;width:100%;height:100%;font-family:system-ui,sans-serif;color:#eee;user-select:none;touch-action:manipulation;position:relative}
+canvas{display:block;background:#050a05;touch-action:none;width:100%;flex:1;min-height:0}
+:root{
+  --bio-green:#1D9E75;--bio-acid:#7fff44;--bio-red:#E24B4A;--bio-gold:#EF9F27;
+  --bio-purple:#cc00ff;--bio-dark:#060c06;--bio-membrane:rgba(20,60,20,0.92);
+}
+.top-bar{
+  display:flex;align-items:center;justify-content:space-between;
+  width:100%;padding:4px 8px;
+  background:var(--bio-membrane);
+  border-bottom:1px solid rgba(29,158,117,0.3);
+  flex-shrink:0;gap:6px;z-index:5;
+  position:relative;overflow:hidden;
+}
+.top-bar::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent,transparent 40px,rgba(29,158,117,0.03) 40px,rgba(29,158,117,0.03) 41px);pointer-events:none}
+.top-time{font-size:13px;font-weight:700;color:#9FE1CB;letter-spacing:0.05em;white-space:nowrap;text-shadow:0 0 8px #1D9E75}
+.top-xp-wrap{flex:1;height:5px;background:#0a1a0a;border-radius:3px;overflow:hidden;border:1px solid rgba(29,158,117,0.4);position:relative}
+.top-xp-fill{height:100%;background:linear-gradient(90deg,#1D9E75,#7fff44);border-radius:3px;transition:width 0.12s;position:relative}
+.top-xp-fill::after{content:'';position:absolute;top:0;right:0;width:4px;height:100%;background:rgba(255,255,255,0.7);border-radius:2px;box-shadow:0 0 6px #7fff44}
+.top-lv{font-size:11px;font-weight:700;color:var(--bio-gold);white-space:nowrap;text-shadow:0 0 6px #EF9F27}
+.corner-stats{position:absolute;top:30px;left:6px;display:flex;flex-direction:column;gap:2px;z-index:6;pointer-events:none}
+.cs-item{font-size:10px;font-weight:600;color:#ccc;background:rgba(0,0,0,0.7);border:1px solid rgba(29,158,117,0.25);border-radius:4px;padding:1px 6px;white-space:nowrap}
+.danger-indicator{position:absolute;top:30px;right:6px;display:flex;flex-direction:column;gap:2px;z-index:6;pointer-events:none}
+.di-item{font-size:9px;font-weight:600;background:rgba(0,0,0,0.75);border-radius:3px;padding:1px 5px;white-space:nowrap;display:none}
+.di-item.show{display:block}
+/* V13: 生态警报条 - v16移到combo信息流区域 */
+.eco-alert{position:absolute;top:30px;left:50%;transform:translateX(-50%);z-index:7;pointer-events:none;font-size:9px;font-weight:700;padding:2px 8px;border-radius:3px;background:rgba(0,0,0,0.8);border:1px solid #ff2200;color:#ff4422;display:none;white-space:nowrap}
+.eco-alert.show{display:block}
+.boss-wrap{display:none;width:100%;padding:2px 6px;flex-shrink:0;background:rgba(0,0,0,0.8);border-bottom:1px solid rgba(226,75,74,0.3)}
+.boss-wrap.show{display:block}
+.boss-name{font-size:10px;font-weight:700;color:#E24B4A;text-align:center;margin-bottom:2px;text-shadow:0 0 8px #E24B4A;letter-spacing:0.1em}
+.boss-phase-dots{text-align:center;margin-bottom:2px;font-size:8px}
+.boss-bar-bg{width:100%;height:6px;background:#1a0a0a;border-radius:3px;overflow:hidden;border:1px solid rgba(226,75,74,0.3)}
+.boss-bar-fill{height:100%;background:linear-gradient(90deg,#7B1FA2,#E24B4A,#EF9F27);border-radius:3px;transition:width 0.15s;position:relative}
+.boss-bar-fill::after{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:repeating-linear-gradient(90deg,transparent,transparent 8px,rgba(255,255,255,0.06) 8px,rgba(255,255,255,0.06) 9px)}
+.weapon-row{display:grid;grid-template-columns:repeat(6,1fr);gap:3px;width:100%;padding:2px 4px;flex-shrink:0;background:rgba(0,0,0,0.88);border-top:1px solid rgba(29,158,117,0.2)}
+.weapon-slot{background:#0c140c;border:1px solid #1a2a1a;border-radius:5px;padding:3px 2px;text-align:center;position:relative;min-height:46px;transition:border-color 0.2s}
+.weapon-slot.evolved{border-color:#EF9F27;background:#14100a;box-shadow:0 0 6px rgba(239,159,39,0.2)}
+.weapon-slot.evolved2{border-color:#ff4400;background:#14080a;box-shadow:0 0 6px rgba(255,68,0,0.2)}
+.weapon-slot.evolved3{border-color:#cc00ff;background:#100018;box-shadow:0 0 8px rgba(204,0,255,0.25)}
+.weapon-slot.evolved4{border-color:#00ccff;background:#001020;box-shadow:0 0 10px rgba(0,204,255,0.3)}
+.weapon-slot.evolved5{border-color:#ffdd00;background:#181000;box-shadow:0 0 12px rgba(255,221,0,0.35)}
+.weapon-slot.evolved6{border-color:#ff0088;background:#180012;box-shadow:0 0 16px rgba(255,0,136,0.45)}
+.ws-name{font-size:8px;font-weight:500;color:#bbb;margin-bottom:1px;line-height:1.2}
+.ws-lv{font-size:7px;color:#444;margin-bottom:2px}
+.ws-bar-wrap{width:100%;height:2px;background:#1a2a1a;border-radius:1px;overflow:hidden}
+.ws-bar{height:100%;background:#1D9E75;border-radius:1px;transition:width 0.2s}
+.ws-bar.evolved{background:#EF9F27}.ws-bar.evolved2{background:#ff4400}.ws-bar.evolved3{background:#cc00ff}
+.ws-bar.evolved4{background:#00ccff}.ws-bar.evolved5{background:#ffdd00}.ws-bar.evolved6{background:#ff0088}
+.ws-empty{font-size:8px;color:#2a3a2a;display:flex;align-items:center;justify-content:center;height:100%}
+.evolved-badge{position:absolute;top:1px;right:2px;font-size:7px;color:#EF9F27}
+.evolved2-badge{position:absolute;top:1px;right:2px;font-size:7px;color:#ff4400}
+.evolved3-badge{position:absolute;top:1px;right:2px;font-size:7px;color:#cc00ff}
+.evolved4-badge{position:absolute;top:1px;right:2px;font-size:7px;color:#00ccff}
+.evolved5-badge{position:absolute;top:1px;right:2px;font-size:7px;color:#ffdd00}
+.evolved6-badge{position:absolute;top:1px;right:2px;font-size:7px;color:#ff0088}
+.weapon-slot.passive-active{box-shadow:0 0 5px rgba(133,183,235,0.3);border-color:rgba(133,183,235,0.4)}
+.ws-passive-dot{position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:#85B7EB;animation:passivePulse 1.8s ease-in-out infinite}
+@keyframes passivePulse{0%,100%{opacity:0.4;transform:translateX(-50%) scale(0.8)}50%{opacity:1;transform:translateX(-50%) scale(1.2)}}
+.bottom-bar{display:flex;align-items:center;justify-content:space-between;width:100%;padding:3px 8px;background:rgba(0,0,0,0.92);border-top:1px solid #111;flex-shrink:0;gap:6px}
+.speed-toggle-btn{background:#0c140c;border:1px solid #1a2a1a;border-radius:20px;padding:3px 12px;font-size:11px;color:#446644;cursor:pointer;transition:all 0.15s;white-space:nowrap}
+.speed-toggle-btn.active{background:#0d2a1a;border-color:#1D9E75;color:#1D9E75;box-shadow:0 0 6px rgba(29,158,117,0.3)}
+.pause-btn{background:#1a1a0e;border:1px solid #2a2a18;border-radius:20px;padding:3px 12px;font-size:11px;color:#888;cursor:pointer;white-space:nowrap}
+.pause-btn.paused{background:#2a1a0a;border-color:#E24B4A;color:#E24B4A}
+.bottom-mid{flex:1;text-align:center;font-size:9px;color:#223322}
+/* v16: alert-banner移到combo下方，不再遮挡战场中心 */
+.alert-banner{display:none;position:fixed;top:120px;left:50%;transform:translateX(-50%);
+  background:rgba(0,0,0,0.88);border:1px solid #E24B4A;border-radius:5px;
+  padding:4px 16px;font-size:11px;font-weight:700;color:#E24B4A;text-align:center;
+  z-index:99;pointer-events:none;letter-spacing:0.06em;max-width:80vw;
+  text-shadow:0 0 8px #E24B4A;white-space:nowrap}
+.alert-banner.show{display:block}
+.alert-banner.green{color:#1D9E75;border-color:#1D9E75;text-shadow:0 0 8px #1D9E75}
+.alert-banner.orange{color:#EF9F27;border-color:#EF9F27;text-shadow:0 0 8px #EF9F27}
+.upgrade-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:50;flex-direction:column;align-items:center;justify-content:center;padding:14px}
+.upgrade-overlay.show{display:flex}
+.upgrade-overlay::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 50% 50%,rgba(29,158,117,0.04),transparent 70%);pointer-events:none}
+.upgrade-title{font-size:14px;font-weight:700;color:#eee;margin-bottom:10px;text-align:center;letter-spacing:0.05em}
+.upgrade-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%}
+.upgrade-card{background:#0c140c;border:1px solid #1e2e1e;border-radius:10px;padding:10px 8px;cursor:pointer;transition:all 0.15s;position:relative;overflow:hidden}
+.upgrade-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(29,158,117,0.03),transparent);pointer-events:none}
+.upgrade-card:active{border-color:#1D9E75;background:#0d2a1a;transform:scale(0.97)}
+.upgrade-card.evolved-card{border-color:#EF9F27;background:#14100a}
+.upgrade-card.evolved2-card{border-color:#ff4400;background:#14080a}
+.upgrade-card.evolved3-card{border-color:#cc00ff;background:#100018}
+.upgrade-card.evolved4-card{border-color:#00ccff;background:#001020}
+.upgrade-card.evolved5-card{border-color:#ffdd00;background:#181000}
+.upgrade-card.evolved6-card{border-color:#ff0088;background:#180012}
+.uc-name{font-size:11px;font-weight:600;color:#ddd;margin-bottom:3px}
+.uc-type{font-size:8px;padding:1px 5px;border-radius:3px;display:inline-block;margin-bottom:4px}
+.type-attack{background:#2a1010;color:#E24B4A}.type-orbit{background:#0d2a1a;color:#1D9E75}
+.type-passive{background:#1a1a2a;color:#85B7EB}.type-evolve{background:#2a1a00;color:#EF9F27}
+.type-evolve2{background:#2a0800;color:#ff6622}
+.type-evolve3{background:#001828;color:#00ccff}
+.type-evolve4{background:#1a1800;color:#ffdd00}
+.type-evolve5{background:#1a0012;color:#ff0088}
+.uc-desc{font-size:9px;color:#777;line-height:1.5}
+.uc-lv{font-size:8px;color:#444;margin-top:3px}
+.result{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.94);z-index:60;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px}
+.result.show{display:flex}
+.result-title{font-size:22px;font-weight:700;margin-bottom:8px;letter-spacing:0.05em}
+.result-sub{font-size:12px;color:#777;margin-bottom:16px;white-space:pre-line;line-height:1.8}
+.btn-main{background:#1D9E75;color:#fff;border:none;border-radius:8px;padding:10px 28px;font-size:14px;cursor:pointer;margin:4px;letter-spacing:0.05em;box-shadow:0 0 16px rgba(29,158,117,0.4)}
+.btn-main:active{background:#159060}
+.build-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:80;flex-direction:column;align-items:center;justify-content:center;padding:14px;gap:8px}
+.build-overlay.show{display:flex}
+.build-overlay::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 50% 60%,rgba(29,158,117,0.06),transparent 70%);pointer-events:none}
+.build-title{font-size:16px;font-weight:700;color:#eee;text-align:center;margin-bottom:2px;letter-spacing:0.1em;text-shadow:0 0 12px rgba(29,158,117,0.6)}
+.build-sub{font-size:10px;color:#446644;margin-bottom:8px;text-align:center}
+.build-cards{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;width:100%;max-width:380px}
+.build-card{background:#080e08;border:1px solid #1a2a1a;border-radius:8px;padding:8px;text-align:center;cursor:pointer;transition:all 0.15s}
+.build-card:active,.build-card.selected{border-color:#1D9E75;background:#0d2a1a}
+.bc-icon{font-size:20px;margin-bottom:2px}
+.bc-name{font-size:12px;font-weight:700;color:#ddd;margin-bottom:2px}
+.bc-tag{font-size:8px;padding:1px 5px;border-radius:3px;display:inline-block;margin-bottom:3px}
+.bc-desc{font-size:8px;color:#446644;line-height:1.4}
+.build-start-btn{margin-top:10px;background:#1D9E75;color:#fff;border:none;border-radius:8px;padding:10px 36px;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:0.1em;box-shadow:0 0 20px rgba(29,158,117,0.5)}
+.build-start-btn:active{background:#159060}
+.build-note{font-size:9px;color:#334433;margin-top:4px;text-align:center}
+/* v16: buff-toast移到combo下方，改为小型HUD条 */
+.buff-toast{position:fixed;top:108px;left:50%;transform:translateX(-50%);z-index:75;pointer-events:none;
+  background:rgba(0,0,0,0.82);border-radius:4px;padding:3px 12px;
+  font-size:11px;font-weight:700;text-align:center;opacity:0;transition:opacity 0.2s;white-space:nowrap;
+  border:1px solid #666;letter-spacing:0.04em}
+/* v17: HUD信息流已移除，combo tier提示改为toast闪过即消 */
+#hud-buff-stream{display:none;}
+.danger-zone-flash{position:fixed;inset:0;pointer-events:none;z-index:3;opacity:0;transition:opacity 0.1s}
+/* V13: HUD生命感 */
+#hud-vignette{position:fixed;inset:0;pointer-events:none;z-index:4;border-radius:0;transition:opacity 0.5s}
+.dpad{display:none!important}
+</style>
+</head>
+<body>
+<div class="top-bar" id="top-bar">
+  <div class="top-time" id="h-time">9:00</div>
+  <div class="top-xp-wrap"><div class="top-xp-fill" id="xp-bar" style="width:0%"></div></div>
+  <div class="top-lv">Lv<span id="h-lv">1</span></div>
+</div>
+<canvas id="c"></canvas>
+<div class="corner-stats" id="corner-stats">
+  <div class="cs-item" id="h-kills-disp">☠ 0</div>
+  <div class="cs-item" id="h-sync-disp" style="display:none"></div>
+</div>
+<div class="danger-indicator" id="danger-indicator">
+  <div class="di-item" id="di-plasma" style="color:#7aadff;border:1px solid #7aadff44">⚡ 电浆风暴</div>
+  <div class="di-item" id="di-spore" style="color:#7fff44;border:1px solid #7fff4444">🍄 孢子爆发</div>
+  <div class="di-item" id="di-hatch" style="color:#ff8800;border:1px solid #ff880044">🥚 孵化巢穴</div>
+  <div class="di-item" id="di-mycel" style="color:#ff4422;border:1px solid #ff442244">🍄 菌毯反噬</div>
+</div>
+<div class="eco-alert" id="eco-alert"></div>
+<div class="boss-wrap" id="boss-wrap">
+  <div class="boss-name" id="boss-name">???</div>
+  <div class="boss-phase-dots" id="boss-phase-dots"></div>
+  <div class="boss-bar-bg"><div class="boss-bar-fill" id="boss-bar" style="width:100%"></div></div>
+</div>
+<div class="weapon-row" id="weapon-row">
+  <div class="weapon-slot" id="ws0"><div class="ws-empty">空</div></div>
+  <div class="weapon-slot" id="ws1"><div class="ws-empty">空</div></div>
+  <div class="weapon-slot" id="ws2"><div class="ws-empty">空</div></div>
+  <div class="weapon-slot" id="ws3"><div class="ws-empty">空</div></div>
+  <div class="weapon-slot" id="ws4"><div class="ws-empty">空</div></div>
+  <div class="weapon-slot" id="ws5"><div class="ws-empty">空</div></div>
+</div>
+<div class="bottom-bar">
+  <button class="speed-toggle-btn" id="speed-toggle-btn" onclick="cycleSpeed()">1x ▶</button>
+  <div class="bottom-mid" id="phase-label"></div>
+  <button class="pause-btn" id="pause-btn" onclick="togglePause()">暂停</button>
+</div>
+<div class="upgrade-overlay" id="upgrade-overlay">
+  <div class="upgrade-title" id="up-title">拾取技能</div>
+  <div class="upgrade-cards" id="up-cards"></div>
+</div>
+<div class="alert-banner" id="alert-banner"></div>
+<div class="buff-toast" id="buff-toast"></div>
+<!-- v16: HUD信息流（combo下方激活buff列表） -->
+<div id="hud-buff-stream"></div>
+<div class="build-overlay" id="build-overlay" style="display:none!important"></div>
+<div class="result" id="result">
+  <div class="result-title" id="r-title"></div>
+  <div class="result-sub" id="r-sub"></div>
+  <button class="btn-main" onclick="restartGame()">再来一局</button>
+</div>
+<div class="dpad" id="dpad">
+  <div id="du">▲</div><div id="dd">▼</div><div id="dl">◀</div><div id="dr">▶</div>
+</div>
+<script>
+// ══════ zzfx ══════
+let zzfxX;
+function zzfx(...z){zzfxX=zzfxX||new AudioContext();let b=zzfxX,d=b.createBuffer(1,b.sampleRate*z[1],b.sampleRate),e=d.numberOfChannels;for(let f=e;f--;){let g=d.getChannelData(f),h=z[0]||1,i=z[2]*2*Math.PI/b.sampleRate||220*2*Math.PI/b.sampleRate,j=z[3]||0,k=z[4]||0,l=z[5]||0,m=z[6]||0,n=z[7]||0,o=z[8]||0,p=z[9]||0,q=z[10]||0,r=0,s=0,t=0,u=1,v=0,w=0;for(let x=d.numberOfChannels;x--;)for(let y=0,A=0,B,C;y<g.length;y++){B=i+(j*y/g.length);C=n?1-2*(y/g.length%1*2-1):k?Math.sign(Math.sin(i*(y+1)))*h:m?Math.random()*2-1:Math.sin((r+=B));s=((C*u+(l?C<0?1:-1:0)*u)*h+o*(Math.random()*2-1));s=Math.min(Math.max(s,-1),1);g[y]=s*Math.cos(v++*p*2*Math.PI/b.sampleRate);}}const c=b.createBufferSource();c.buffer=d;c.connect(b.destination);c.start();return c;}
+let soundEnabled=true;
+function playSound(type){
+  if(!soundEnabled)return;
+  try{
+    switch(type){
+      case'kill':zzfx(.4,.06,520,.04,.01,.1,1,1.5,0,0,0,0,0,0,0,.1,.02,0,0,.02);break;
+      case'hit':zzfx(.6,.08,180,.03,.01,.04,1,.8,0,0,0,0,0,0,0,.2,.02,0,0,.01);break;
+      case'levelup':zzfx(.5,.3,300,.05,.05,.15,0,1.5,0,0,200,.05,.1,0,0,0,.05,.5,0,.1);break;
+      case'ultra':zzfx(.8,.4,80,.05,.1,.3,1,.5,-5,0,0,0,0,0,0,.3,.1,.3,0,.05);break;
+      case'hurt':zzfx(.7,.12,160,.01,.01,.08,1,-.5,0,0,0,0,0,0,0,.4,.01,0,0,.02);break;
+      case'boss':zzfx(1,.6,60,.05,.1,.5,1,-.2,-4,0,0,0,0,0,0,.3,.15,.3,0,.1);break;
+      case'bossdeath':zzfx(1,.8,50,.05,.1,.7,1,-.3,-5,0,0,0,0,0,0,.4,.2,.5,.1,.1);break;
+      case'shoot':zzfx(.3,.05,600,.02,.01,.05,0,1.2,0,0,0,0,0,0,0,.05,.01,0,0,.02);break;
+      case'poison':zzfx(.3,.25,200,.01,.05,.2,1,0,0,0,0,0,0,5,0,.1,.05,0,.1,.05);break;
+      case'thunder':zzfx(.5,.15,800,.01,.01,.08,1,-2,0,0,0,0,0,8,0,.15,.01,0,0,.02);break;
+      case'danger':zzfx(.6,.15,220,.02,.03,.1,1,-.8,0,0,0,0,0,0,0,.3,.02,0,0,.02);break;
+      case'sync':zzfx(.5,.2,440,.03,.05,.1,0,1.2,0,0,150,.04,.08,0,0,0,.04,.4,0,.06);break;
+      case'mycel':zzfx(.4,.3,90,.03,.1,.25,1,-.4,0,0,0,0,0,0,0,.2,.08,0,0,.05);break;
+      case'pulse':zzfx(.7,.4,40,.02,.05,.4,1,-.3,-3,0,0,0,0,0,0,.3,.1,.4,.05,.08);break;
+    }
+  }catch(e){}
+}
+
+// ══════ Canvas ══════
+const CV=document.getElementById('c');
+const ctx=CV.getContext('2d');
+let W,H;
+function resizeCanvas(){
+  const vw=window.innerWidth;W=vw;
+  const topH=document.querySelector('.top-bar').offsetHeight||26;
+  const wepH=document.querySelector('.weapon-row').offsetHeight||50;
+  const botH=document.querySelector('.bottom-bar').offsetHeight||34;
+  const bossH=document.getElementById('boss-wrap').classList.contains('show')?(document.getElementById('boss-wrap').offsetHeight||22):0;
+  H=Math.max(200,window.innerHeight-topH-wepH-botH-bossH);
+  CV.width=W;CV.height=H;CV.style.width=W+'px';CV.style.height=H+'px';
+}
+resizeCanvas();
+window.addEventListener('resize',resizeCanvas);
+
+const FPS=60;
+// v22: Boss每3分钟（180秒）出现一次，无限循环
+const BOSS_INTERVAL=180;
+let SPEED=1,manualPaused=false;
+const SPEEDS=[1,1.5,2,3];
+let speedIdx=0;
+function cycleSpeed(){
+  speedIdx=(speedIdx+1)%SPEEDS.length;SPEED=SPEEDS[speedIdx];
+  const labels=['1x ▶','1.5x ▶','2x ▶▶','3x ▶▶▶'];
+  const btn=document.getElementById('speed-toggle-btn');
+  btn.textContent=labels[speedIdx];btn.classList.toggle('active',speedIdx>0);
+}
+function togglePause(){
+  if(G&&(G.dead||G.won))return;
+  if(G&&G.upgrading)return;
+  manualPaused=!manualPaused;
+  if(G)G.paused=manualPaused;
+  const btn=document.getElementById('pause-btn');
+  btn.textContent=manualPaused?'继续':'暂停';
+  btn.classList.toggle('paused',manualPaused);
+}
+
+// ══════ 时间线提示 ══════
+const TIME_ALERTS=[
+  {sec:1,   msg:'⚠ 入侵开始',cls:''},
+  {sec:90,  msg:'⚠ 精英虫出现',cls:''},
+  {sec:120, msg:'🍄 菌毯开始自我扩张',cls:'orange'},
+  {sec:240, msg:'🍄 虫群进化加速',cls:'orange'},  // v14: 替换提示
+  {sec:360, msg:'⚡ 世界脉冲启动',cls:''},
+  {sec:480, msg:'💀 虫潮：逐渐失控',cls:''},  // v14: 后移
+];
+let shownAlerts=new Set(),alertTimer=0;
+function showAlert(msg,cls){
+  const el=document.getElementById('alert-banner');
+  el.textContent=msg;el.className='alert-banner show'+(cls?' '+cls:'');
+  alertTimer=150;// v16: 缩短显示时间（原200）
+}
+let ecoAlertTimer=0;
+function showEcoAlert(msg){
+  const el=document.getElementById('eco-alert');
+  el.textContent=msg;el.classList.add('show');ecoAlertTimer=100;// v16: 缩短
+}
+
+// ══════ V13: 对象池 ══════
+const PtPool=[],ProjPool=[],DmgPool=[];
+function getPt(){return PtPool.pop()||{};}
+function getProj(){return ProjPool.pop()||{};}
+function getDmg(){return DmgPool.pop()||{};}
+function recyclePt(p){if(PtPool.length<200)PtPool.push(p);}
+function recycleProj(p){if(ProjPool.length<100)ProjPool.push(p);}
+function recycleDmg(d){if(DmgPool.length<100)DmgPool.push(d);}
+
+function addPt(G,x,y,color,n,spd){
+  // 后期粒子减半（性能优化）
+  const maxN=G.comboTier>=6?Math.ceil(n*0.5):n;
+  for(let i=0;i<maxN;i++){
+    const p=getPt();const a=Math.random()*Math.PI*2,s=(0.4+Math.random())*spd;
+    p.x=x;p.y=y;p.vx=Math.cos(a)*s;p.vy=Math.sin(a)*s;p.life=1;p.color=color;p.r=1.5+Math.random()*1.5;
+    G.pts.push(p);
+  }
+}
+function addProj(G,x,y,vx,vy,opts){
+  const p=getProj();Object.assign(p,{x,y,vx,vy,age:0,...opts});G.projs.push(p);
+}
+function addDamageText(G,x,y,text,color,size=16){
+  const d=getDmg();d.x=x;d.y=y;d.text=text;d.color=color;d.size=size;d.life=40;d.vy=-0.7;
+  G.damageTexts.push(d);
+}
+
+function screenShake(power){shakePower=Math.max(shakePower,power);}
+function addExplosionWave(G,x,y,r,color){G.waves.push({x,y,r,life:20,color});}
+function addArc(G,x,y,stars){G.arcs.push({x,y,life:20+stars*10,stars});}
+function triggerFlash(){/* v15: 白屏闪烁已关闭 */}
+
+// ══════ Build系统 ══════
+let selectedBuild='spore';
+function selectBuild(b){
+  selectedBuild=b;
+  document.querySelectorAll('.build-card').forEach((el,i)=>{
+    el.classList.toggle('selected',['spore','plasma','swarm','berserk'][i]===b);
+  });
+}
+
+// ══════ 武器定义 ══════
+const WEAPONS={
+  spore_cannon:{
+    name:'孢子炮',type:'attack',maxLv:6,
+    desc:['发射追踪孢子弹','三连射穿透','伤害+弹速提升','四连射','满级可进化→','孢子分裂'],
+    evolve:'spore_storm',
+    onFire(G,lv,stars){
+      const t=nearestEnemy(G);if(!t)return;
+      playSound('shoot');
+      const atkMult=G.buffs.atk;
+      const baseDmg=(2.4+lv*0.8)*atkMult;
+      // v17 孢子流：sporeAtkMult倍伤害，感染范围扩大
+      const sporeBonus=G.activeBuild==='spore'?(G.sporeAtkMult||1.5):1;
+      const infRange=G.activeBuild==='spore'?(45*(G.infectionSpread||1.5)):45;
+      const n=lv>=3?4:lv>=2?3:2;
+      for(let i=0;i<n;i++){
+        const ang=Math.atan2(t.y-G.my,t.x-G.mx)+(i-Math.floor(n/2))*0.2;
+        addProj(G,G.mx,G.my,Math.cos(ang)*5.5,Math.sin(ang)*5.5,{dmg:baseDmg*sporeBonus,r:4,color:'#9FE1CB',life:70,homing:t,pierce:lv>=5,sporeInfect:G.activeBuild==='spore',sporeRange:infRange});
+      }
+    },
+    cd:[72,58,44,34,26,20],
+  },
+  poison_spit:{
+    name:'毒液喷射',type:'attack',maxLv:6,
+    desc:['喷射毒液DOT','范围+扩散','毒液持续时间+','三向毒液','满级可进化→','毒雾残留'],
+    evolve:'poison_cloud',
+    onFire(G,lv,stars){
+      const t=nearestEnemy(G);if(!t)return;
+      playSound('poison');const atkMult=G.buffs.atk;
+      const n=lv>=4?4:lv>=2?3:2;
+      // v17 孢子流：毒液持续时间×poisonMult，伤害+sporeAtkMult
+      const poisonDur=G.activeBuild==='spore'?Math.round(280*(G.poisonMult||2.0)):240+lv*20;
+      const poisonDmg=G.activeBuild==='spore'?(1.2*(G.sporeAtkMult||1.5)):1.2+lv*0.2;
+      for(let i=0;i<n;i++){
+        const ang=Math.atan2(t.y-G.my,t.x-G.mx)+(i-Math.floor(n/2))*0.3;
+        addProj(G,G.mx,G.my,Math.cos(ang)*4.5,Math.sin(ang)*4.5,{dmg:poisonDmg*atkMult,r:5,color:'#639922',life:65,poison:poisonDur,splash:lv>=2?25:0});
+      }
+    },
+    cd:[75,58,42,32,24,18],
+  },
+  lightning_bug:{
+    name:'引雷虫',type:'attack',maxLv:6,
+    desc:['发射跳链雷电','链次+1','伤害提升','连锁范围+','满级可进化→','双雷齐射'],
+    evolve:'thunder_swarm',
+    onFire(G,lv,stars){
+      const t=nearestEnemy(G);if(!t)return;
+      playSound('thunder');const atkMult=G.buffs.atk;
+      // v17 电浆流：plasmaAtkMult倍伤害，chainBonus额外连锁，plasmaSpeedMult攻速
+      const dmg=(3.5+lv*1.5)*atkMult*(G.activeBuild==='plasma'?(G.plasmaAtkMult||1.8):1);
+      const chainR=G.activeBuild==='plasma'?100:65+lv*3;
+      const chainN=G.activeBuild==='plasma'?(lv+(G.chainBonus||3)):(lv+1);
+      const n=lv>=6?2:1;
+      for(let s=0;s<n;s++){
+        const ang=Math.atan2(t.y-G.my,t.x-G.mx)+(s-0.5)*0.15;
+        addProj(G,G.mx,G.my,Math.cos(ang)*7,Math.sin(ang)*7,{dmg,r:3,color:'#C9E054',life:55,chain:chainN,chainR,isLightning:true,homing:t,overload:G.activeBuild==='plasma'});
+      }
+    },
+    cd:[90,72,55,42,32,24],
+    cdMult(G){return G.activeBuild==='plasma'?1/(G.plasmaSpeedMult||1.4):1;},
+  },
+  orbit_bugs:{
+    name:'虫环',type:'orbit',maxLv:6,
+    desc:['旋转虫子护体','虫数+2','伤害提升','旋转加速','满级可进化→','虫数再+3'],
+    evolve:'orbit_storm',
+    update(G,lv,ws,stars){
+      const count=3+lv*2,speed=0.055+lv*0.01;
+      ws.orbitAngle=(ws.orbitAngle||0)+speed;
+      ws.orbs=ws.orbs||[];
+      while(ws.orbs.length<count)ws.orbs.push({a:Math.random()*Math.PI*2});
+      ws.orbs.length=count;
+      const atkMult=G.buffs.atk;
+      ws.orbs.forEach((o,i)=>{
+        o.a=ws.orbitAngle+i/count*Math.PI*2;
+        const r=35+lv*8;o.x=G.mx+Math.cos(o.a)*r;o.y=G.my+Math.sin(o.a)*r;
+        G.enemies.forEach(e=>{if(Math.hypot(e.x-o.x,e.y-o.y)<e.sz/2+6){e.hp-=(0.5+lv*0.2)*atkMult;knockback(e,o.x,o.y,3);addPt(G,o.x,o.y,'#5DCAA5',2,1.5);}});
+        if(G.boss&&Math.hypot(G.boss.x-o.x,G.boss.y-o.y)<G.boss.sz/2+6){G.boss.hp-=(0.35+lv*0.15)*atkMult;addPt(G,o.x,o.y,'#5DCAA5',2,1.5);}
+      });
+    },
+  },
+  flame_tower:{
+    name:'火焰塔',type:'orbit',maxLv:6,
+    desc:['旋转火焰塔·等距均匀分布','塔数+1（共3塔）','塔数+1（共4塔）','伤害提升','塔数+1（共5塔）可进化→','火焰强化'],
+    evolve:'inferno_ring',
+    update(G,lv,ws,stars){
+      const count=1+lv; // lv1=2塔, lv2=3塔, ..., lv6=7塔
+      const orbitR=60+lv*8;
+      // 全局共享旋转角，确保所有塔始终等距
+      ws.baseAngle=(ws.baseAngle||0)+0.018;
+      // 重建塔数组保持count一致
+      if(!ws.towers||ws.towers.length!==count){
+        ws.towers=Array.from({length:count},(_,i)=>({fireTimer:Math.floor(i/count*38),x:0,y:0}));
+      }
+      const atkMult=G.buffs.atk;
+      ws.towers.forEach((t,i)=>{
+        // 均匀分布：每个塔偏移 2π/count * i
+        const a=ws.baseAngle+i/count*Math.PI*2;
+        t.x=G.mx+Math.cos(a)*orbitR;
+        t.y=G.my+Math.sin(a)*orbitR;
+        t.fireTimer++;
+        if(t.fireTimer>=38){
+          t.fireTimer=0;
+          const en=nearestEnemyTo(G,t.x,t.y);
+          if(en&&Math.hypot(en.x-t.x,en.y-t.y)<130){
+            const ang=Math.atan2(en.y-t.y,en.x-t.x);
+            addProj(G,t.x,t.y,Math.cos(ang)*5.5,Math.sin(ang)*5.5,
+              {dmg:(2.5+lv*0.8)*atkMult,r:4,color:'#E85D24',life:42,isFlameBolt:true});
+          }
+        }
+      });
+    },
+  },
+  hive_expand:{name:'虫巢扩张',type:'passive',maxLv:6,desc:['虫群上限+8','再+8','精英虫率+20%','虫群上限+10','再+12','精英虫率+50%'],evolve:'hive_fortress',
+    onEquip(G,lv){G.swarmBonus=(G.swarmBonus||0)+(lv<=2?8:lv<=4?10:12);if(lv>=3)G.eliteRate=(G.eliteRate||0.1)+0.2*(lv-2);}},
+  shell_armor:{name:'甲壳装甲',type:'passive',maxLv:6,desc:['虫子血量+80%','再+80%','减伤15%','血量再+80%','减伤35%','最终强化'],evolve:'iron_carapace',
+    onEquip(G,lv){G.bugHpMult=(G.bugHpMult||1)*(lv<=3?1.8:lv<=5?1.6:2.0);if(lv>=3)G.dmgReduce=(G.dmgReduce||0)+(lv>=5?0.2:0.15);}},
+  rapid_spawn:{name:'快速孵化',type:'passive',maxLv:6,desc:['孵化间隔-25%','再-25%','击杀孵化+30%','间隔再-20%','击杀孵化+50%','终极孵化'],evolve:'swarm_surge',
+    onEquip(G,lv){const mults=[0.75,0.75,0.80,0.80,0.85,0.90];G.spawnMult=(G.spawnMult||1)*(mults[lv-1]||0.85);if(lv>=3)G.killSpawn=(G.killSpawn||0)+(lv>=5?0.5:0.3);}},
+  bio_leech:{name:'生命汲取',type:'passive',maxLv:6,desc:['击杀回血','回复翻倍','攻击也回血','回复三倍','持续再生','终极汲取'],evolve:'life_drain',
+    onEquip(G,lv){G.leechLv=(G.leechLv||0)+(lv<=2?1:lv<=4?2:3);}},
+  // V13: 狂暴流专属被动
+  berserker_soul:{name:'狂暴之魂',type:'passive',maxLv:6,desc:['无伤时攻击+10%','再+10%','受伤暴怒缓冲','攻击再+15%','暴怒强化','终极狂暴'],evolve:'death_sync',
+    onEquip(G,lv){G.berserkerLv=(G.berserkerLv||0)+(lv<=3?1:lv<=5?2:3);}},
+  // 超武
+  spore_storm:{name:'孢子风暴',type:'evolve',maxLv:6,sourceWeapon:'spore_cannon',
+    desc:['全向爆射孢子弹穿透爆炸','伤害+范围提升','弹速提升','更多投射物','终极孢子','毁灭风暴'],
+    onFire(G,lv,stars){screenShake(8);playSound('ultra');
+      const n=8+(stars*6),dmg=5*(stars+1);
+      const starCols=['#00FFB3','#00FF88','#FF00FF','#00ccff','#ffdd00','#ff0088'];
+      for(let i=0;i<n;i++){const a=i/n*Math.PI*2;const col=starCols[Math.min(stars,5)];
+        addProj(G,G.mx,G.my,Math.cos(a)*6,Math.sin(a)*6,{dmg,r:7+stars*2,color:col,life:65,splash:50+stars*12,sporeInfect:true});}
+      // 孢子流：顺带扩张菌毯
+      if(G.activeBuild==='spore'){G.infectionMap.push({x:G.mx,y:G.my,r:80+stars*20,life:600,pulse:0,hostile:false,fastGrow:true});}},
+    cd:[42,34,26,20,15,11],},
+  poison_cloud:{name:'毒雾领域',type:'evolve',maxLv:6,sourceWeapon:'poison_spit',
+    desc:['毒雾覆盖全场感染所有敌人','持续时间+','毒伤增强','范围扩大','终极毒雾','灭绝瘴气'],
+    onFire(G,lv,stars){screenShake(8);playSound('poison');const dur=300*(stars+1);
+      G.enemies.forEach(e=>{e.poison=Math.max(e.poison||0,dur);addPt(G,e.x,e.y,'#639922',2,0.8);});
+      if(G.boss)G.boss.poison=Math.max(G.boss.poison||0,dur);
+      addPt(G,G.mx,G.my,'#639922',20+stars*8,3);},
+    cd:[160,120,90,68,50,38],},
+  thunder_swarm:{name:'雷虫风暴',type:'evolve',maxLv:6,sourceWeapon:'lightning_bug',
+    desc:['多道追踪电光齐射+减速','雷击数+','连锁增强','伤害大幅提升','终极雷暴','天罚降临'],
+    onFire(G,lv,stars){screenShake(8);playSound('thunder');
+      const targets=[...G.enemies];if(G.boss)targets.push(G.boss);
+      const bolts=4+stars*2,dmg=6+stars*3,chainCount=1+stars;
+      targets.sort((a,b)=>Math.hypot(a.x-G.mx,a.y-G.my)-Math.hypot(b.x-G.mx,b.y-G.my));
+      for(let i=0;i<bolts;i++){
+        const t=targets[i%Math.max(1,targets.length)];if(!t)break;
+        const ang=Math.atan2(t.y-G.my,t.x-G.mx)+(Math.random()-0.5)*0.3;
+        addProj(G,G.mx,G.my,Math.cos(ang)*7,Math.sin(ang)*7,{dmg,r:3,color:'#C9E054',life:55,chain:chainCount,chainR:55+stars*20,slowOnHit:true,isLightning:true,overload:G.activeBuild==='plasma'});
+      }
+      // 电浆流：额外EMP波
+      if(G.activeBuild==='plasma'){
+        G.enemies.forEach(e=>{if(Math.hypot(e.x-G.mx,e.y-G.my)<120){e.slowTimer=Math.max(e.slowTimer||0,240);addPt(G,e.x,e.y,'#7aadff',3,1);}});
+      }
+      const arcN=3+stars*2;for(let i=0;i<arcN;i++){const t=targets[i%Math.max(1,targets.length)];if(t)addArc(G,t.x,t.y,stars);}},
+    cd:[150,120,95,75,58,45],},
+  orbit_storm:{name:'虫环风暴',type:'evolve',maxLv:6,sourceWeapon:'orbit_bugs',
+    desc:['高速旋转虫子弹射穿刺','虫数+旋转加速','伤害大幅提升','范围扩大','终极虫环','毁灭风暴'],
+    update(G,lv,ws,stars){
+      const speed=0.1+stars*0.05,count=8+stars*4,dmg=1.8*(stars+1),r=55+stars*15;
+      ws.orbitAngle=(ws.orbitAngle||0)+speed;
+      ws.orbs=ws.orbs||Array.from({length:count},(_,i)=>({a:i/count*Math.PI*2}));
+      while(ws.orbs.length<count)ws.orbs.push({a:Math.random()*Math.PI*2});
+      ws.orbs.length=count;const atkMult=G.buffs.atk;
+      ws.orbs.forEach((o,i)=>{
+        o.a=ws.orbitAngle+i/count*Math.PI*2;o.x=G.mx+Math.cos(o.a)*r;o.y=G.my+Math.sin(o.a)*r;
+        const orbCols=['#00FFB3','#FF8800','#FF00FF','#00ccff','#ffdd00','#ff0088'];
+        G.enemies.forEach(e=>{if(Math.hypot(e.x-o.x,e.y-o.y)<e.sz/2+8){e.hp-=dmg*atkMult;knockback(e,o.x,o.y,5+stars*2);addPt(G,o.x,o.y,orbCols[Math.min(stars,5)],3,2);}});
+        if(G.boss&&Math.hypot(G.boss.x-o.x,G.boss.y-o.y)<G.boss.sz/2+8){G.boss.hp-=dmg*0.8*atkMult;addPt(G,o.x,o.y,'#00FFB3',2,2);}
+      });},},
+  inferno_ring:{name:'炼狱火环',type:'evolve',maxLv:6,sourceWeapon:'flame_tower',
+    desc:['动态火焰光环灼烧·六塔环绕射击','火焰强化','灼烧范围+','伤害大幅提升','终极火环','炼狱降临'],
+    update(G,lv,ws,stars){
+      ws.ringTimer=(ws.ringTimer||0)+1;
+      ws.haloAngle=(ws.haloAngle||0)+0.028+stars*0.012;
+      // 六个环绕火焰塔的位置
+      const towerCount=6;
+      const towerR=70+stars*20;
+      if(!ws.infernoTowers){
+        ws.infernoTowers=Array.from({length:towerCount},(_,i)=>({fireTimer:Math.floor(i/towerCount*28)}));
+      }
+      ws.infernoTowers.forEach((t,i)=>{
+        const a=ws.haloAngle+i/towerCount*Math.PI*2;
+        t.x=G.mx+Math.cos(a)*towerR;
+        t.y=G.my+Math.sin(a)*towerR;
+      });
+      // 不规则火焰射击：从六个塔位随机发射
+      ws.shootTimer=(ws.shootTimer||0)+1;
+      const shootInterval=Math.max(10,28-stars*6-lv*2);
+      if(ws.shootTimer>=shootInterval){
+        ws.shootTimer=0+(Math.random()*6|0);
+        const allT=[...G.enemies];if(G.boss)allT.push(G.boss);
+        const near=allT.filter(e=>Math.hypot(e.x-G.mx,e.y-G.my)<150+stars*40);
+        if(near.length>0){
+          const fireN=1+(stars>0&&Math.random()<0.5?1:0)+(stars>=2&&Math.random()<0.4?1:0)+(stars>=4&&Math.random()<0.3?1:0);
+          const flameCols=['#E85D24','#ff7700','#ff4400','#ff2200','#ff0088','#cc00ff'];
+          for(let fi=0;fi<fireN;fi++){
+            // 从随机塔位发射
+            const srcTower=ws.infernoTowers[Math.floor(Math.random()*towerCount)];
+            const tgt=near[Math.floor(Math.random()*near.length)];
+            const baseAng=Math.atan2(tgt.y-srcTower.y,tgt.x-srcTower.x);
+            const jitter=(Math.random()-0.5)*0.7;
+            const spd=4.5+Math.random()*2.5;
+            const dmgF=(2.5+stars*2.5)*(G.buffs.atk||1);
+            addProj(G,srcTower.x,srcTower.y,Math.cos(baseAng+jitter)*spd,Math.sin(baseAng+jitter)*spd,
+              {dmg:dmgF,r:5+stars*2,color:flameCols[Math.min(stars,5)],
+               life:38+stars*12,splash:18+stars*14,isFlameBolt:true});
+          }
+        }
+      }
+      // 持续范围灼烧
+      const r=80+stars*40,dmg=(1.4+stars*1.4),interval=Math.max(4,8-stars*2);
+      if(ws.ringTimer%interval===0){const atkMult=G.buffs.atk;
+        G.enemies.forEach(e=>{if(Math.hypot(e.x-G.mx,e.y-G.my)<r){e.hp-=dmg*atkMult;if(ws.ringTimer%12===0)addPt(G,e.x,e.y,'#E85D24',2,1.5);}});
+        if(G.boss&&Math.hypot(G.boss.x-G.mx,G.boss.y-G.my)<r)G.boss.hp-=dmg*0.5;}
+      ws.drawR=r;ws.stars=stars;},},
+  hive_fortress:{name:'虫巢要塞',type:'evolvePassive',maxLv:6,sourceWeapon:'hive_expand',desc:['虫群上限大幅提升，精英虫比例+'],
+    onEquip(G,lv,stars){G.swarmBonus=(G.swarmBonus||0)+16*(stars+1);G.eliteRate=(G.eliteRate||0.1)+0.1*(stars+1);}},
+  iron_carapace:{name:'铁甲龟壳',type:'evolvePassive',maxLv:6,sourceWeapon:'shell_armor',desc:['虫子血量翻倍，减伤大幅提升'],
+    onEquip(G,lv,stars){G.bugHpMult=(G.bugHpMult||1)*2*(stars+1);G.dmgReduce=Math.min(0.75,(G.dmgReduce||0)+0.15*(stars+1));}},
+  swarm_surge:{name:'虫潮涌动',type:'evolvePassive',maxLv:6,sourceWeapon:'rapid_spawn',desc:['极速孵化，击杀大量孵化'],
+    onEquip(G,lv,stars){G.spawnMult=(G.spawnMult||1)*0.5;G.killSpawn=(G.killSpawn||0)+0.6*(stars+1);}},
+  life_drain:{name:'生命掠夺',type:'evolvePassive',maxLv:6,sourceWeapon:'bio_leech',desc:['大幅增强汲取，每秒自动回血'],
+    onEquip(G,lv,stars){G.leechLv=(G.leechLv||0)+3*(stars+1);G.regenRate=(G.regenRate||0)+0.05*(stars+1);}},
+  death_sync:{name:'死亡同步',type:'evolvePassive',maxLv:6,sourceWeapon:'berserker_soul',desc:['低血量爆发，高combo自愈'],
+    onEquip(G,lv,stars){G.deathSync=true;G.berserkerLv=(G.berserkerLv||0)+2*(stars+1);}},
+};
+
+// ══════ V13: 敌人生态系统（18种）══════
+const ENEMY_TYPES=[
+  {key:'normal',name:'普通虫',col:'#B04040',sz:10,hpBase:2.5,spdBase:0.58,atk:0.38,hasKB:false,unlockSec:0,special:null},
+  {key:'swift',name:'快袭虫',col:'#E06030',sz:8,hpBase:1.2,spdBase:1.18,atk:0.24,hasKB:false,unlockSec:25,special:'fast'},
+  {key:'armored',name:'重甲虫',col:'#607090',sz:16,hpBase:10,spdBase:0.34,atk:0.65,hasKB:true,unlockSec:50,special:'armored',defMult:2.5},
+  {key:'ranged',name:'远程虫',col:'#A060C0',sz:9,hpBase:3.5,spdBase:0.50,atk:0.44,hasKB:false,unlockSec:80,special:'ranged',keepDist:120},
+  {key:'bomber',name:'爆炸虫',col:'#C09020',sz:11,hpBase:4.5,spdBase:0.46,atk:0.55,hasKB:false,unlockSec:130,special:'bomber',explodeR:50,explodeDmg:18},
+  {key:'elite',name:'精英虫',col:'#C83030',sz:13,hpBase:16,spdBase:0.72,atk:0.75,hasKB:true,unlockSec:90,special:'elite'},
+  {key:'queen',name:'孵化虫',col:'#8030A0',sz:18,hpBase:28,spdBase:0.28,atk:0.9,hasKB:false,unlockSec:200,special:'spawner',spawnInterval:160},
+  {key:'regen',name:'再生虫',col:'#206040',sz:14,hpBase:18,spdBase:0.44,atk:0.58,hasKB:false,unlockSec:300,special:'regen',regenRate:0.05},
+  {key:'void',name:'虚空虫',col:'#8040C0',sz:11,hpBase:7,spdBase:1.35,atk:0.65,hasKB:false,unlockSec:400,special:'void'},
+  {key:'shield',name:'护盾虫',col:'#4488CC',sz:12,hpBase:8,spdBase:0.52,atk:0.46,hasKB:false,unlockSec:100,special:'shield',immuneDot:true},
+  {key:'jumper',name:'跳跃虫',col:'#FF6644',sz:9,hpBase:4,spdBase:0.58,atk:0.52,hasKB:false,unlockSec:150,special:'jumper'},
+  {key:'devourer',name:'吞噬虫',col:'#664422',sz:11,hpBase:6,spdBase:0.46,atk:0.56,hasKB:false,unlockSec:280,special:'devourer'},
+  {key:'suicidal',name:'自爆精英',col:'#FF2200',sz:14,hpBase:20,spdBase:0.65,atk:0.80,hasKB:false,unlockSec:350,special:'suicidal',explodeR:65,explodeDmg:24},
+  // V13 新增
+  {key:'hivemind',name:'巢核虫',col:'#CC4488',sz:14,hpBase:22,spdBase:0.32,atk:0.68,hasKB:false,unlockSec:310,special:'hivemind'},
+  {key:'corruptor',name:'腐蚀虫',col:'#448844',sz:12,hpBase:8,spdBase:0.52,atk:0.56,hasKB:false,unlockSec:270,special:'corruptor'},
+];
+
+// ══════ Boss定义（V13增强）══════
+const BOSS_DEFS=[
+  {
+    name:'孵化母体',hp:600,spd:0.85,sz:36,col:'#C97B3A',reward:5,
+    chargeTimer:0,chargeCd:160,charging:false,chargeDir:{x:0,y:0},chargeSpd:0,
+    splitTimer:0,splitCd:200,bulletTimer:0,bulletCd:80,bulletAngle:0,
+    phaseDesc:['召唤阶段','菌毯扩散','高速冲锋'],
+    update(G,boss){
+      const pct=boss.hp/boss.maxhp;
+      const phase=pct>0.66?0:pct>0.33?1:2;
+      boss._phase=phase;
+      boss.splitTimer++;
+      const splitCd=phase===0?160:phase===1?120:80;
+      if(boss.splitTimer>=splitCd){boss.splitTimer=0;
+        const n=phase===0?3:phase===1?4:6;
+        for(let i=0;i<n;i++)spawnEnemyAt(G,Math.random()<0.3?'elite':'normal',boss.x+(Math.random()-0.5)*60,boss.y+(Math.random()-0.5)*60);}
+      // 阶段2：菌毯扩散
+      if(phase>=1&&G.elapsed%45===0){
+        G.infectionMap.push({x:boss.x+(Math.random()-0.5)*80,y:boss.y+(Math.random()-0.5)*80,r:50+Math.random()*30,life:600,pulse:Math.random()*999,hostile:true});
+      }
+      // 阶段3：高速冲锋
+      boss.chargeTimer++;
+      const chargeCd=phase>=2?100:200;
+      if(boss.chargeTimer>=chargeCd&&!boss.charging){
+        boss.chargeTimer=0;boss.charging=true;
+        const dx=G.mx-boss.x,dy=G.my-boss.y,d=Math.hypot(dx,dy)||1;
+        boss.chargeDir={x:dx/d,y:dy/d};boss.chargeSpd=phase>=2?9:6;
+        addPt(G,boss.x,boss.y,'#EF9F27',10,3);
+      }
+      if(boss.charging){
+        boss.x+=boss.chargeDir.x*boss.chargeSpd;boss.y+=boss.chargeDir.y*boss.chargeSpd;
+        boss.chargeSpd*=0.9;if(boss.chargeSpd<0.5)boss.charging=false;
+        if(Math.hypot(G.mx-boss.x,G.my-boss.y)<boss.sz/2+12)G.mhp-=2;
+      }
+      boss.bulletTimer++;
+      if(boss.bulletTimer>=boss.bulletCd){
+        boss.bulletTimer=0;boss.bulletAngle+=0.5;
+        const bulletN=phase>=2?6:4;
+        for(let i=0;i<bulletN;i++){const a=boss.bulletAngle+i/bulletN*Math.PI*2;addProj(G,boss.x,boss.y,Math.cos(a)*3.5,Math.sin(a)*3.5,{dmg:7,r:5,color:'#E85D24',life:80,isBossBullet:true});}
+      }
+    }
+  },
+  {
+    name:'菌毯核心',hp:1200,spd:0.60,sz:44,col:'#3A7B3A',reward:8,
+    spitTimer:0,spitCd:100,puddleTimer:0,puddleCd:160,puddles:[],
+    phaseDesc:['地图腐蚀','毒液封锁','菌毯失控'],
+    update(G,boss){
+      const pct=boss.hp/boss.maxhp;const phase=pct>0.66?0:pct>0.33?1:2;boss._phase=phase;
+      if(G.elapsed%30===0){
+        G.infectionMap.push({x:Math.random()*W,y:Math.random()*H,r:40+Math.random()*40,life:500+Math.random()*200,pulse:Math.random()*999,hostile:phase>=1});
+      }
+      if(G.elapsed%35===0)G.bugs.forEach(b=>{if(Math.hypot(b.x-boss.x,b.y-boss.y)<130){b.hp-=0.7;addPt(G,b.x,b.y,'#639922',1,0.5);}});
+      boss.spitTimer++;
+      if(boss.spitTimer>=boss.spitCd){
+        boss.spitTimer=0;const ang=Math.atan2(G.my-boss.y,G.mx-boss.x);
+        const n=phase>=2?7:phase>=1?5:3;
+        for(let i=-(Math.floor(n/2));i<=Math.floor(n/2);i++){
+          const a=ang+i*0.22;addProj(G,boss.x,boss.y,Math.cos(a)*4,Math.sin(a)*4,{dmg:4,r:6,color:'#639922',life:70,poison:200,isBossBullet:true,splash:25});
+        }
+      }
+      boss.puddleTimer++;
+      if(boss.puddleTimer>=boss.puddleCd){boss.puddleTimer=0;boss.puddles.push({x:boss.x,y:boss.y,r:50+phase*15,life:400});}
+      boss.puddles.forEach(p=>{p.life--;if(G.elapsed%16===0)G.bugs.forEach(b=>{if(Math.hypot(b.x-p.x,b.y-p.y)<p.r){b.hp-=0.3;}});});
+      boss.puddles=boss.puddles.filter(p=>p.life>0);
+      // V13阶段3：强制菌毯反噬
+      if(phase>=2){G.mycelBetray=Math.min(1,(G.mycelBetray||0)+0.003);}
+    }
+  },
+  {
+    name:'主巢意识',hp:2800,spd:0.52,sz:58,col:'#7B3AC9',reward:15,
+    spawnT:0,beamTimer:0,beamCd:130,beamActive:false,beamAngle:0,beamDur:0,
+    meteorTimer:0,meteorCd:220,
+    phaseDesc:['意识苏醒','全场封锁','世界活体化'],
+    update(G,boss){
+      const pct=boss.hp/boss.maxhp;const phase=pct>0.66?0:pct>0.33?1:2;boss._phase=phase;
+      boss.spawnT++;const spawnCd=phase>=2?45:phase>=1?55:70;
+      if(boss.spawnT>=spawnCd){boss.spawnT=0;spawnEnemyAt(G,Math.random()<0.4?'elite':'normal',boss.x+(Math.random()-0.5)*80,boss.y+(Math.random()-0.5)*80);}
+      boss.beamTimer++;
+      if(!boss.beamActive&&boss.beamTimer>=boss.beamCd){boss.beamTimer=0;boss.beamActive=true;boss.beamDur=90+phase*20;boss.beamAngle=Math.atan2(G.my-boss.y,G.mx-boss.x);}
+      if(boss.beamActive){
+        boss.beamDur--;boss.beamAngle+=0.022+phase*0.008;if(boss.beamDur<=0)boss.beamActive=false;
+        G.bugs.forEach(b=>{const ang=Math.atan2(b.y-boss.y,b.x-boss.x);let diff=Math.abs(ang-boss.beamAngle);if(diff>Math.PI)diff=Math.PI*2-diff;if(diff<0.15&&Math.hypot(b.x-boss.x,b.y-boss.y)<220){b.hp-=1.8;}});
+        const mAng=Math.atan2(G.my-boss.y,G.mx-boss.x);let diff=Math.abs(mAng-boss.beamAngle);if(diff>Math.PI)diff=Math.PI*2-diff;if(diff<0.15&&Math.hypot(G.mx-boss.x,G.my-boss.y)<220)G.mhp-=0.9;
+      }
+      boss.meteorTimer++;if(boss.meteorTimer>=boss.meteorCd){
+        boss.meteorTimer=0;const n=4+phase*2;
+        for(let i=0;i<n;i++){
+          const tx=Math.random()*W,ty=Math.random()*H;
+          G.dangerCircles.push({x:tx,y:ty,r:55,life:60,warn:true,color:'#9B4AFF'});
+          setTimeout(()=>{if(!G||G.dead||G.won)return;addPt(G,tx,ty,'#E85D24',18,3);addExplosionWave(G,tx,ty,50,'#9B4AFF');
+            G.bugs.forEach(b=>{if(Math.hypot(b.x-tx,b.y-ty)<55){b.hp-=5;knockback(b,tx,ty,5);}});
+            if(Math.hypot(G.mx-tx,G.my-ty)<55)G.mhp-=12;},i*350/SPEED);
+        }
+      }
+      // V13阶段3：UI腐蚀 + 世界脉冲加速
+      if(phase>=2){G.worldCorrupt=true;G.uiCorrupt=Math.min(1,(G.uiCorrupt||0)+0.004);}
+      if(phase>=1){G.worldPulseActive=true;}
+    }
+  },
+];
+
+// ══════ 工具函数 ══════
+function nearestEnemy(G){
+  let best=null,bd=Infinity;
+  G.enemies.forEach(e=>{if(e.stealth&&e.stealthAlpha<0.3)return;const d=Math.hypot(e.x-G.mx,e.y-G.my);if(d<bd){bd=d;best=e;}});
+  if(G.boss){const d=Math.hypot(G.boss.x-G.mx,G.boss.y-G.my);if(d<bd)best=G.boss;}
+  return best;
+}
+function nearestEnemyTo(G,x,y){
+  let best=null,bd=Infinity;
+  G.enemies.forEach(e=>{const d=Math.hypot(e.x-x,e.y-y);if(d<bd){bd=d;best=e;}});
+  if(G.boss){const d=Math.hypot(G.boss.x-x,G.boss.y-y);if(d<bd)best=G.boss;}
+  return best;
+}
+function knockback(obj,fx,fy,force){const dx=obj.x-fx,dy=obj.y-fy,d=Math.hypot(dx,dy)||1;obj.vx+=(dx/d)*force;obj.vy+=(dy/d)*force;}
+
+let bugId=0,enId=0;
+
+// ══════ 敌人生成 ══════
+function getAvailableTypes(sec){return ENEMY_TYPES.filter(t=>sec>=t.unlockSec);}
+function spawnEnemyAt(G,typeKey,x,y){
+  const def=ENEMY_TYPES.find(t=>t.key===typeKey)||ENEMY_TYPES[0];
+  const sec=Math.floor(G.elapsed/FPS);
+  const earlyMult=sec<60?0.8:sec<120?0.92:1;
+  // 后期成长更猛，每120秒多一档
+  const lateScale=sec>240?1+((sec-240)/100)*0.6:1;
+  const diff=1.3*earlyMult*lateScale;
+  G.enemies.push({
+    id:enId++,x,y,vx:0,vy:0,
+    hp:def.hpBase*(1+G.phase*0.6+G.lv*0.18)*diff,
+    maxhp:def.hpBase*(1+G.phase*0.6+G.lv*0.18)*diff,
+    spd:def.spdBase*(1+G.phase*0.07),
+    sz:def.sz,poison:0,kbCd:0,slowTimer:0,
+    hasKB:def.hasKB,atk:def.atk*diff,typeKey:def.key,col:def.col,
+    special:def.special,defMult:def.defMult||1,keepDist:def.keepDist||0,
+    explodeR:def.explodeR||0,explodeDmg:def.explodeDmg||0,
+    rangedTimer:0,rangedCd:90,spawnTimer:0,spawnInterval:def.spawnInterval||180,
+    regenRate:def.regenRate||0,magnetR:def.magnetR||0,
+    stealthAlpha:1,stealthTimer:0,
+    immuneDot:def.immuneDot||false,
+    shield:def.special==='shield'?1:0,shieldCd:0,
+    jumpTimer:0,jumpCd:80+Math.random()*40,jumping:false,jumpVx:0,jumpVy:0,
+    devourCount:0,enrageTimer:0,
+    // V13新增特殊属性
+    overloadStacks:0,hivebuff:0,
+  });
+}
+function spawnEnemy(G){
+  const s=Math.floor(Math.random()*4);
+  let x,y;
+  if(s===0){x=Math.random()*W;y=-15;}
+  else if(s===1){x=W+15;y=Math.random()*H;}
+  else if(s===2){x=Math.random()*W;y=H+15;}
+  else{x=-15;y=Math.random()*H;}
+  const sec=Math.floor(G.elapsed/FPS);
+  const avail=getAvailableTypes(sec);
+  // V13: Build权重影响刷怪
+  const base={normal:35,swift:20,armored:12,ranged:10,bomber:8,elite:6,queen:3,stealth:5,regen:5,magnetic:4,void:4,
+    shield:8,jumper:10,devourer:4,suicidal:3,reflector:5,hivemind:3,corruptor:4};
+  // [v14] Build不再克制玩家，改为略微配合主题（不加天敌）
+  // 孢子流：稍多corruptor让地图更有生态感
+  if(G.activeBuild==='spore'){base.corruptor=(base.corruptor||4)*1.3;}
+  // 虫海流：稍多queen增加召唤感
+  if(G.activeBuild==='swarm'){base.queen=(base.queen||3)*1.5;}
+  const weights=avail.map(t=>base[t.key]||5);
+  const total=weights.reduce((a,b)=>a+b,0);
+  let r=Math.random()*total,chosen=avail[0];
+  for(let i=0;i<avail.length;i++){r-=weights[i];if(r<=0){chosen=avail[i];break;}}
+  spawnEnemyAt(G,chosen.key,x,y);
+}
+
+// ══════ V13: 后期规则变化系统 ══════
+function updateLateGameRules(G,sec){
+  // [v14已移除] 菌毯反噬系统
+
+  // [v14已移除] 视野污染系统
+
+  // ─ 3. 孵化潮（随机裂开生成虫海）
+  if(sec>=240&&!G.bossMode){
+    G.hatchTideTimer=(G.hatchTideTimer||0)+1;
+    const hatchInterval=Math.max(540,1100-sec*0.8); // v14: 孵化潮频率降低
+    if(G.hatchTideTimer>=hatchInterval){
+      G.hatchTideTimer=0;
+      const cx=Math.random()*W,cy=Math.random()*H;
+      G.dangerCircles.push({x:cx,y:cy,r:80,life:90,color:'#ff8800'});
+      showEcoAlert('💥 孵化潮爆发！');
+      setTimeout(()=>{
+        if(!G||G.dead||G.won)return;
+        const n=4+Math.floor(sec/90); // v14: 孵化潮数量减少
+        for(let i=0;i<n;i++){
+          const a=Math.random()*Math.PI*2,rr=20+Math.random()*60;
+          spawnEnemyAt(G,Math.random()<0.3?'elite':'normal',cx+Math.cos(a)*rr,cy+Math.sin(a)*rr);
+        }
+        addExplosionWave(G,cx,cy,80,'#ff8800');addPt(G,cx,cy,'#E85D24',20,3);
+        playSound('pulse');
+      },90/SPEED*16);
+    }
+  }
+
+  // ─ 4. 世界脉冲（周期性全场危险波）
+  if(sec>=300||G.worldPulseActive){
+    G.worldPulseTimer=(G.worldPulseTimer||0)+1;
+    const pulseInterval=Math.max(420,660-sec); // v14: 脉冲频率降低
+    if(G.worldPulseTimer>=pulseInterval){
+      G.worldPulseTimer=0;
+      G.worldPulseFlash=40;
+      playSound('pulse');
+      // 所有敌人短暂狂暴
+      G.enemies.forEach(e=>{e.rage=1.2;e.spd=Math.min(e.spd*1.05,e.spd*1.5);}); // v14: rage减弱
+      // 全场护盾虫恢复护盾
+      G.enemies.forEach(e=>{if(e.special==='shield')e.shield=1;});
+      showEcoAlert('🌊 世界脉冲！');
+    }
+    if(G.worldPulseFlash>0)G.worldPulseFlash--;
+  }
+
+  // [v14已移除] 菌丝封路系统
+}
+
+// ══════ V13: 敌人协同AI ══════
+function updateEnemyCooperation(G){
+  // 巢核虫：给范围内所有敌人提供DOT免疫 + 加速
+  G.enemies.forEach(hive=>{
+    if(hive.special!=='hivemind')return;
+    G.enemies.forEach(e=>{
+      if(e===hive)return;
+      if(Math.hypot(e.x-hive.x,e.y-hive.y)<100){
+        e.hivebuff=30;// 持续帧
+        e.immuneDot=true;
+      }
+    });
+  });
+  // 护盾虫：给旁边友军提供DOT护盾
+  G.enemies.forEach(sh=>{
+    if(sh.special!=='shield'||sh.shield<=0)return;
+    G.enemies.forEach(e=>{
+      if(e===sh)return;
+      if(Math.hypot(e.x-sh.x,e.y-sh.y)<60){e.shieldBubble=Math.max(e.shieldBubble||0,20);}
+    });
+  });
+  // 孵化虫：玩家如果不优先打，则指数增长
+  G.enemies.forEach(q=>{
+    if(q.special!=='spawner')return;
+    q.spawnTimer=(q.spawnTimer||0)+1;
+    if(q.spawnTimer>=q.spawnInterval){
+      q.spawnTimer=0;
+      spawnEnemyAt(G,'normal',q.x+(Math.random()-0.5)*30,q.y+(Math.random()-0.5)*30);
+      // 存活越久，间隔越短
+      q.spawnInterval=Math.max(60,q.spawnInterval-5);
+    }
+  });
+  // hivebuff衰减
+  G.enemies.forEach(e=>{if(e.hivebuff>0)e.hivebuff--;else{if(!e.immuneDot&&e.typeKey==='normal')e.immuneDot=false;}});
+  G.enemies.forEach(e=>{if(e.shieldBubble>0)e.shieldBubble--;});
+}
+
+// ══════ 危险区域系统 ══════
+function updateDangerZones(G){
+  G.dangerZones=G.dangerZones||[];
+  G.dangerCircles=G.dangerCircles||[];
+  const sec=Math.floor(G.elapsed/FPS);
+  if(sec>=180&&G.elapsed%300===0&&G.dangerZones.length<3){ // v15: 危险区延迟出现，频率降低，上限减少
+    const types=['plasma','spore','corrosion'];
+    const t=types[Math.floor(Math.random()*types.length)];
+    const x=60+Math.random()*(W-120),y=60+Math.random()*(H-120);
+    G.dangerZones.push({x,y,r:45+Math.random()*30,type:t,life:600+Math.random()*300,warn:60,active:false});
+    playSound('danger');
+  }
+  G.dangerZones.forEach(z=>{
+    if(z.warn>0){z.warn--;return;}
+    z.active=true;z.life--;
+    const dx=G.mx-z.x,dy=G.my-z.y;
+    const inZone=dx*dx+dy*dy<z.r*z.r;
+    if(inZone){
+      switch(z.type){
+        case'plasma':G.mhp-=0.035;if(G.elapsed%20===0)addPt(G,G.mx,G.my,'#7aadff',3,1.5);break; // v14: 降低
+        case'spore':if(G.elapsed%40===0){G.mhp-=0.025;addPt(G,G.mx,G.my,'#7fff44',2,1);}break; // v14: 降低
+        case'corrosion':G.mhp-=0.04;break; // v14: 降低
+      }
+    }
+    if(z.type==='spore'&&z.active&&G.elapsed%90===0){
+      spawnEnemyAt(G,'normal',z.x+(Math.random()-0.5)*z.r,z.y+(Math.random()-0.5)*z.r);
+    }
+  });
+  G.dangerZones=G.dangerZones.filter(z=>z.life>0);
+  G.dangerCircles.forEach(c=>c.life--);
+  G.dangerCircles=G.dangerCircles.filter(c=>c.life>0);
+  const hasPlasma=G.dangerZones.some(z=>z.type==='plasma'&&z.active);
+  const hasSpore=G.dangerZones.some(z=>z.type==='spore'&&z.active);
+  const hasCorr=G.dangerZones.some(z=>z.type==='corrosion'&&z.active);
+  const hasMycel=false; // v14: 菌毯反噬系统已移除
+  document.getElementById('di-plasma').classList.toggle('show',hasPlasma);
+  document.getElementById('di-spore').classList.toggle('show',hasSpore);
+  document.getElementById('di-hatch').classList.toggle('show',hasCorr);
+  document.getElementById('di-mycel').classList.toggle('show',hasMycel);
+}
+
+// ══════ 主游戏 ══════
+let G,mX,mY;
+let shakePower=0,flashTimer=0;
+let buffToastTimer=0;
+function showBuffToast(msg,color){
+  const el=document.getElementById('buff-toast');
+  el.textContent=msg;el.style.color=color||'#ffcc00';el.style.borderColor=color||'#ffcc00';
+  el.style.opacity='1';buffToastTimer=120;// v16: 原200，缩短到120帧（2秒）
+}
+function updateBuffToast(){
+  if(buffToastTimer>0){buffToastTimer--;
+    if(buffToastTimer<=20)document.getElementById('buff-toast').style.opacity=(buffToastTimer/20).toFixed(2);
+  }
+  // v16: 更新HUD信息流
+  updateHudBuffStream();
+}
+// v17: HUD信息流已移除，不再常驻显示combo buff
+function updateHudBuffStream(){}
+
+function dismissBuildInfo(){
+  document.getElementById('build-overlay').classList.remove('show');
+  G.paused=false;G.activeBuild=selectedBuild;
+  // V13: 流派引导——初始提供流派核心武器
+  applyBuildBonus(G);
+  spawnBug(3);
+  // v15: 游戏开始就刷几只敌人，不让玩家干等
+  for(let i=0;i<3;i++)setTimeout(()=>{if(G&&!G.dead&&!G.won)spawnEnemy(G);},i*300);
+  setTimeout(()=>{if(G&&!G.dead&&!G.won)showUpgrade();},800);
+}
+function applyBuildBonus(G){
+  // v18: 无流派选择，所有武器全部开放随机出现，无锁定池无专属加成
+  G.buildWeights={};
+  G.buildLockedPool=null;
+}
+function initGame(){
+  resizeCanvas();
+  mX=W/2;mY=H/2;
+  G={
+    mx:W/2,my:H/2,mhp:60,mmaxhp:60,
+    bugs:[],enemies:[],projs:[],pts:[],arcs:[],
+    xp:0,xpNext:25,lv:1,kills:0,elapsed:0,
+    combo:0,comboTimer:0,comboTier:0,damageTexts:[],waves:[],
+    infection:0,eliteFlash:0,slimePools:[],infectionMap:[],
+    comboMilestone:0,pendingUpgrade:0,
+    keys:{},paused:true,dead:false,won:false,upgrading:false,
+    slots:Array(6).fill(null).map(()=>({id:null,lv:0,timer:0,state:{},stars:0})),
+    pendingStarFor:{},
+    bossPhase:0,boss:null,bossMode:false,bossKillCount:0,nextBossAt:BOSS_INTERVAL,
+    spawnTimer:0,bugTimer:0,
+    swarmBonus:0,bugHpMult:1,spawnMult:1,killSpawn:0,leechLv:0,dmgReduce:0,regenRate:0,eliteRate:0.1,
+    phase:0,_raf:null,
+    buffs:{atk:1.2,spd:1.15},
+    worldCorrupt:false,overmind:false,worldPulseActive:false,worldPulseTimer:0,worldPulseFlash:0,
+    noDmgTimer:0,
+    dangerZones:[],dangerCircles:[],
+    // v18: 无流派，activeBuild置null
+    activeBuild:null,buildWeights:{},buildLockedPool:null,
+    mycelBetray:0,visionCorrupt:0,hatchTideTimer:0,
+    mycelWalls:[],uiCorrupt:0,
+    berserkerLv:0,deathSync:false,
+    stillTimer:0,
+  };
+  manualPaused=false;speedIdx=0;SPEED=1;buffToastTimer=0;
+  document.getElementById('buff-toast').style.opacity='0';
+  document.getElementById('speed-toggle-btn').textContent='1x ▶';
+  document.getElementById('speed-toggle-btn').classList.remove('active');
+  document.getElementById('pause-btn').textContent='暂停';
+  document.getElementById('pause-btn').classList.remove('paused');
+  shownAlerts=new Set();
+  ['upgrade-overlay','result','boss-wrap'].forEach(id=>document.getElementById(id).classList.remove('show'));
+  document.getElementById('alert-banner').classList.remove('show');
+  document.getElementById('eco-alert').classList.remove('show');
+  document.getElementById('h-sync-disp').style.display='none';
+  updateWeaponUI();
+  loop();
+  // v18: 直接开始，无需选择流派
+  dismissBuildInfo();
+}
+
+function spawnBug(n,x,y){
+  n=n||1;
+  for(let i=0;i<n;i++){
+    const cap=10+G.lv*2+G.swarmBonus;
+    if(G.bugs.length>=cap)break;
+    const a=Math.random()*Math.PI*2,rr=16+Math.random()*12;
+    const hp=(1.5+G.lv*0.1)*(G.bugHpMult||1);
+    // V13: 虫海流虫子分工
+    const isSwarm=G.activeBuild==='swarm';
+    const role=isSwarm?(['fighter','bomber','guard'][Math.floor(Math.random()*3)]):'fighter';
+    G.bugs.push({id:bugId++,
+      x:x!=null?x+(Math.random()-0.5)*20:G.mx+Math.cos(a)*rr,
+      y:y!=null?y+(Math.random()-0.5)*20:G.my+Math.sin(a)*rr,
+      vx:0,vy:0,hp,maxhp:hp,atkTimer:0,age:0,targetId:null,
+      elite:Math.random()<(G.eliteRate||0.1),
+      role,
+    });
+  }
+}
+
+// ══════ 武器UI ══════
+function starStr(n){const stars=['★','★★','★★★','★★★★','★★★★★','★★★★★★'];return stars[n]||'★';}
+function updateWeaponUI(){
+  G.slots.forEach((sl,i)=>{
+    const el=document.getElementById('ws'+i);
+    if(!sl.id){el.innerHTML='<div class="ws-empty">空</div>';el.className='weapon-slot';return;}
+    const w=WEAPONS[sl.id];
+    const isEv=w.type==='evolve'||w.type==='evolvePassive';
+    const isPassive=w.type==='passive'||w.type==='evolvePassive';
+    const stars=sl.stars||0;const pct=sl.lv/w.maxLv*100;
+    const evCls=['',' evolved',' evolved2',' evolved3',' evolved4',' evolved5',' evolved6'];
+    const starLabels=['★','★★','★★★','★★★★','★★★★★','★★★★★★'];
+    const badgeCls=['evolved-badge','evolved-badge','evolved2-badge','evolved3-badge','evolved4-badge','evolved5-badge','evolved6-badge'];
+    let cls='weapon-slot';
+    if(isEv&&stars>=0)cls+=evCls[Math.min(stars,5)+1];
+    if(isPassive&&!isEv)cls+=' passive-active';
+    el.className=cls;
+    let badge='';
+    if(isEv)badge=`<div class="${badgeCls[Math.min(stars,5)+1]}">${starLabels[Math.min(stars,5)]}</div>`;
+    const barClass=isEv?evCls[Math.min(stars,5)+1]:'';
+    const sLabel=isEv?' '+starStr(stars):'';
+    const isPending=sl.id&&w.evolve&&G.pendingStarFor&&G.pendingStarFor[w.evolve]===i;
+    const passiveDot=isPassive?'<div class="ws-passive-dot"></div>':'';
+    el.innerHTML=`${badge}<div class="ws-name">${w.name}${sLabel}${isPending?'⊕':''}</div><div class="ws-lv">Lv.${sl.lv}/${w.maxLv}</div><div class="ws-bar-wrap"><div class="ws-bar${barClass}" style="width:${pct}%"></div></div>${passiveDot}`;
+  });
+}
+
+// ══════ 游戏更新 ══════
+function update(){
+  const steps=SPEED>=3?3:SPEED>=2?2:SPEED>=1.5?Math.random()<0.5?1:2:1;
+  for(let s=0;s<steps;s++) _update();
+}
+
+function _update(){
+  if(G.paused||G.dead||G.won)return;
+  G.elapsed++;
+  const sec=Math.floor(G.elapsed/FPS);
+
+  // ── Combo Tier 系统 ──
+  if(G.comboTimer>0){G.comboTimer--;}else{G.combo=0;}
+  const prevTier=G.comboTier||0;
+  G.comboTier=0;
+  if(G.combo>=10)G.comboTier=1;if(G.combo>=25)G.comboTier=2;if(G.combo>=50)G.comboTier=3;
+  if(G.combo>=80)G.comboTier=4;if(G.combo>=120)G.comboTier=5;if(G.combo>=200)G.comboTier=6;
+  if(G.combo>=350)G.comboTier=7;if(G.combo>=500)G.comboTier=8;
+
+  if(G.comboTier>prevTier){
+    const tierNames=['','热身','狩猎','侵蚀','暴走','母巢同步','污染扩张','世界侵蚀','虫巢暴走'];
+    const tierColors=['','#aaff44','#ffcc00','#ff9900','#ff4400','#ff2200','#cc00ff','#ff00aa','#ff00ff'];
+    const tierBuffs=['','攻速+5%','攻速+10%','攻击+15%','攻击+25%/攻速+15%','攻击+40%','菌毯失控','世界腐败','虫巢暴走'];
+    const tc=tierColors[G.comboTier]||'#ff8800';
+    showBuffToast('⚡ '+tierNames[G.comboTier]+' · '+tierBuffs[G.comboTier],tc);
+    screenShake(G.comboTier*1);playSound('sync'); // v15: 减少combo抖动
+    for(let i=0;i<G.comboTier;i++){setTimeout(()=>{if(!G||G.dead)return;addExplosionWave(G,G.mx,G.my,14+i*6,tc);},i*80);}
+    document.getElementById('h-sync-disp').style.display='block';
+    document.getElementById('h-sync-disp').textContent='同步 '+tierNames[G.comboTier];
+    document.getElementById('h-sync-disp').style.color=tc;
+    // V13: Combo高tier触发世界变化
+    if(G.comboTier>=6){
+      // 菌毯扩张 v14: 提高触发门槛
+      if(Math.random()<0.3)G.infectionMap.push({x:Math.random()*W,y:Math.random()*H,r:60,life:500,pulse:0,hostile:false});
+    }
+    if(G.comboTier>=6){G.infection=Math.min(1,(G.infection||0)+0.08);}
+    if(G.comboTier>=7){G.worldCorrupt=true;}
+    if(G.comboTier>=8){G.overmind=true;}
+  }
+  if(G.comboTier===0)document.getElementById('h-sync-disp').style.display='none';
+
+  // buffs计算
+  const berserkBonus=G.activeBuild==='berserk'&&G.noDmgTimer>300?1+(G.berserkerLv||0)*0.12:1;
+  G.buffs={atk:1.2*berserkBonus,spd:1.15};
+  switch(G.comboTier){
+    case 1:G.buffs.spd=1.2;break;case 2:G.buffs.spd=1.25;break;
+    case 3:G.buffs.atk=1.35*berserkBonus;G.buffs.spd=1.2;break;
+    case 4:G.buffs.atk=1.45*berserkBonus;G.buffs.spd=1.3;break;
+    case 5:G.buffs.atk=1.6*berserkBonus;G.buffs.spd=1.3;break;
+    case 6:G.buffs.atk=1.8*berserkBonus;G.buffs.spd=1.4;G.infection=Math.min(1,(G.infection||0)+0.002);break;
+    case 7:G.buffs.atk=2.0*berserkBonus;G.worldCorrupt=true;break;
+    case 8:G.buffs.atk=2.5*berserkBonus;G.overmind=true;break;
+  }
+  // [v14] 狂暴流高combo不再负减伤，改为维持0下限
+  if(G.activeBuild==='berserk'&&G.comboTier>=5){
+    G.dmgReduce=Math.max(0,G.dmgReduce);// 不再让玩家受额外伤害
+  }
+
+  // ── 菌毯成长（V13三阶段）──
+  const phaseTime=G.elapsed/60;
+  G.infection=Math.min(1,(G.infection||0)+0.0008);
+  // 前期（0~2分钟）：缓慢扩展
+  if(phaseTime<120&&G.elapsed%90===0&&G.infectionMap.length<20){
+    G.infectionMap.push({x:Math.random()*W,y:Math.random()*H,r:35+Math.random()*45,life:900+Math.random()*300,pulse:Math.random()*999,hostile:false});
+  }
+  // 中期（2~6分钟）：自我扩张，感染尸体
+  if(phaseTime>=120&&phaseTime<360&&G.elapsed%60===0&&G.infectionMap.length<35){
+    // 从现有斑块扩展
+    if(G.infectionMap.length>0){
+      const src=G.infectionMap[Math.floor(Math.random()*G.infectionMap.length)];
+      const ang=Math.random()*Math.PI*2,dist=50+Math.random()*80;
+      G.infectionMap.push({x:src.x+Math.cos(ang)*dist,y:src.y+Math.sin(ang)*dist,r:30+Math.random()*35,life:700,pulse:Math.random()*999,hostile:false});
+    }
+  }
+  // 后期（6分钟+）：菌毯开始反噬
+  if(phaseTime>=480&&G.elapsed%60===0&&G.infectionMap.length<40){ // v15: hostile菌毯更晚出现
+    G.infectionMap.push({x:Math.random()*W,y:Math.random()*H,r:40+Math.random()*50,life:600,pulse:Math.random()*999,hostile:true});
+  }
+
+  G.infectionMap.forEach(z=>{
+    z.life--;z.pulse+=0.05;
+    if(z.fastGrow)z.r=Math.min(z.r*1.002,180);
+    const pdx=G.mx-z.x,pdy=G.my-z.y;
+    if(pdx*pdx+pdy*pdy<z.r*z.r){
+      if(z.hostile){
+        G.mhp-=0.012;
+        // v16: 菌毯反噬有文字反馈
+        if(G.elapsed%80===0)addDamageText(G,G.mx+(Math.random()-0.5)*16,G.my-12,'菌毯侵蚀','#ff4422',10);
+      }
+      else if(phaseTime<180){G.mhp=Math.min(G.mmaxhp,G.mhp+0.025);}
+      // v14: 中期菌毯中性，不伤也不治
+      // 后期反噬（通过updateLateGameRules处理）
+    }
+    G.enemies.forEach(e=>{
+      const dx=e.x-z.x,dy=e.y-z.y;
+      if(dx*dx+dy*dy<z.r*z.r){
+        if(!z.hostile&&phaseTime<180){e.slowTimer=Math.max(e.slowTimer||0,8);} // 轻微减速，不触发蓝色显示
+        else if(z.hostile){e.rage=1.1;} // v14: rage效果减弱
+      }
+    });
+    // 腐蚀虫增殖菌毯
+    G.enemies.forEach(e=>{if(e.special==='corruptor'&&!z.hostile&&Math.hypot(e.x-z.x,e.y-z.y)<z.r*0.5){z.r=Math.min(z.r+0.05,120);z.hostile=phaseTime>180;}});
+  });
+  G.infectionMap=G.infectionMap.filter(z=>z.life>0);
+
+  // ── V13: 后期规则变化 ──
+  updateLateGameRules(G,sec);
+
+  // ── V13: 敌人协同AI ──
+  if(G.elapsed%6===0)updateEnemyCooperation(G);
+
+  updateDangerZones(G);
+
+  G.noDmgTimer=(G.noDmgTimer||0)+1;
+  TIME_ALERTS.forEach(a=>{if(!shownAlerts.has(a.sec)&&sec>=a.sec){shownAlerts.add(a.sec);showAlert(a.msg,a.cls);}});
+  if(alertTimer>0){alertTimer--;if(alertTimer<=0)document.getElementById('alert-banner').classList.remove('show');}
+  if(ecoAlertTimer>0){ecoAlertTimer--;if(ecoAlertTimer<=0)document.getElementById('eco-alert').classList.remove('show');}
+
+  const phaseNames=['前期·孵化','中期·扩张','后期·失控','末期·背叛'];
+  const phaseIdx=phaseTime<120?0:phaseTime<360?1:phaseTime<480?2:3;
+  const phaseLabelEl=document.getElementById('phase-label');
+  if(phaseLabelEl)phaseLabelEl.textContent=phaseNames[phaseIdx];
+
+  if(!G.bossMode){
+    // v22: 每3分钟出现一个Boss，循环Boss类型，属性随时间成长
+    if(!G.nextBossAt)G.nextBossAt=BOSS_INTERVAL;
+    if(sec>=G.nextBossAt){
+      G.nextBossAt=sec+BOSS_INTERVAL;
+      const bossIdx=(G.bossKillCount||0)%BOSS_DEFS.length;
+      triggerBoss(bossIdx,sec);
+      return;
+    }
+  }
+
+  // 移动
+  const ms=1.9*G.buffs.spd;
+  const prevMx=G.mx,prevMy=G.my;
+  if(G.keys['a']||G.keys['A']||G.keys['ArrowLeft'])G.mx=Math.max(14,G.mx-ms);
+  if(G.keys['d']||G.keys['D']||G.keys['ArrowRight'])G.mx=Math.min(W-14,G.mx+ms);
+  if(G.keys['w']||G.keys['W']||G.keys['ArrowUp'])G.my=Math.max(14,G.my-ms);
+  if(G.keys['s']||G.keys['S']||G.keys['ArrowDown'])G.my=Math.min(H-14,G.my+ms);
+
+  // v18: 静止惩罚系统 —— 玩家不动时敌人快速聚拢并加速
+  const moved=Math.hypot(G.mx-prevMx,G.my-prevMy)>0.5;
+  if(moved){G.stillTimer=0;}else{G.stillTimer=(G.stillTimer||0)+1;}
+  // 静止超过1.5秒（90帧）开始施压
+  const stillPressure=Math.min(1,(G.stillTimer||0)/180); // 0→1 线性，3秒满压
+  if(stillPressure>0){
+    G.enemies.forEach(e=>{
+      const dx=G.mx-e.x,dy=G.my-e.y,d=Math.hypot(dx,dy)||1;
+      // 加速朝玩家冲 + 额外吸力（满压×4.5）
+      const surge=1+stillPressure*4.5;
+      e.vx+=(dx/d)*e.spd*0.06*surge;
+      e.vy+=(dy/d)*e.spd*0.06*surge;
+    });
+    // 静止满2/4/6秒额外刷怪（3只，更有压迫感）
+    if(G.stillTimer===120||G.stillTimer===240||G.stillTimer===360){
+      for(let i=0;i<3;i++)spawnEnemy(G);
+    }
+    // 满压时（>3秒静止）：环境伤害，每秒3点，模拟被完全包围
+    if(stillPressure>=1&&G.elapsed%20===0){
+      G.mhp-=1;
+      addDamageText(G,G.mx+(Math.random()-0.5)*20,G.my-18,'包围！','#ff8800',11);
+    }
+  }
+
+  // [v14已移除] 菌丝墙碰撞
+
+  G.phase=G.kills<12?0:G.kills<35?1:G.kills<70?2:G.kills<130?3:4;
+
+  // 敌人生成
+  if(!G.bossMode){
+    G.spawnTimer++;
+    const earlyReduction=sec<60?0.80:sec<120?0.90:1;
+    const comboMult=G.combo>=300?0.45:1;
+    const rate=Math.max(8,(75-G.phase*12-G.lv*1.5)*(G.spawnMult||1)/1.6*comboMult/earlyReduction);
+    if(G.spawnTimer>=rate){
+      G.spawnTimer=0;
+      const baseSpawn=G.combo>=300?3:1;
+      for(let i=0;i<baseSpawn;i++)spawnEnemy(G);
+      if(G.phase>=2&&sec>120)spawnEnemy(G);
+      if((G.phase>=4||G.combo>=300)&&sec>180){spawnEnemy(G);spawnEnemy(G);}
+      if(G.combo>=300&&Math.random()<0.3)spawnEnemyAt(G,'elite',Math.random()<0.5?-15:W+15,Math.random()*H);
+    }
+  }
+
+  G.bugTimer++;
+  const bugRate=Math.max(75,200*(G.spawnMult||1));
+  const cap=10+G.lv*2+G.swarmBonus;
+  if(G.bugTimer>=bugRate&&G.bugs.length<cap){G.bugTimer=0;spawnBug(1);}
+
+  if(G.regenRate&&G.elapsed%60===0)G.mhp=Math.min(G.mmaxhp,G.mhp+G.regenRate*G.mmaxhp);
+
+  // 武器系统
+  G.slots.forEach(sl=>{
+    if(!sl.id)return;const w=WEAPONS[sl.id];
+    if(w.update)w.update(G,sl.lv,sl.state,sl.stars);
+    if(w.onFire){
+      sl.timer++;const cd=w.cd?w.cd[Math.min(sl.lv-1,w.cd.length-1)]:60;
+      const starMults=[1,0.7,0.58,0.48,0.4,0.33];
+      const starMult=starMults[Math.min(sl.stars||0,5)];
+      // v17: 支持流派CD倍率（如电浆流提速）
+      const buildCdMult=w.cdMult?w.cdMult(G):1;
+      if(sl.timer>=cd*starMult*buildCdMult){sl.timer=0;w.onFire(G,sl.lv,sl.stars);}
+    }
+  });
+
+  // ── 小虫副炮系统（独立调度，不修改母体武器）──
+  // 每帧检测：装备了 attack 类型武器时，随机小虫以20%伤害复制发射
+  // 关键：isBugShot:true 标记确保完全走 enemy 碰撞路径，绝不会打到母体/小虫自身
+  if(G.bugs.length>0){
+    G.bugShotTimer=(G.bugShotTimer||0)+1;
+    // 副炮 CD：每45帧触发一次（约0.75秒），从随机虫子射出
+    if(G.bugShotTimer>=45){
+      G.bugShotTimer=0;
+      // 收集所有已装备的 attack 类武器
+      const attackSlots=G.slots.filter(sl=>{
+        if(!sl.id)return false;
+        const w=WEAPONS[sl.id];
+        return w.onFire&&(w.type==='attack'||w.type==='evolve');
+      });
+      if(attackSlots.length>0){
+        // 随机选一个已装备攻击武器
+        const sl=attackSlots[Math.floor(Math.random()*attackSlots.length)];
+        const w=WEAPONS[sl.id];
+        // 随机选一只存活小虫作为发射源
+        const srcBug=G.bugs[Math.floor(Math.random()*G.bugs.length)];
+        // 找最近敌人（相对虫子位置）
+        const tgt=nearestEnemyTo(G,srcBug.x,srcBug.y);
+        if(tgt){
+          const dx=tgt.x-srcBug.x,dy=tgt.y-srcBug.y,dist=Math.hypot(dx,dy)||1;
+          // 根据武器类型选择合适的子弹参数（伤害固定为母体的20%）
+          const atkMult=G.buffs.atk;
+          const jitter=(Math.random()-0.5)*0.5;
+          const ang=Math.atan2(dy,dx)+jitter;
+          let bulletOpts;
+          if(sl.id==='lightning_bug'||sl.id==='thunder_swarm'){
+            bulletOpts={dmg:(3.5+sl.lv*1.5)*atkMult*0.2,r:3,color:'#C9E054',life:50,isLightning:true,isBugShot:true};
+          } else if(sl.id==='poison_spit'||sl.id==='poison_cloud'){
+            bulletOpts={dmg:1.2*atkMult*0.2,r:4,color:'#639922',life:55,poison:120,isBugShot:true};
+          } else if(sl.id==='spore_cannon'||sl.id==='spore_storm'){
+            bulletOpts={dmg:(2.4+sl.lv)*atkMult*0.2,r:4,color:'#9FE1CB',life:60,isBugShot:true};
+          } else {
+            // 其他 evolve 武器：通用小弹
+            bulletOpts={dmg:2*atkMult*0.2,r:3,color:'#aaddff',life:50,isBugShot:true};
+          }
+          addProj(G,srcBug.x,srcBug.y,Math.cos(ang)*5,Math.sin(ang)*5,bulletOpts);
+        }
+      }
+    }
+  } else {
+    G.bugShotTimer=0;
+  }
+
+  // ── V13: 虫子行动（分工角色）──
+  const allTargets=[...G.enemies];if(G.boss)allTargets.push(G.boss);
+  G.bugs.forEach((b,bi)=>{
+    b.age++;
+    let tgt=null;
+    if(b.targetId!=null){tgt=allTargets.find(e=>e.id===b.targetId&&e.hp>0);if(!tgt)b.targetId=null;}
+    if(!tgt&&allTargets.length>0){
+      const liveTargets=allTargets.filter(e=>e.hp>0);
+      // 虫海流分工：优先攻击类型
+      if(G.activeBuild==='swarm'){
+        if(b.role==='guard'){
+          // 守卫型：攻击最近敌人保护玩家
+          const sorted=liveTargets.sort((a,b2)=>Math.hypot(a.x-G.mx,a.y-G.my)-Math.hypot(b2.x-G.mx,b2.y-G.my));
+          tgt=sorted[0];
+        } else if(b.role==='bomber'){
+          // 爆破型：优先孵化虫
+          const queens=liveTargets.filter(e=>e.special==='spawner');
+          tgt=queens.length>0?queens[0]:liveTargets.sort((a,b2)=>b2.hp-a.hp)[0];
+        } else {
+          // 战斗型：最低血量
+          tgt=liveTargets.sort((a,b2)=>a.hp-b2.hp)[0];
+        }
+      } else {
+        const byHp=liveTargets.sort((a,b2)=>a.hp-b2.hp);
+        tgt=byHp[Math.min(bi%3,byHp.length-1)];
+      }
+      if(tgt)b.targetId=tgt.id;
+    }
+    if(tgt){
+      const nd=Math.hypot(tgt.x-b.x,tgt.y-b.y);
+      const spd=(1.2+(b.elite?0.5:0));
+      if(nd>10){b.vx=b.vx*0.83+(tgt.x-b.x)/nd*spd*0.17;b.vy=b.vy*0.83+(tgt.y-b.y)/nd*spd*0.17;}
+      else{b.atkTimer++;if(b.atkTimer>=22){
+        b.atkTimer=0;const atkMult=G.buffs.atk*(G.activeBuild==='swarm'?(G.bugAtkMult||1.6):1);
+        const dmg=(b.elite?2.2:1.1)*atkMult*(1-(G.dmgReduce||0))/(tgt.defMult||1)/(tgt.shield?3:1)/(tgt.shieldBubble>0?2:1);
+        tgt.hp-=dmg;
+        if(tgt.shield>0&&!tgt.immuneDot)tgt.shield=Math.max(0,tgt.shield-0.1);
+        if(G.leechLv>=3)G.mhp=Math.min(G.mmaxhp,G.mhp+0.3);
+        if(Math.random()<0.35)addDamageText(G,tgt.x+(Math.random()-0.5)*8,tgt.y-2,Math.ceil(dmg)+'','#5DCAA5',13);
+        addPt(G,tgt.x,tgt.y,'#1D9E75',2,1.2);
+        if(tgt.hp<=0)b.targetId=null;
+      }}
+    } else {
+      const dx=G.mx-b.x,dy=G.my-b.y,dd=Math.hypot(dx,dy)||1;
+      if(dd>25){b.vx=b.vx*0.88+(dx/dd)*0.12;b.vy=b.vy*0.88+(dy/dd)*0.12;}else{b.vx*=0.9;b.vy*=0.9;}
+    }
+    const mv=Math.hypot(b.vx,b.vy);if(mv>2.5){b.vx=b.vx/mv*2.5;b.vy=b.vy/mv*2.5;}
+    b.x=Math.max(5,Math.min(W-5,b.x+b.vx));b.y=Math.max(5,Math.min(H-5,b.y+b.vy));
+  });
+
+  // ── 敌人行动 ──
+  G.enemies.forEach(e=>{
+    if(e.poison>0&&!e.immuneDot){e.poison--;if(e.poison%16===0){e.hp-=0.6/e.defMult;addPt(G,e.x,e.y,'#639922',2,0.7);}}
+    if(e.kbCd>0)e.kbCd--;if(e.slowTimer>0)e.slowTimer--;
+    const spdMult=e.slowTimer>0?0.3:1;
+    e.vx*=0.88;e.vy*=0.88;
+    if(e.rage&&e.rage>1){e.spd=Math.min(e.spd*1.002,e.spd*2);}
+
+    // 护盾虫：护盾恢复
+    if(e.special==='shield'){
+      e.shieldCd=(e.shieldCd||0)+1;
+      if(e.shield<=0&&e.shieldCd>180){e.shield=1;e.shieldCd=0;addPt(G,e.x,e.y,'#4488CC',5,1.5);}
+    }
+    // 跳跃虫
+    if(e.special==='jumper'){
+      e.jumpTimer=(e.jumpTimer||0)+1;
+      if(!e.jumping&&e.jumpTimer>=e.jumpCd){
+        e.jumpTimer=0;e.jumping=true;
+        const dx=G.mx-e.x,dy=G.my-e.y,d=Math.hypot(dx,dy)||1;
+        e.jumpVx=(dx/d)*8;e.jumpVy=(dy/d)*8;
+        addPt(G,e.x,e.y,'#FF6644',5,2);
+        // V13: 落地冲击波
+        const landX=e.x+e.jumpVx*6,landY=e.y+e.jumpVy*6;
+        setTimeout(()=>{if(!G||G.dead)return;addExplosionWave(G,landX,landY,30,'#FF6644');if(Math.hypot(G.mx-landX,G.my-landY)<30)G.mhp-=4;},250/SPEED);
+      }
+      if(e.jumping){e.vx+=e.jumpVx*0.15;e.vy+=e.jumpVy*0.15;e.jumpVx*=0.88;e.jumpVy*=0.88;
+        if(Math.hypot(e.jumpVx,e.jumpVy)<0.5)e.jumping=false;}
+    }
+    // 吞噬虫：吃尸体真正变大
+    if(e.special==='devourer'){
+      if(e.devourCount>=3){e.sz=Math.min(24,e.sz+2);e.hp+=8;e.maxhp+=8;e.devourCount=0;e.atk*=1.05;addPt(G,e.x,e.y,'#AA7744',8,2);
+        // 进化成精英
+        if(e.sz>=22)e.special='elite';
+      }
+    }
+    // 再生虫
+    if(e.special==='regen'&&e.hp<e.maxhp)e.hp=Math.min(e.maxhp,e.hp+e.regenRate);
+    // [v14已移除] 隐遁虫逻辑
+    // [v14已移除] 磁力虫逻辑
+    // [v14已移除] 反射虫逻辑
+    // V13: 腐蚀虫：移动时扩张菌毯
+    if(e.special==='corruptor'&&G.elapsed%120===0){
+      G.infectionMap.push({x:e.x,y:e.y,r:25+Math.random()*20,life:400,pulse:Math.random()*999,hostile:Math.floor(G.elapsed/60)>360}); // v15: corruptor菌毯更晚变hostile
+    }
+
+    // 移动逻辑
+    if(e.special==='ranged'){
+      const dx=G.mx-e.x,dy=G.my-e.y,d=Math.hypot(dx,dy)||1;
+      if(d<e.keepDist){e.vx-=(dx/d)*e.spd*spdMult*0.15;e.vy-=(dy/d)*e.spd*spdMult*0.15;}
+      else{e.vx+=(dx/d)*e.spd*spdMult*0.08;e.vy+=(dy/d)*e.spd*spdMult*0.08;}
+      e.rangedTimer++;if(e.rangedTimer>=e.rangedCd&&d<200){e.rangedTimer=0;e.rangedCd=70+Math.floor(Math.random()*20);addProj(G,e.x,e.y,(dx/d)*3.5,(dy/d)*3.5,{dmg:e.atk*5,r:4,color:'#A060C0',life:80,isEnemyBullet:true});}
+    } else if(e.special==='suicidal'){
+      const dx=G.mx-e.x,dy=G.my-e.y,d=Math.hypot(dx,dy)||1;
+      const urgency=1+Math.min(3,(1-e.hp/e.maxhp)*2);
+      e.vx+=(dx/d)*e.spd*spdMult*0.14*urgency;e.vy+=(dy/d)*e.spd*spdMult*0.14*urgency;
+    } else if(e.special==='void'){
+      const dx=G.mx-e.x,dy=G.my-e.y,d=Math.hypot(dx,dy)||1;
+      e.vx+=(dx/d)*e.spd*spdMult*0.12;e.vy+=(dy/d)*e.spd*spdMult*0.12;
+    } else if(e.special==='spawner'){
+      // spawner移动在协同AI里处理，这里只移动
+      const dx=G.mx-e.x,dy=G.my-e.y,d=Math.hypot(dx,dy)||1;
+      e.vx+=(dx/d)*e.spd*spdMult*0.06;e.vy+=(dy/d)*e.spd*spdMult*0.06;
+    } else if(e.special==='hivemind'){
+      // 巢核：跟随最多友军群
+      let cx=0,cy=0,cnt=0;
+      G.enemies.forEach(o=>{if(o!==e&&Math.hypot(o.x-e.x,o.y-e.y)<120){cx+=o.x;cy+=o.y;cnt++;}});
+      if(cnt>0){cx/=cnt;cy/=cnt;const dx=cx-e.x,dy=cy-e.y,d=Math.hypot(dx,dy)||1;e.vx+=(dx/d)*e.spd*spdMult*0.05;}
+      else{const dx=G.mx-e.x,dy=G.my-e.y,d=Math.hypot(dx,dy)||1;e.vx+=(dx/d)*e.spd*spdMult*0.08;e.vy+=(dy/d)*e.spd*spdMult*0.08;}
+    } else {
+      const dx=G.mx-e.x,dy=G.my-e.y,d=Math.hypot(dx,dy)||1;
+      e.vx+=(dx/d)*e.spd*spdMult*0.1;e.vy+=(dy/d)*e.spd*spdMult*0.1;
+    }
+    const ev=Math.hypot(e.vx,e.vy);if(ev>e.spd*2.2){e.vx=e.vx/ev*e.spd*2.2;e.vy=e.vy/ev*e.spd*2.2;}
+    if(e.special==='void'){e.x+=e.vx;e.y+=e.vy;}
+    else{e.x=Math.max(-e.sz,Math.min(W+e.sz,e.x+e.vx));e.y=Math.max(-e.sz,Math.min(H+e.sz,e.y+e.vy));}
+    const d2=Math.hypot(G.mx-e.x,G.my-e.y);
+    if(d2<14){G.mhp-=e.atk*(1-(G.dmgReduce||0));G.combo=0;G.comboTimer=0;G.comboMilestone=0;G.pendingUpgrade=0;G.noDmgTimer=0;screenShake(4);playSound('hurt');addPt(G,G.mx,G.my,'#E24B4A',3,1.5);}
+    if(e.hasKB&&e.kbCd<=0){G.bugs.forEach(b=>{if(Math.hypot(b.x-e.x,b.y-e.y)<e.sz/2+6){knockback(b,e.x,e.y,4);e.kbCd=45;addPt(G,b.x,b.y,'#EF9F27',3,1.5);}});}
+  });
+
+  // Boss行动
+  if(G.boss){
+    const boss=G.boss;
+    if(boss.poison>0){boss.poison--;if(boss.poison%18===0){boss.hp-=0.35;addPt(G,boss.x,boss.y,'#639922',2,0.8);}}
+    boss.vx*=0.9;boss.vy*=0.9;
+    if(!boss.charging){const dx=G.mx-boss.x,dy=G.my-boss.y,d=Math.hypot(dx,dy)||1;boss.vx+=(dx/d)*boss.spd*0.07;boss.vy+=(dy/d)*boss.spd*0.07;}
+    const bv=Math.hypot(boss.vx,boss.vy);if(bv>boss.spd*2){boss.vx=boss.vx/bv*boss.spd*2;boss.vy=boss.vy/bv*boss.spd*2;}
+    boss.x+=boss.vx;boss.y+=boss.vy;
+    boss.x=Math.max(-boss.sz,Math.min(W+boss.sz,boss.x));boss.y=Math.max(-boss.sz,Math.min(H+boss.sz,boss.y));
+    if(boss.update)boss.update(G,boss);
+    const phaseDots=boss.phaseDesc||[];const currentPhase=boss._phase||0;
+    document.getElementById('boss-phase-dots').textContent=phaseDots.map((p,i)=>i===currentPhase?`[${p}]`:p).join(' → ');
+    const bd=Math.hypot(G.mx-boss.x,G.my-boss.y);
+    if(bd<boss.sz/2+12&&!boss.charging){G.mhp-=0.5;addPt(G,G.mx,G.my,'#E24B4A',3,2);}
+    document.getElementById('boss-bar').style.width=Math.max(0,boss.hp/boss.maxhp*100)+'%';
+    if(boss.hp<=0){
+      screenShake(18);triggerFlash();playSound('bossdeath');
+      addExplosionWave(G,boss.x,boss.y,40,'#ff0000');
+      addDamageText(G,boss.x,boss.y,'BOSS DOWN','#ff3300',34);
+      addPt(G,boss.x,boss.y,'#EF9F27',25,4);addPt(G,boss.x,boss.y,'#E24B4A',15,3);
+      G.kills+=boss.reward;G.xp+=boss.reward*8;
+      if(G.leechLv>0)G.mhp=Math.min(G.mmaxhp,G.mhp+boss.reward*2);
+      G.boss=null;G.bossMode=false;G.bossKillCount=(G.bossKillCount||0)+1;
+      document.getElementById('boss-wrap').classList.remove('show');
+      document.getElementById('boss-phase-dots').textContent='';
+      setTimeout(resizeCanvas,10);
+      showUpgrade();return;
+    }
+  }
+
+  // 抛射物
+  const dp=[];
+  G.projs.forEach((p,i)=>{
+    p.age++;
+    if(p.homing&&p.homing.hp>0){const dx=p.homing.x-p.x,dy=p.homing.y-p.y,d=Math.hypot(dx,dy)||1;p.vx=p.vx*0.88+(dx/d)*6*0.12;p.vy=p.vy*0.88+(dy/d)*6*0.12;}
+    p.x+=p.vx;p.y+=p.vy;p.life--;
+    if(p.life<=0||p.x<-10||p.x>W+10||p.y<-10||p.y>H+10){dp.push(i);recycleProj(p);return;}
+    if(p.isBossBullet||p.isEnemyBullet){
+      G.bugs.forEach(b=>{if(Math.hypot(b.x-p.x,b.y-p.y)<8){b.hp-=p.dmg;}});
+      if(Math.hypot(G.mx-p.x,G.my-p.y)<14){G.mhp-=p.dmg*0.5;G.combo=0;G.comboTimer=0;G.noDmgTimer=0;screenShake(5);triggerFlash();playSound('hurt');dp.push(i);recycleProj(p);}
+      return;
+    }
+    // isBugShot：纯粹只打敌人，绝不触发任何友方/玩家伤害逻辑
+    if(p.isBugShot){
+      let bsHit=false;
+      const bsCheck=(e)=>{
+        if(bsHit)return;
+        if(Math.hypot(e.x-p.x,e.y-p.y)<e.sz/2+p.r){
+          bsHit=true;
+          const actualDmg=p.dmg/(e.defMult||1)/(e.shield>0?3:1);
+          e.hp-=actualDmg;
+          if(p.poison&&!e.immuneDot){e.poison=Math.max(e.poison||0,p.poison);}
+          addDamageText(G,e.x+(Math.random()-0.5)*10,e.y-4,Math.ceil(actualDmg)+'','#88ddaa',13);
+          addPt(G,e.x,e.y,'#9FE1CB',1,1);
+          dp.push(i);recycleProj(p);
+        }
+      };
+      G.enemies.forEach(bsCheck);
+      if(!bsHit&&G.boss)bsCheck(G.boss);
+      return;
+    }
+    let hit=false;
+    const check=(e)=>{
+      if(hit&&!p.pierce)return;
+      if(Math.hypot(e.x-p.x,e.y-p.y)<e.sz/2+p.r){
+        const shieldDiv=e.shield>0?3:1;
+        const bubbleDiv=e.shieldBubble>0?1.5:1;
+        const actualDmg=p.dmg/(e.defMult||1)/shieldDiv/bubbleDiv;
+        e.hp-=actualDmg;
+        if(e.shield>0&&!p.poison){e.shield=Math.max(0,e.shield-0.3);addPt(G,e.x,e.y,'#4488CC',3,1.5);hit=true;if(!p.pierce){dp.push(i);recycleProj(p);}return;}
+        hit=true;
+        const isBig=actualDmg>=10,isMed=actualDmg>=5;
+        addDamageText(G,e.x+(Math.random()-0.5)*12,e.y-4,Math.ceil(actualDmg)+'',isBig?'#ff2200':isMed?'#ff7700':'#ffcc44',isBig?26:isMed?20:15);
+        if(isBig)screenShake(3);
+        if(p.poison&&!e.immuneDot){G.slimePools.push({x:p.x,y:p.y,r:18,life:220});e.poison=Math.max(e.poison||0,p.poison);}
+        if(p.slowOnHit)e.slowTimer=Math.max(e.slowTimer||0,180);
+        // V13: 孢子感染链
+        if(p.sporeInfect&&!e.immuneDot){
+          e.poison=Math.max(e.poison||0,120);
+          G.enemies.forEach(e2=>{if(e2!==e&&!e2.immuneDot&&Math.hypot(e2.x-e.x,e2.y-e.y)<45){e2.poison=Math.max(e2.poison||0,60);}});
+        }
+        // V13: 过载标记（电浆流）
+        if(p.overload){e.overloadStacks=(e.overloadStacks||0)+1;if(e.overloadStacks>=3){e.overloadStacks=0;addExplosionWave(G,e.x,e.y,40,'#7aadff');G.enemies.forEach(e2=>{if(Math.hypot(e2.x-e.x,e2.y-e.y)<40)e2.hp-=p.dmg*2;});addPt(G,e.x,e.y,'#7aadff',12,3);}}
+        if(p.splash)[...G.enemies,G.boss].filter(Boolean).forEach(e2=>{if(e2!==e&&Math.hypot(e2.x-p.x,e2.y-p.y)<p.splash)e2.hp-=p.dmg*0.5/(e2.defMult||1);});
+        if(p.chain&&p.chain>0){
+          const chainTargets=G.enemies.filter(c=>c!==e&&c.hp>0&&Math.hypot(c.x-e.x,c.y-e.y)<(p.chainR||55));
+          if(chainTargets.length>0){
+            const ct=chainTargets[0];const ang2=Math.atan2(ct.y-e.y,ct.x-e.x);
+            addProj(G,e.x,e.y,Math.cos(ang2)*7,Math.sin(ang2)*7,{dmg:p.dmg*0.7,r:p.r,color:p.color,life:40,chain:p.chain-1,chainR:p.chainR,isLightning:p.isLightning,slowOnHit:p.slowOnHit,overload:p.overload});
+            addArc(G,ct.x,ct.y,0);
+          }
+        }
+        if(!p.pierce){dp.push(i);recycleProj(p);}
+      }
+    };
+    G.enemies.forEach(check);
+    if(G.boss)check(G.boss);
+  });
+  for(let i=dp.length-1;i>=0;i--)G.projs.splice(dp[i],1);
+
+  // 虫子死亡
+  const db=[];
+  G.bugs.forEach((b,i)=>{if(b.hp<=0){db.push(i);addPt(G,b.x,b.y,'#5DCAA5',4,1.8);}});
+  for(let i=db.length-1;i>=0;i--){recyclePt(G.bugs[db[i]]);G.bugs.splice(db[i],1);}
+
+  // 敌人死亡
+  const de=[];
+  G.enemies.forEach((e,i)=>{
+    if(e.hp<=0){
+      de.push(i);G.kills++;G.xp+=2+G.phase*2;
+      if(G.comboTimer>0){G.combo++;}else{G.combo=1;}
+      G.comboTimer=190;
+      screenShake(G.combo>=20?6:2);
+      addExplosionWave(G,e.x,e.y,12,'#ff6633');
+      if(G.combo>=2&&G.combo%10===0)addDamageText(G,e.x,e.y-18,G.combo+' COMBO!','#ff8800',20);
+      // 吞噬虫进化
+      G.enemies.forEach(other=>{if(other.special==='devourer'&&Math.hypot(other.x-e.x,other.y-e.y)<60)other.devourCount++;});
+      const milestoneStep=G.combo>=300?100:80;
+      const milestone=Math.floor(G.combo/milestoneStep);
+      if(milestone>G.comboMilestone){G.comboMilestone=milestone;const reward=milestone*milestoneStep;screenShake(6);playSound('levelup');showAlert('🔥 '+reward+' 连杀！奖励技能！','green');G.pendingUpgrade=(G.pendingUpgrade||0)+1;}
+      if(G.combo===300){showBuffToast('☠ 300连杀 · 世界开始失控！','#ff2200');screenShake(8);for(let j=0;j<5;j++)spawnEnemy(G);}
+      playSound(e.special==='elite'||e.special==='suicidal'?'hit':'kill');
+      if(e.special==='elite'||e.special==='suicidal')G.eliteFlash=35;
+      addPt(G,e.x,e.y,'#EF9F27',5,2.2);
+      // V13: 击杀孵化虫时全场敌人减速
+      if(e.special==='spawner'){showEcoAlert('✓ 孵化核消灭！');G.enemies.forEach(other=>other.slowTimer=Math.max(other.slowTimer||0,120));}
+      if(e.special==='bomber'||e.special==='suicidal'){
+        addPt(G,e.x,e.y,'#E85D24',18,3);addExplosionWave(G,e.x,e.y,e.explodeR,'#E85D24');
+        G.bugs.forEach(b=>{if(Math.hypot(b.x-e.x,b.y-e.y)<e.explodeR){b.hp-=e.explodeDmg*0.3;knockback(b,e.x,e.y,6);}});
+        const edist=Math.hypot(G.mx-e.x,G.my-e.y);if(edist<e.explodeR)G.mhp-=e.explodeDmg*(1-edist/e.explodeR);
+      }
+      if(Math.random()<(G.killSpawn||0))spawnBug(1,e.x,e.y);
+      if(G.leechLv>=1)G.mhp=Math.min(G.mmaxhp,G.mhp+0.8*G.leechLv);
+      // V13: 死亡同步（狂暴流）：低血量击杀回血
+      if(G.deathSync&&G.mhp/G.mmaxhp<0.3)G.mhp=Math.min(G.mmaxhp,G.mhp+3);
+    }
+  });
+  for(let i=de.length-1;i>=0;i--)G.enemies.splice(de[i],1);
+
+  if(G.arcs){G.arcs.forEach(a=>a.life--);G.arcs=G.arcs.filter(a=>a.life>0);}
+  G.pts.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vx*=0.9;p.vy*=0.9;p.life-=0.022;p.r*=0.96;});
+  G.pts=G.pts.filter(p=>{if(p.life<=0){recyclePt(p);return false;}return true;});
+
+  if(G.xp>=G.xpNext){G.xp-=G.xpNext;G.xpNext=Math.floor(G.xpNext*1.38);G.lv++;screenShake(4);playSound('levelup');showUpgrade();return;}
+  if((G.pendingUpgrade||0)>0&&!G.upgrading){G.pendingUpgrade--;showUpgrade();return;}
+  if(G.mhp<=0){doGameover();return;}
+  if(G.bugs.length===0&&G.enemies.length>10)G.mhp-=0.06; // 无虫惩罚加重
+  updateBuffToast();
+  updateHUD();
+}
+
+function triggerBoss(i,sec){
+  G.bossMode=true;G.bossPhase=i+1;
+  screenShake(6);playSound('boss'); // v15
+  const def=JSON.parse(JSON.stringify(BOSS_DEFS[i]));
+  def.update=BOSS_DEFS[i].update;def.phaseDesc=BOSS_DEFS[i].phaseDesc;
+  // v22: Boss属性随出现时间成长（每180秒HP+50%，其他属性微调）
+  const bossScale=1+(sec||180)/180*0.5;
+  const scaledHp=Math.floor(def.hp*bossScale);
+  G.boss={...def,x:W/2,y:-100,vx:0,vy:0,maxhp:scaledHp,hp:scaledHp,poison:0,puddles:def.puddles||[],_phase:0,spd:def.spd*(1+(sec||180)/360*0.15)};
+  document.getElementById('boss-name').textContent=def.name;
+  document.getElementById('boss-wrap').classList.add('show');
+  setTimeout(resizeCanvas,10);
+  showAlert('⚡ BOSS出现：'+def.name);
+}
+
+// ══════ 升级面板（V13: Build引导权重）══════
+function showUpgrade(){
+  G.paused=true;G.upgrading=true;
+  const equippedIds=G.slots.filter(s=>s.id).map(s=>s.id);
+  const hasEmpty=G.slots.some(s=>!s.id);
+  const pendingMerge=[];
+  Object.entries(G.pendingStarFor||{}).forEach(([evolveId,slotIdx])=>{
+    const srcSl=G.slots[slotIdx];if(!srcSl||!srcSl.id)return;
+    const sw=WEAPONS[srcSl.id];if(!sw||sw.type==='evolve'||sw.type==='evolvePassive')return;
+    if(sw.evolve!==evolveId)return;if(srcSl.lv<sw.maxLv)return;
+    const targetSl=G.slots.find(s=>s.id===evolveId);if(!targetSl||targetSl.stars>=5)return;
+    pendingMerge.push({srcSlot:srcSl,srcIdx:slotIdx,targetSlot:targetSl,evolveId});
+  });
+  const pendingSlotIdxs=new Set(Object.values(G.pendingStarFor||{}));
+  const upgradeable=G.slots.filter((s,i)=>{
+    if(!s.id)return false;const w=WEAPONS[s.id];
+    if(w.type==='evolve'||w.type==='evolvePassive')return false;
+    if(s.lv>=w.maxLv)return false;return true;
+  });
+  const evolveable=G.slots.filter((s,i)=>{
+    if(!s.id)return false;const w=WEAPONS[s.id];
+    if(w.type==='evolve'||w.type==='evolvePassive')return false;
+    if(s.lv<w.maxLv)return false;if(!w.evolve)return false;
+    if(equippedIds.includes(w.evolve))return false;if(pendingSlotIdxs.has(i))return false;return true;
+  });
+  const stackSource=[];
+  if(hasEmpty){
+    G.slots.forEach((sl)=>{
+      if(!sl.id)return;const w=WEAPONS[sl.id];
+      if(w.type!=='evolve'&&w.type!=='evolvePassive')return;if(sl.stars>=5)return;if(!w.sourceWeapon)return;
+      const alreadyPending=Object.values(G.pendingStarFor||{}).some(idx=>G.slots[idx]&&G.slots[idx].id===w.sourceWeapon);
+      if(alreadyPending)return;const srcInSlot=G.slots.some(s=>s.id===w.sourceWeapon);if(srcInSlot)return;
+      stackSource.push({evolveSlot:sl,evolveId:sl.id,sourceId:w.sourceWeapon,sourceW:WEAPONS[w.sourceWeapon]});
+    });
+  }
+  // v17: 流派专属武器池 - 只出现本Build允许的武器
+  const lockedPool=G.buildLockedPool||null;
+  const newPool=Object.keys(WEAPONS).filter(k=>{const w=WEAPONS[k];if(w.type==='evolve'||w.type==='evolvePassive')return false;if(equippedIds.includes(k))return false;if(lockedPool&&!lockedPool.includes(k))return false;return true;});
+  // 对流派武器排序提升权重
+  const buildPriorityPool=newPool.sort((a,b)=>{
+    const wa=G.buildWeights[a]||1,wb=G.buildWeights[b]||1;
+    return (Math.random()<wb/(wa+wb)?1:-1);
+  });
+  let choices=[];
+  if(pendingMerge.length>0)choices.push({kind:'merge',m:pendingMerge[0]});
+  if(choices.length<3&&evolveable.length>0&&Math.random()<0.75)choices.push({kind:'evolve',slot:evolveable[Math.floor(Math.random()*evolveable.length)]});
+  if(choices.length<3&&stackSource.length>0){const ss=stackSource[Math.floor(Math.random()*stackSource.length)];choices.push({kind:'stackSrc',ss});}
+  const upShuffled=upgradeable.sort(()=>Math.random()-0.5);upShuffled.slice(0,2).forEach(sl=>{if(choices.length<3)choices.push({kind:'upgrade',slot:sl});});
+  if(hasEmpty){const newShuffled=[...buildPriorityPool];while(choices.length<3&&newShuffled.length>0)choices.push({kind:'new',wid:newShuffled.pop()});}
+  while(choices.length<3&&upgradeable.length>0)choices.push({kind:'upgrade',slot:upgradeable[Math.floor(Math.random()*upgradeable.length)]});
+  choices=choices.slice(0,3);if(choices.length===0){G.paused=false;G.upgrading=false;return;}
+  const el=document.getElementById('up-cards');el.innerHTML='';
+  const hasMerge=choices.some(c=>c.kind==='merge'),hasEv=choices.some(c=>c.kind==='evolve'),hasStack=choices.some(c=>c.kind==='stackSrc');
+  document.getElementById('up-title').textContent=hasMerge?'⚡ 叠星进化！':hasEv?'⚡ 超武进化时机！':hasStack?'★ 叠星路线开启！':'拾取技能';
+  choices.forEach(c=>{
+    const card=document.createElement('div');card.className='upgrade-card';
+    if(c.kind==='new'){const w=WEAPONS[c.wid];card.innerHTML=`<div class="uc-name">${w.name}</div><span class="uc-type type-${w.type}">${typeName(w.type)}</span><div class="uc-desc">${w.desc[0]}</div><div class="uc-lv">新获得</div>`;card.onclick=()=>pickNew(c.wid);}
+    else if(c.kind==='upgrade'){const sl=c.slot;const w=WEAPONS[sl.id];const nl=sl.lv+1;const willEvolve=nl>=w.maxLv&&w.evolve&&!equippedIds.includes(w.evolve);card.innerHTML=`<div class="uc-name">↑ ${w.name}</div><span class="uc-type type-${w.type}">${typeName(w.type)}</span><div class="uc-desc">${w.desc[Math.min(sl.lv,w.desc.length-1)]}</div><div class="uc-lv">Lv.${sl.lv}→${nl}${willEvolve?'（满级可进化）':''}</div>`;
+      card.onclick=()=>{const wCheck=WEAPONS[sl.id];if(wCheck.type==='evolve'||wCheck.type==='evolvePassive'){closeUpgrade();return;}sl.lv++;const w2=WEAPONS[sl.id];if(w2.onEquip)w2.onEquip(G,sl.lv);closeUpgrade();};}
+    else if(c.kind==='evolve'){const sl=c.slot;const w=WEAPONS[sl.id];const ew=WEAPONS[w.evolve];card.className+=' evolved-card';card.innerHTML=`<div class="uc-name">★ 进化：${ew.name}</div><span class="uc-type type-evolve">超武进化</span><div class="uc-desc">${ew.desc[0]}</div><div class="uc-lv">${w.name} 满级 → 超武★</div>`;
+      card.onclick=()=>{sl.id=w.evolve;sl.lv=1;sl.timer=0;sl.state={};sl.stars=0;const ew2=WEAPONS[w.evolve];if(ew2.onEquip)ew2.onEquip(G,1,0);closeUpgrade();};}
+    else if(c.kind==='stackSrc'){const ss=c.ss;const sw=ss.sourceW;const ew=WEAPONS[ss.evolveId];const curStar=G.slots.find(s=>s.id===ss.evolveId)?.stars||0;const nextStar=curStar+1;const srcCardCls=['','evolved2-card','evolved3-card','evolved4-card','evolved5-card','evolved6-card'];card.className+=' '+(srcCardCls[Math.min(nextStar,5)]||'evolved2-card');card.innerHTML=`<div class="uc-name">${sw.name}</div><span class="uc-type type-${sw.type}">${typeName(sw.type)}</span><div class="uc-desc">${sw.desc[0]}<br><span style="color:#ff8844">叠加至 ${ew.name} → ${starStr(nextStar)}</span></div><div class="uc-lv">新获得（叠星路线）</div>`;
+      card.onclick=()=>{const emptySl=G.slots.find(s=>!s.id);if(!emptySl){closeUpgrade();return;}const idx=G.slots.indexOf(emptySl);emptySl.id=ss.sourceId;emptySl.lv=1;emptySl.timer=0;emptySl.state={};emptySl.stars=0;const sw2=WEAPONS[ss.sourceId];if(sw2.onEquip)sw2.onEquip(G,1);if(!G.pendingStarFor)G.pendingStarFor={};G.pendingStarFor[ss.evolveId]=idx;closeUpgrade();};}
+    else if(c.kind==='merge'){const {srcSlot,srcIdx,targetSlot,evolveId}=c.m;const sw=WEAPONS[srcSlot.id];const ew=WEAPONS[evolveId];const nextStar=targetSlot.stars+1;const starCardCls=['evolved-card','evolved2-card','evolved3-card','evolved4-card','evolved5-card','evolved6-card'];const starTypeCls=['type-evolve','type-evolve2','type-evolve3','type-evolve4','type-evolve5','type-evolve5'];const starNames=['一星','二星','三星','四星','五星','六星'];card.className+=' '+starCardCls[Math.min(nextStar,5)];card.innerHTML=`<div class="uc-name">⚡ 叠星：${ew.name} ${starStr(nextStar)}</div><span class="uc-type ${starTypeCls[Math.min(nextStar,5)]}">${starNames[Math.min(nextStar,5)]}超武</span><div class="uc-desc">效果×${nextStar+1}，冷却-${Math.min(nextStar*15+15,70)}%<br>槽位释放！</div><div class="uc-lv">${sw.name} 满级叠加</div>`;
+      card.onclick=()=>{targetSlot.stars=nextStar;const ew2=WEAPONS[evolveId];if(ew2.onEquip)ew2.onEquip(G,targetSlot.lv,nextStar);srcSlot.id=null;srcSlot.lv=0;srcSlot.timer=0;srcSlot.state={};srcSlot.stars=0;delete G.pendingStarFor[evolveId];showAlert(`⚡ ${ew.name} ${starStr(nextStar)} 叠星！`,'green');closeUpgrade();};}
+    el.appendChild(card);
+  });
+  document.getElementById('upgrade-overlay').classList.add('show');
+}
+function typeName(t){return{attack:'攻击型',orbit:'环绕型',passive:'被动型',evolve:'超武',evolvePassive:'超被动'}[t]||t;}
+function pickNew(wid){const sl=G.slots.find(s=>!s.id);if(!sl)return closeUpgrade();sl.id=wid;sl.lv=1;sl.timer=0;sl.state={};sl.stars=0;const w=WEAPONS[wid];if(w.onEquip)w.onEquip(G,1);closeUpgrade();}
+function closeUpgrade(){document.getElementById('upgrade-overlay').classList.remove('show');updateWeaponUI();G.upgrading=false;G.paused=manualPaused;}
+
+function updateHUD(){
+  document.getElementById('h-kills-disp').textContent='☠ '+G.kills;
+  document.getElementById('h-lv').textContent=G.lv;
+  document.getElementById('xp-bar').style.width=Math.min(100,G.xp/G.xpNext*100)+'%';
+  if(!G.bossMode){
+    const elapsedSec=Math.floor(G.elapsed/FPS);
+    document.getElementById('h-time').textContent=`${Math.floor(elapsedSec/60)}:${(elapsedSec%60).toString().padStart(2,'0')}`;
+  } else {
+    document.getElementById('h-time').textContent='⚡BOSS';
+  }
+  // V13: HUD活体化 - 根据combo tier和血量改变顶栏颜色
+  const tier=G.comboTier||0;
+  const hpPct=G.mhp/G.mmaxhp;
+  const tierColors=['','#aaff44','#ffcc00','#ff9900','#ff4400','#ff2200','#cc00ff','#ff00aa','#ff00ff'];
+  const tc=tierColors[tier];
+  if(tc&&tier>=3){
+    document.getElementById('top-bar').style.borderBottomColor=tc+'66';
+  } else {
+    document.getElementById('top-bar').style.borderBottomColor='rgba(29,158,117,0.3)';
+  }
+}
+
+function doGameover(){
+  G.dead=true;
+  const elapsedSec=Math.floor(G.elapsed/FPS);
+  const timeStr=`${Math.floor(elapsedSec/60)}分${elapsedSec%60}秒`;
+  const phases=['孵化期','围猎期','空中涌现','生态崩坏','虫巢失控'];
+  const wlist=G.slots.filter(s=>s.id).map(s=>`${WEAPONS[s.id].name}${s.stars?starStr(s.stars):''}Lv.${s.lv}`).join(' ');
+  const buildNames={spore:'孢子流',plasma:'电浆流',swarm:'虫海流',berserk:'狂暴流'};
+  document.getElementById('r-title').textContent='☠ 虫族灭绝';
+  document.getElementById('r-title').style.color='#E24B4A';
+  document.getElementById('r-sub').textContent=`流派：${buildNames[G.activeBuild]||'未知'}\n存活 ${timeStr} · 消灭 ${G.kills} 个敌人 · Lv.${G.lv}\n击败Boss: ${G.bossKillCount||0} 个 · 阶段「${phases[G.phase]}」\n最高同步：${['无','热身','狩猎','侵蚀','暴走','母巢同步','污染扩张','世界侵蚀','虫巢暴走'][G.comboTier]||'无'}\n最高Combo: ${G.combo||0}\n\n武器：${wlist||'无'}`;
+  document.getElementById('result').classList.add('show');
+}
+function doVictory(){
+  G.won=true;
+  const wlist=G.slots.filter(s=>s.id).map(s=>`${WEAPONS[s.id].name}${s.stars?starStr(s.stars):''}Lv.${s.lv}`).join(' ');
+  document.getElementById('r-title').textContent='🎉 虫族征服完成！';
+  document.getElementById('r-title').style.color='#1D9E75';
+  document.getElementById('r-sub').textContent=`消灭 ${G.kills} 个敌人 · Lv.${G.lv}\n最高Combo: ${G.combo||0}\n武器：${wlist||'无'}`;
+  document.getElementById('result').classList.add('show');
+}
+function restartGame(){if(G&&G._raf)cancelAnimationFrame(G._raf);initGame();}
+
+// ══════ 绘制 ══════
+function draw(){
+  ctx.save();
+  if(shakePower>0){ctx.translate((Math.random()-0.5)*shakePower,(Math.random()-0.5)*shakePower);shakePower*=0.84;if(shakePower<0.2)shakePower=0;}
+  ctx.clearRect(0,0,W,H);
+
+  // ── 背景 ──
+  ctx.fillStyle='#050a05';ctx.fillRect(0,0,W,H);
+
+  // ── V13: 世界脉冲闪光 ──
+  if((G.worldPulseFlash||0)>0){
+    const pf=G.worldPulseFlash;
+    ctx.fillStyle=`rgba(255,60,0,${(pf/40)*0.2})`;ctx.fillRect(0,0,W,H);
+  }
+
+  // ── 菌毯地面 ──
+  const inf=Math.min(1,G.infection||0);
+  if(inf>0){ctx.fillStyle=`rgba(18,55,18,${0.04+inf*0.1})`;ctx.fillRect(0,0,W,H);}
+  // [v14已移除] 菌丝墙渲染
+
+  // 菌毯斑块
+  (G.infectionMap||[]).forEach(z=>{
+    const pulse=Math.sin(z.pulse)*0.12+0.88;
+    const alpha=(z.life/1200)*0.15*pulse*(inf+0.25);
+    const g2=ctx.createRadialGradient(z.x,z.y,2,z.x,z.y,z.r*pulse);
+    if(z.hostile){
+      g2.addColorStop(0,`rgba(180,60,30,${Math.min(0.3,alpha*2.5)})`);
+      g2.addColorStop(0.6,`rgba(100,30,15,${alpha*1.5})`);
+      g2.addColorStop(1,'rgba(0,0,0,0)');
+    } else {
+      g2.addColorStop(0,`rgba(40,160,70,${Math.min(0.3,alpha*2)})`);
+      g2.addColorStop(0.6,`rgba(22,90,35,${alpha})`);
+      g2.addColorStop(1,'rgba(0,0,0,0)');
+    }
+    ctx.fillStyle=g2;ctx.beginPath();ctx.arc(z.x,z.y,z.r*pulse,0,Math.PI*2);ctx.fill();
+  });
+
+  // ── 危险区域 ──
+  (G.dangerZones||[]).forEach(z=>{
+    const pulse=Math.sin(G.elapsed*0.08)*0.15+0.85;
+    let zColor;
+    switch(z.type){case'plasma':zColor='rgba(100,160,255,';break;case'spore':zColor='rgba(100,255,50,';break;case'corrosion':zColor='rgba(200,120,30,';break;default:zColor='rgba(200,50,50,';}
+    if(!z.active){
+      const warnAlpha=0.15+Math.sin(G.elapsed*0.2)*0.1;
+      ctx.save();ctx.strokeStyle=zColor+'0.8)';ctx.lineWidth=2;ctx.setLineDash([5,5]);
+      ctx.globalAlpha=warnAlpha*2;
+      ctx.beginPath();ctx.arc(z.x,z.y,z.r,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);ctx.restore();
+    } else {
+      const g2=ctx.createRadialGradient(z.x,z.y,z.r*0.3,z.x,z.y,z.r);
+      g2.addColorStop(0,zColor+'0.12)');g2.addColorStop(0.7,zColor+'0.08)');g2.addColorStop(1,zColor+'0)');
+      ctx.fillStyle=g2;ctx.beginPath();ctx.arc(z.x,z.y,z.r*pulse,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle=zColor+'0.5)';ctx.lineWidth=1.5;ctx.globalAlpha=0.4+Math.sin(G.elapsed*0.1)*0.2;
+      ctx.beginPath();ctx.arc(z.x,z.y,z.r*pulse,0,Math.PI*2);ctx.stroke();ctx.globalAlpha=1;
+    }
+  });
+  (G.dangerCircles||[]).forEach(c=>{
+    const alpha=c.life/90;
+    ctx.save();ctx.globalAlpha=Math.min(0.8,alpha*0.7);ctx.strokeStyle=c.color||'#9B4AFF';ctx.lineWidth=2;
+    ctx.setLineDash([4,4]);ctx.beginPath();ctx.arc(c.x,c.y,c.r,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);ctx.restore();
+  });
+
+  // ── 世界状态背景 ──
+  if(G.bossMode){ctx.fillStyle='rgba(140,15,40,0.05)';ctx.fillRect(0,0,W,H);}
+  if(G.worldCorrupt){const a=0.04+Math.sin(G.elapsed*0.02)*0.02;ctx.fillStyle=`rgba(160,0,100,${a})`;ctx.fillRect(0,0,W,H);}
+  if(G.overmind){
+    ctx.fillStyle='rgba(220,0,130,0.05)';ctx.fillRect(0,0,W,H);
+    ctx.save();ctx.globalAlpha=0.12+Math.sin(G.elapsed*0.05)*0.06;ctx.strokeStyle='#ff00aa';ctx.lineWidth=8;ctx.strokeRect(4,4,W-8,H-8);ctx.restore();
+  }
+  // [v14已移除] 视野污染渲染
+  // V13: UI腐蚀（Boss主巢阶段3）
+  if((G.uiCorrupt||0)>0){
+    const uc=G.uiCorrupt;
+    // 边框蠕动
+    ctx.save();ctx.globalAlpha=uc*0.5;
+    for(let i=0;i<3;i++){
+      ctx.strokeStyle=`rgba(${Math.floor(100+Math.random()*100)},0,${Math.floor(100+Math.random()*80)},0.7)`;
+      ctx.lineWidth=3+i*2;
+      ctx.strokeRect(i*3+Math.sin(G.elapsed*0.05+i)*3,i*3+Math.cos(G.elapsed*0.04+i)*3,W-i*6,H-i*6);
+    }
+    ctx.restore();
+  }
+
+  if(G.eliteFlash>0){ctx.fillStyle=`rgba(0,0,0,${G.eliteFlash/35*0.28})`;ctx.fillRect(0,0,W,H);G.eliteFlash--;}
+
+  // 毒液水洼
+  (G.slimePools||[]).forEach(s=>{
+    const g=ctx.createRadialGradient(s.x,s.y,2,s.x,s.y,s.r);
+    g.addColorStop(0,'rgba(70,230,110,0.20)');g.addColorStop(1,'rgba(70,230,110,0)');
+    ctx.fillStyle=g;ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fill();s.life--;
+  });
+  G.slimePools=(G.slimePools||[]).filter(s=>s.life>0);
+
+  // 炼狱火环：动态火焰光环
+  G.slots.forEach(sl=>{
+    if(sl.id&&sl.id==='inferno_ring'&&sl.state.drawR){
+      const r=sl.state.drawR,stars=sl.state.stars||0,ha=sl.state.haloAngle||0;
+      const rt=sl.state.ringTimer||0;
+      const flameRgba=['rgba(232,93,36,','rgba(255,120,0,','rgba(255,68,0,','rgba(255,34,0,','rgba(255,0,136,','rgba(204,0,255,'];
+      const innerCol=flameRgba[Math.min(stars,5)];
+      // 基础光环（旋转虚线）
+      ctx.save();
+      ctx.strokeStyle=innerCol+'0.35)';ctx.lineWidth=2+Math.min(stars,5)*0.5;
+      ctx.setLineDash([10+stars*4,8-stars*2]);ctx.lineDashOffset=-ha*r;
+      ctx.beginPath();ctx.arc(G.mx,G.my,r,0,Math.PI*2);ctx.stroke();
+      ctx.setLineDash([]);
+      // 内圈脉冲环
+      const pulseR=r*0.6+Math.sin(rt*0.18)*8;
+      ctx.strokeStyle=innerCol+'0.18)';ctx.lineWidth=1.5;
+      ctx.setLineDash([6,10]);ctx.lineDashOffset=ha*r*0.7;
+      ctx.beginPath();ctx.arc(G.mx,G.my,pulseR,0,Math.PI*2);ctx.stroke();
+      ctx.setLineDash([]);
+      // 火焰节点：沿光环均匀分布，缓慢旋转
+      const nodeCount=6+stars*3;
+      for(let ni=0;ni<nodeCount;ni++){
+        const na=ha+ni/nodeCount*Math.PI*2;
+        const nx=G.mx+Math.cos(na)*r,ny=G.my+Math.sin(na)*r;
+        const flicker=0.6+Math.sin(rt*0.25+ni*1.3)*0.4;
+        ctx.globalAlpha=0.7*flicker;
+        const nodeCols=['#ff6600','#ff4400','#ff2200','#ff0088','#cc00ff','#ffdd00'];
+        ctx.fillStyle=ni%3===0?nodeCols[Math.min(stars,5)]:'#ffaa00';
+        ctx.beginPath();ctx.arc(nx,ny,3+stars+flicker*2,0,Math.PI*2);ctx.fill();
+        // 小火舌
+        if(stars>=1){
+          ctx.strokeStyle='rgba(255,80,0,0.5)';ctx.lineWidth=1.5;
+          ctx.beginPath();ctx.moveTo(nx,ny);
+          ctx.lineTo(nx+Math.cos(na)*6*flicker,ny+Math.sin(na)*6*flicker);ctx.stroke();
+        }
+      }
+      ctx.globalAlpha=1;ctx.restore();
+      // 六个环绕火焰塔（炼狱火环发射源）
+      if(sl.state.infernoTowers){
+        sl.state.infernoTowers.forEach((t,i)=>{
+          ctx.save();
+          const flicker=0.75+Math.sin(G.elapsed*0.28+i*1.1)*0.25;
+          ctx.globalAlpha=0.85*flicker;
+          const towerCols=['#E85D24','#ff7700','#ff4400','#ff2200','#ff0088','#cc00ff'];
+          ctx.shadowBlur=10;ctx.shadowColor=towerCols[Math.min(stars,5)];
+          ctx.fillStyle=towerCols[Math.min(stars,5)];
+          ctx.beginPath();ctx.arc(t.x,t.y,6+stars,0,Math.PI*2);ctx.fill();
+          ctx.globalAlpha=0.6*flicker;ctx.fillStyle='#ffeeaa';
+          ctx.beginPath();ctx.arc(t.x,t.y,3,0,Math.PI*2);ctx.fill();
+          ctx.restore();
+        });
+      }
+    }
+  });
+
+  if(G.boss&&G.boss.puddles){
+    G.boss.puddles.forEach(p=>{ctx.globalAlpha=Math.min(0.35,p.life/400*0.35);ctx.fillStyle='#2a5a12';ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;});
+  }
+  if(G.boss&&G.boss.beamActive){
+    ctx.save();ctx.globalAlpha=0.3;ctx.strokeStyle='#9B4AFF';ctx.lineWidth=14;ctx.shadowColor='#9B4AFF';ctx.shadowBlur=20;
+    ctx.beginPath();ctx.moveTo(G.boss.x,G.boss.y);ctx.lineTo(G.boss.x+Math.cos(G.boss.beamAngle)*250,G.boss.y+Math.sin(G.boss.beamAngle)*250);ctx.stroke();ctx.restore();
+  }
+
+  if(G.arcs){G.arcs.forEach(a=>{ctx.save();ctx.globalAlpha=a.life/30*0.8;ctx.strokeStyle='#C9E054';ctx.lineWidth=1.5;
+    ctx.beginPath();let cx=a.x,cy=a.y;for(let i=0;i<4;i++){const nx=cx+(Math.random()-0.5)*20,ny=cy+(Math.random()-0.5)*20;ctx.moveTo(cx,cy);ctx.lineTo(nx,ny);cx=nx;cy=ny;}ctx.stroke();ctx.restore();});}
+
+  // 粒子（后期高combo降低质量）
+  const showAllPt=G.comboTier<6;
+  G.pts.forEach((p,i)=>{
+    if(!showAllPt&&i%2===0)return;// 性能优化：高combo只渲染一半粒子
+    ctx.globalAlpha=p.life*0.65;ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,Math.max(0.5,p.r),0,Math.PI*2);ctx.fill();
+  });
+  ctx.globalAlpha=1;
+
+  // ── 敌人（视觉优先级：普通低饱和，精英/Boss高对比）──
+  G.enemies.forEach(e=>{
+    const pct=e.hp/e.maxhp;
+    // V13: 后期普通敌人更透明（视觉降级，减少信息爆炸）
+    const baseFade=G.comboTier>=5?0.65:0.85;
+    const alpha=(e.special==='stealth'?(e.stealthAlpha||1):1)*baseFade;
+    ctx.globalAlpha=alpha;
+    // 过载标记：闪烁提示
+    if((e.overloadStacks||0)>=2){ctx.save();ctx.strokeStyle='#7aadff';ctx.lineWidth=2;ctx.globalAlpha=0.6+Math.sin(G.elapsed*0.3)*0.4;ctx.beginPath();ctx.arc(e.x,e.y,e.sz/2+4,0,Math.PI*2);ctx.stroke();ctx.restore();}
+    let col=e.poison>0&&!e.immuneDot?'#3a6a1a':e.slowTimer>60?'#3050A0':e.col;
+    // V13: 巢核虫范围显示
+    if(e.special==='hivemind'){
+      ctx.save();ctx.strokeStyle='rgba(204,68,136,0.3)';ctx.lineWidth=1;ctx.setLineDash([4,4]);
+      ctx.beginPath();ctx.arc(e.x,e.y,100,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);ctx.restore();
+    }
+    if(e.special==='elite'||e.special==='suicidal'){ctx.save();ctx.shadowBlur=18;ctx.shadowColor='#ff1111';}
+    if(e.shield>0){ctx.save();ctx.strokeStyle='rgba(68,136,204,0.7)';ctx.lineWidth=2;ctx.shadowBlur=8;ctx.shadowColor='#4488CC';ctx.beginPath();ctx.arc(e.x,e.y,e.sz/2+5,0,Math.PI*2);ctx.stroke();ctx.restore();}
+    // shieldBubble
+    if((e.shieldBubble||0)>0){ctx.save();ctx.globalAlpha=0.4;ctx.strokeStyle='#44aacc';ctx.lineWidth=1;ctx.beginPath();ctx.arc(e.x,e.y,e.sz/2+8,0,Math.PI*2);ctx.stroke();ctx.restore();}
+    ctx.fillStyle=col;
+    if(e.special==='armored'){ctx.strokeStyle='#7080A0';ctx.lineWidth=2;ctx.beginPath();ctx.rect(e.x-e.sz/2,e.y-e.sz/2,e.sz,e.sz);ctx.fill();ctx.stroke();}
+    else if(e.special==='bomber'||e.special==='suicidal'){
+      ctx.beginPath();for(let i=0;i<6;i++){const a=i/6*Math.PI*2;ctx.lineTo(e.x+Math.cos(a)*e.sz/2,e.y+Math.sin(a)*e.sz/2);}ctx.closePath();ctx.fill();
+    }
+    else if(e.special==='spawner'){ctx.beginPath();ctx.ellipse(e.x,e.y,e.sz/2,e.sz/2*0.75,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#8040B0';ctx.lineWidth=2;ctx.stroke();}
+    else if(e.special==='jumper'){
+      ctx.beginPath();for(let i=0;i<3;i++){const a=i/3*Math.PI*2-Math.PI/2;ctx.lineTo(e.x+Math.cos(a)*e.sz/2,e.y+Math.sin(a)*e.sz/2);}ctx.closePath();ctx.fill();
+    }
+    else if(e.special==='devourer'){
+      ctx.beginPath();ctx.arc(e.x,e.y,e.sz/2,0,Math.PI*2);ctx.fill();
+      if(e.devourCount>0){ctx.strokeStyle='#886633';ctx.lineWidth=1;ctx.beginPath();ctx.arc(e.x,e.y,e.sz/2+3,0,Math.PI*2);ctx.stroke();}
+    }
+    else if(e.special==='magnetic'){ctx.beginPath();ctx.arc(e.x,e.y,e.sz/2,0,Math.PI*2);ctx.fill();ctx.strokeStyle='rgba(50,100,200,0.5)';ctx.lineWidth=1;ctx.setLineDash([3,3]);ctx.beginPath();ctx.arc(e.x,e.y,e.magnetR||0,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);}
+    else if(e.special==='void'){ctx.fillStyle='#6030A0';ctx.beginPath();for(let i=0;i<5;i++){const a=i/5*Math.PI*2-Math.PI/2;ctx.lineTo(e.x+Math.cos(a)*e.sz/2,e.y+Math.sin(a)*e.sz/2);}ctx.closePath();ctx.fill();}
+    else if(e.special==='regen'){ctx.beginPath();ctx.arc(e.x,e.y,e.sz/2,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#18A050';ctx.lineWidth=1;ctx.stroke();}
+    // V13新增外观
+    else if(e.special==='reflector'){
+      ctx.beginPath();ctx.arc(e.x,e.y,e.sz/2,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle='rgba(0,136,204,0.8)';ctx.lineWidth=2;ctx.stroke();
+      // 反射纹路
+      ctx.save();ctx.strokeStyle='rgba(100,200,255,0.5)';ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(e.x-e.sz/2*0.6,e.y);ctx.lineTo(e.x+e.sz/2*0.6,e.y);
+      ctx.moveTo(e.x,e.y-e.sz/2*0.6);ctx.lineTo(e.x,e.y+e.sz/2*0.6);ctx.stroke();ctx.restore();
+    }
+    else if(e.special==='hivemind'){
+      ctx.beginPath();for(let i=0;i<4;i++){const a=i/4*Math.PI*2+G.elapsed*0.02;ctx.lineTo(e.x+Math.cos(a)*e.sz/2,e.y+Math.sin(a)*e.sz/2);}ctx.closePath();ctx.fill();
+      ctx.strokeStyle='#CC4488';ctx.lineWidth=2;ctx.stroke();
+    }
+    else if(e.special==='corruptor'){
+      ctx.beginPath();ctx.arc(e.x,e.y,e.sz/2,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle='rgba(100,180,80,0.7)';ctx.lineWidth=1.5;ctx.stroke();
+      // 扩散触角
+      ctx.save();ctx.globalAlpha=0.4;for(let i=0;i<4;i++){
+        const a=i/4*Math.PI*2+G.elapsed*0.03;
+        ctx.strokeStyle='#4aa840';ctx.lineWidth=1;
+        ctx.beginPath();ctx.moveTo(e.x,e.y);ctx.lineTo(e.x+Math.cos(a)*e.sz,e.y+Math.sin(a)*e.sz);ctx.stroke();
+      }ctx.restore();
+    }
+    else{ctx.beginPath();ctx.arc(e.x,e.y,e.sz/2,0,Math.PI*2);ctx.fill();}
+    if(e.special==='elite'||e.special==='suicidal')ctx.restore();
+    ctx.globalAlpha=alpha;
+    ctx.fillStyle='rgba(0,0,0,0.45)';ctx.fillRect(e.x-e.sz/2,e.y-e.sz/2-7,e.sz,2);
+    ctx.fillStyle=pct>0.5?'#1D9E75':'#E24B4A';ctx.fillRect(e.x-e.sz/2,e.y-e.sz/2-7,e.sz*pct,2);
+    ctx.globalAlpha=1;
+  });
+
+  // ── Boss ──
+  if(G.boss){
+    const b=G.boss,pct=b.hp/b.maxhp,pulse=Math.sin(G.elapsed*0.1)*2.5;
+    ctx.save();ctx.fillStyle='rgba(0,0,0,0.4)';ctx.beginPath();ctx.ellipse(b.x,b.y+b.sz*0.55,b.sz*0.75,b.sz*0.28,0,0,Math.PI*2);ctx.fill();ctx.restore();
+    ctx.save();ctx.shadowColor=b.col;ctx.shadowBlur=32+pulse*3;ctx.fillStyle=b.col;ctx.beginPath();ctx.arc(b.x,b.y,b.sz/2+pulse,0,Math.PI*2);ctx.fill();ctx.restore();
+    if(b._phase>=1){ctx.save();ctx.strokeStyle=b._phase>=2?'#ff2200':'#EF9F27';ctx.lineWidth=2;ctx.globalAlpha=0.5;ctx.beginPath();ctx.arc(b.x,b.y,b.sz/2+8+pulse*0.5,0,Math.PI*2);ctx.stroke();ctx.restore();}
+    ctx.fillStyle='rgba(0,0,0,0.55)';ctx.fillRect(b.x-b.sz/2,b.y-b.sz/2-14,b.sz,6);
+    ctx.fillStyle=pct>0.5?'#EF9F27':'#E24B4A';ctx.fillRect(b.x-b.sz/2,b.y-b.sz/2-14,b.sz*pct,6);
+  }
+
+  // 环绕武器
+  G.slots.forEach(sl=>{
+    if(!sl.id)return;
+    if(sl.state.orbs){sl.state.orbs.forEach(o=>{const orbCols2=['#00FFB3','#FF8800','#FF00FF','#00ccff','#ffdd00','#ff0088'];const col=sl.stars>0?orbCols2[Math.min(sl.stars,5)]:(sl.id==='orbit_storm'?'#00FFB3':'#5DCAA5');ctx.fillStyle=col;ctx.globalAlpha=0.9;ctx.beginPath();ctx.arc(o.x,o.y,5+Math.min(sl.stars||0,5)*1.5,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;});}
+    if(sl.state.towers){
+      const towers=sl.state.towers;
+      // 轨道圆（淡）
+      if(towers.length>0){
+        const r=Math.hypot(towers[0].x-G.mx,towers[0].y-G.my);
+        ctx.save();ctx.globalAlpha=0.12;ctx.strokeStyle='#E85D24';ctx.lineWidth=1;ctx.setLineDash([4,6]);
+        ctx.beginPath();ctx.arc(G.mx,G.my,r,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);ctx.restore();
+      }
+      towers.forEach(t=>{
+        // 母体到塔的连线
+        ctx.save();ctx.globalAlpha=0.18;ctx.strokeStyle='#ff8844';ctx.lineWidth=1;
+        ctx.beginPath();ctx.moveTo(G.mx,G.my);ctx.lineTo(t.x,t.y);ctx.stroke();ctx.restore();
+        // 塔本体：火焰圆
+        ctx.save();
+        const flicker=0.8+Math.sin(G.elapsed*0.25+t.x)*0.2;
+        ctx.globalAlpha=0.92*flicker;
+        ctx.fillStyle='#E85D24';ctx.beginPath();ctx.arc(t.x,t.y,7,0,Math.PI*2);ctx.fill();
+        ctx.globalAlpha=0.7*flicker;ctx.fillStyle='#ffcc44';ctx.beginPath();ctx.arc(t.x,t.y,3.5,0,Math.PI*2);ctx.fill();
+        // 火焰光晕
+        ctx.globalAlpha=0.22*flicker;ctx.strokeStyle='#ff6600';ctx.lineWidth=3;
+        ctx.beginPath();ctx.arc(t.x,t.y,11,0,Math.PI*2);ctx.stroke();
+        ctx.restore();
+      });
+    }
+  });
+
+  // 抛射物
+  G.projs.forEach(p=>{
+    if(p.isBossBullet||p.isEnemyBullet){ctx.globalAlpha=0.85;ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;return;}
+    ctx.save();
+    if(p.isFlameBolt){
+      // 火焰弹：拖尾+核心
+      const ang=Math.atan2(p.vy,p.vx),len=10+p.r;
+      const g2=ctx.createLinearGradient(p.x-Math.cos(ang)*len,p.y-Math.sin(ang)*len,p.x,p.y);
+      g2.addColorStop(0,'rgba(0,0,0,0)');g2.addColorStop(1,p.color.replace(')',',0.7)').replace('rgb','rgba'));
+      ctx.strokeStyle=p.color;ctx.lineWidth=p.r*1.2;ctx.globalAlpha=0.5;
+      ctx.beginPath();ctx.moveTo(p.x-Math.cos(ang)*len,p.y-Math.sin(ang)*len);ctx.lineTo(p.x,p.y);ctx.stroke();
+      ctx.globalAlpha=0.9;ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#ffeeaa';ctx.globalAlpha=0.7;ctx.beginPath();ctx.arc(p.x,p.y,p.r*0.5,0,Math.PI*2);ctx.fill();
+      ctx.restore();return;
+    }
+    if(p.isLightning){
+      const len=10+p.r*2,ang=Math.atan2(p.vy,p.vx);
+      ctx.strokeStyle=p.color;ctx.lineWidth=1.5;ctx.shadowColor=p.color;ctx.shadowBlur=6;
+      ctx.beginPath();let cx2=p.x-Math.cos(ang)*len,cy2=p.y-Math.sin(ang)*len;ctx.moveTo(cx2,cy2);
+      for(let i=1;i<=4;i++){const t2=i/4,nx=p.x-Math.cos(ang)*len*(1-t2),ny=p.y-Math.sin(ang)*len*(1-t2);const perp=ang+Math.PI/2,jitter=(Math.random()-0.5)*5;ctx.lineTo(nx+Math.cos(perp)*jitter,ny+Math.sin(perp)*jitter);}ctx.stroke();
+      ctx.globalAlpha=0.5;ctx.strokeStyle='rgba(180,220,255,0.6)';ctx.lineWidth=1;for(let i=0;i<2;i++){ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(p.x+(Math.random()-0.5)*18,p.y+(Math.random()-0.5)*18);ctx.stroke();}
+      ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,2,0,Math.PI*2);ctx.fill();
+    } else if(p.poison){
+      ctx.strokeStyle='rgba(70,190,70,0.3)';ctx.lineWidth=p.r*1.5;ctx.beginPath();ctx.moveTo(p.x-p.vx*3,p.y-p.vy*3);ctx.lineTo(p.x,p.y);ctx.stroke();
+      ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill();
+    } else {
+      ctx.globalAlpha=0.9;ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill();
+    }
+    ctx.restore();
+  });
+  ctx.globalAlpha=1;
+
+  // ── 虫子 ──
+  G.bugs.forEach(b=>{
+    const pulse=Math.sin(b.age*0.13)*0.1;ctx.save();
+    if(b.elite){ctx.shadowBlur=12;ctx.shadowColor='#EF9F27';}
+    // V13: 虫海流分工颜色
+    let bugColor='#4DBFA0';
+    if(G.activeBuild==='swarm'){
+      if(b.role==='guard')bugColor='#44AAFF';
+      else if(b.role==='bomber')bugColor='#FF8844';
+    }
+    if(b.elite)bugColor='#EF9F27';
+    ctx.fillStyle=bugColor;ctx.globalAlpha=0.9+pulse;
+    ctx.beginPath();ctx.ellipse(b.x,b.y,5,3,Math.atan2(b.vy,b.vx),0,Math.PI*2);ctx.fill();
+    ctx.restore();ctx.globalAlpha=1;
+  });
+
+  // ── 玩家（永远最清晰）──
+  const hpPct=G.mhp/G.mmaxhp;
+  const tier=G.comboTier||0;
+
+  // 低血量危险光环
+  if(hpPct<0.4){
+    const dangerAlpha=0.18+Math.sin(G.elapsed*0.12)*0.1;const dangerR=20+Math.sin(G.elapsed*0.08)*1.5;
+    ctx.save();ctx.strokeStyle='#E24B4A';ctx.lineWidth=2.5;ctx.globalAlpha=dangerAlpha*2;ctx.shadowBlur=10;ctx.shadowColor='#E24B4A';
+    ctx.beginPath();ctx.arc(G.mx,G.my,dangerR,0,Math.PI*2);ctx.stroke();ctx.restore();
+  }
+  // v18: 静止警告 —— 静止超过1.5秒显示收缩的橙色压力环
+  if((G.stillTimer||0)>90){
+    const sp=Math.min(1,(G.stillTimer-90)/90);
+    // 压力环：从屏幕边缘向玩家收缩，多圈叠加暗示包围逼近
+    const maxRingR=Math.max(W,H)*0.72;
+    const minRingR=38;
+    const warnR=maxRingR-(maxRingR-minRingR)*sp;
+    const warnAlpha=(0.25+Math.sin(G.elapsed*0.28)*0.15)*sp;
+    // 外圈（主压力环）
+    ctx.save();ctx.strokeStyle='#ff8800';ctx.lineWidth=2.5;ctx.globalAlpha=warnAlpha;
+    ctx.setLineDash([8,6]);ctx.beginPath();ctx.arc(G.mx,G.my,warnR,0,Math.PI*2);ctx.stroke();
+    // 内圈（辅助环，稍快）
+    const warnR2=Math.max(minRingR+10,(maxRingR*0.6)-(maxRingR*0.6-minRingR*1.4)*sp);
+    ctx.strokeStyle='#ff6600';ctx.lineWidth=1.5;ctx.globalAlpha=warnAlpha*0.6;
+    ctx.setLineDash([5,8]);ctx.beginPath();ctx.arc(G.mx,G.my,warnR2,0,Math.PI*2);ctx.stroke();
+    ctx.setLineDash([]);ctx.restore();
+    if(G.stillTimer===90)showEcoAlert('⚠ 停留原地会被包围！');
+  }
+  // V13: 狂暴流高combo：玩家周围世界扭曲
+  if(G.activeBuild==='berserk'&&tier>=4){
+    const distortR=20+tier*6;
+    ctx.save();ctx.globalAlpha=0.15+tier*0.04;
+    ctx.strokeStyle='#ff2200';ctx.lineWidth=2;
+    for(let i=0;i<3;i++){
+      const a=G.elapsed*0.03*(1+i*0.3)+i*Math.PI*0.7;
+      ctx.beginPath();ctx.arc(G.mx,G.my,distortR+i*8,a,a+Math.PI);ctx.stroke();
+    }
+    ctx.restore();
+  }
+  // Combo tier 旋转光弧
+  if(tier>=1){
+    const tierColors=['','#aaff44','#ffcc00','#ff9900','#ff4400','#ff2200','#cc00ff','#ff00aa','#ff00ff'];
+    const tc=tierColors[tier]||'#ff8800';
+    for(let ri=0;ri<Math.min(tier,4);ri++){
+      const angOffset=G.elapsed*0.04*(1+ri*0.3)+ri*Math.PI*0.5,arcR=18+ri*7,arcLen=0.4+ri*0.1;
+      ctx.save();ctx.strokeStyle=tc;ctx.lineWidth=1.5-ri*0.2;ctx.globalAlpha=0.5-ri*0.08;ctx.shadowBlur=6;ctx.shadowColor=tc;
+      ctx.beginPath();ctx.arc(G.mx,G.my,arcR,angOffset,angOffset+arcLen*Math.PI);ctx.stroke();
+      ctx.beginPath();ctx.arc(G.mx,G.my,arcR,angOffset+Math.PI,angOffset+Math.PI+arcLen*Math.PI);ctx.stroke();ctx.restore();
+    }
+    if(tier>=5){const pulseR=16+(G.elapsed*1.2)%24,pulseAlpha=1-(pulseR-16)/24;ctx.save();ctx.strokeStyle=tc;ctx.lineWidth=1.5;ctx.globalAlpha=pulseAlpha*0.4;ctx.beginPath();ctx.arc(G.mx,G.my,pulseR,0,Math.PI*2);ctx.stroke();ctx.restore();}
+  }
+  if(tier>=7){const tc7=tier>=8?'#ff00ff':'#ff00aa';ctx.save();ctx.globalAlpha=0.22+Math.sin(G.elapsed*0.08)*0.08;ctx.fillStyle=tc7;ctx.beginPath();ctx.arc(G.mx,G.my,24+Math.sin(G.elapsed*0.05)*4,0,Math.PI*2);ctx.fill();ctx.restore();}
+
+  // 玩家主体
+  const tierColors2=['#1D9E75','#1D9E75','#aaee44','#ffcc00','#ff8800','#ff3300','#cc00ff','#ff00aa','#ff00ff'];
+  const bodyColor=hpPct<0.3?'#E24B4A':(tierColors2[tier]||'#1D9E75');
+  const glowStr=14+tier*7+(hpPct<0.3?12:0);
+  ctx.save();ctx.shadowBlur=glowStr;ctx.shadowColor=bodyColor;
+  ctx.fillStyle=`rgba(29,158,117,${0.1+0.06*Math.sin(G.elapsed*0.05)})`;
+  ctx.beginPath();ctx.arc(G.mx,G.my,14,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle=bodyColor;ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(G.mx,G.my,12,0,Math.PI*2);ctx.stroke();
+  ctx.fillStyle=tier>=3?bodyColor:'#9FE1CB';ctx.beginPath();ctx.arc(G.mx,G.my,4,0,Math.PI*2);ctx.fill();
+  ctx.restore();
+  // 血条
+  const hbw=48,hbh=5;
+  ctx.fillStyle='rgba(0,0,0,0.6)';ctx.fillRect(G.mx-hbw/2,G.my-36,hbw,hbh);
+  const hbCol=hpPct<0.3?'#ff3333':hpPct<0.6?'#EF9F27':'#44ee66';
+  ctx.fillStyle=hbCol;ctx.fillRect(G.mx-hbw/2,G.my-36,hbw*hpPct,hbh);
+  if(hpPct>0.05){ctx.fillStyle='rgba(255,255,255,0.2)';ctx.fillRect(G.mx-hbw/2,G.my-36,hbw*hpPct,hbh/2);}
+
+  // Vignette（始终保留玩家清晰）
+  const vg=ctx.createRadialGradient(W/2,H/2,H*0.3,W/2,H/2,H*0.9);
+  vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(0,0,0,0.5)');
+  ctx.fillStyle=vg;ctx.fillRect(0,0,W,H);
+
+  // 爆炸波纹
+  (G.waves||[]).forEach(w=>{ctx.save();ctx.globalAlpha=w.life/20;ctx.strokeStyle=w.color;ctx.lineWidth=3;ctx.beginPath();ctx.arc(w.x,w.y,w.r,0,Math.PI*2);ctx.stroke();ctx.restore();w.r+=5;w.life--;});
+  G.waves=(G.waves||[]).filter(w=>w.life>0);
+
+  // 伤害数字（后期小伤害隐藏）
+  const dmgThreshold=G.comboTier>=4?5:0;
+  (G.damageTexts||[]).forEach(t=>{
+    if(parseInt(t.text)<dmgThreshold&&G.comboTier>=4)return;// 视觉优先级
+    ctx.save();ctx.globalAlpha=t.life/40;ctx.fillStyle=t.color;ctx.font='bold '+t.size+'px Arial';ctx.textAlign='center';ctx.shadowColor=t.color;ctx.shadowBlur=6;ctx.fillText(t.text,t.x,t.y);ctx.restore();t.y+=t.vy;t.life--;
+  });
+  G.damageTexts=(G.damageTexts||[]).filter(t=>{if(t.life<=0){recycleDmg(t);return false;}return true;});
+
+  // ── Combo UI ──
+  if(G.combo>=2){
+    ctx.save();const tc=G.comboTier>=7?'#ff00aa':G.comboTier>=5?'#ff3300':G.comboTier>=3?'#ff8800':G.comboTier>=1?'#ffcc00':'#ffff44';
+    // V13: 高combo combo数字脉动更强烈
+    const scale=1+Math.sin(G.elapsed*0.2)*0.07*(1+G.comboTier*0.05);
+    ctx.translate(W/2,78);ctx.scale(scale,scale);ctx.textAlign='center';ctx.shadowColor=tc;ctx.shadowBlur=16+G.comboTier*4;ctx.fillStyle=tc;
+    const tierNames=['','热身','狩猎','侵蚀','暴走','母巢同步','污染扩张','世界侵蚀','虫巢暴走'];
+    const tierLabel=G.comboTier>0?' ['+tierNames[G.comboTier]+']':'';
+    ctx.font='bold 26px Arial';ctx.fillText(G.combo+' COMBO'+tierLabel,0,0);ctx.restore();
+  }
+
+  // 闪屏
+  // [v15] 白屏闪烁已关闭
+
+  ctx.restore();
+}
+
+function loop(){update();draw();G._raf=requestAnimationFrame(loop);}
+
+// ══════ 输入 ══════
+window.addEventListener('keydown',e=>{G&&(G.keys[e.key]=true);if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key))e.preventDefault();if(e.key==='Escape'||e.key==='p'||e.key==='P')togglePause();});
+window.addEventListener('keyup',e=>{G&&(G.keys[e.key]=false);});
+CV.addEventListener('mousemove',e=>{const r=CV.getBoundingClientRect();mX=e.clientX-r.left;mY=e.clientY-r.top;});
+let dpadState={u:false,d:false,l:false,r:false};
+function bindDpad(id,key,sk){const el=document.getElementById(id);if(!el)return;const press=e=>{e.preventDefault();dpadState[sk]=true;if(G)G.keys[key]=true;};const release=e=>{e.preventDefault();dpadState[sk]=false;if(G)G.keys[key]=false;};el.addEventListener('touchstart',press,{passive:false});el.addEventListener('touchend',release,{passive:false});el.addEventListener('mousedown',press);el.addEventListener('mouseup',release);el.addEventListener('mouseleave',release);}
+bindDpad('du','ArrowUp','u');bindDpad('dd','ArrowDown','d');bindDpad('dl','ArrowLeft','l');bindDpad('dr','ArrowRight','r');
+let touchStart=null;
+CV.addEventListener('touchstart',e=>{e.preventDefault();const r=CV.getBoundingClientRect();touchStart={x:e.touches[0].clientX-r.left,y:e.touches[0].clientY-r.top};},{passive:false});
+CV.addEventListener('touchmove',e=>{e.preventDefault();if(!touchStart||!G)return;const r=CV.getBoundingClientRect();const tx=e.touches[0].clientX-r.left,ty=e.touches[0].clientY-r.top;G.mx=Math.max(14,Math.min(W-14,G.mx+(tx-touchStart.x)*0.5));G.my=Math.max(14,Math.min(H-14,G.my+(ty-touchStart.y)*0.5));touchStart={x:tx,y:ty};},{passive:false});
+CV.addEventListener('touchend',e=>{e.preventDefault();touchStart=null;},{passive:false});
+
+initGame();
+</script>
+</body>
+</html>
