@@ -409,11 +409,12 @@ canvas{display:block;background:#04060f;touch-action:none;width:100%;flex:1;min-
 @keyframes smPulse{0%,100%{box-shadow:0 0 8px rgba(232,212,77,0.2)}50%{box-shadow:0 0 16px rgba(232,212,77,0.4)}}
 /* 开场白 */
 @keyframes introFadeIn{to{opacity:1;transform:translateY(0)}}
+@keyframes introDrop{from{opacity:0;transform:translateY(-90px)}to{opacity:1;transform:translateY(0)}}
 .intro-overlay{position:fixed;inset:0;z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(4,6,15,0.97);pointer-events:none;transition:opacity 0.6s ease}
 .intro-overlay.fade-out{opacity:0}
 .intro-line{font-size:15px;color:#c0b8d8;text-align:center;margin:5px 0;line-height:2;opacity:0;transform:translateY(14px);animation:introFadeIn 0.5s ease forwards;animation-play-state:paused;max-width:88vw;padding:0 20px;text-shadow:0 0 8px rgba(160,140,220,0.3)}
 .intro-line.show{animation-play-state:running}
-.intro-line.l5{font-size:24px;font-weight:700;color:#EF9F27;text-shadow:0 0 24px #EF9F2799;margin-top:14px}
+.intro-line.l5{font-size:24px;font-weight:700;color:#EF9F27;text-shadow:0 0 24px #EF9F2799;margin-top:14px;animation-name:introDrop;animation-duration:0.7s;animation-timing-function:cubic-bezier(.22,.61,.36,1);transform:translateY(-90px)}
 </style>
 </head>
 <body>
@@ -1121,17 +1122,18 @@ function doDailySignin(){
 
 function showIntroText(){
   const lines=[
-    '天地大劫，道界崩裂，无数强者被劫气裹挟涌入混沌战场。',
+    '天地大劫，道界崩裂。',
+    '无数强者被劫气裹挟涌入混沌战场。',
     '劫气腐蚀一切道法，所有修士境界尽皆封印。',
     '你这个一无所有的练气期，偏偏与劫气共鸣——怒火越盛，战力越强。',
     '收金丹妖兽，炼元婴傀儡，打化神大能，锤爆仙帝魔尊。',
     '愤怒的练气期，横扫三界！'
   ];
   const overlay=document.createElement('div');overlay.className='intro-overlay';
-  const els=lines.map((t,i)=>{const e=document.createElement('div');e.className='intro-line'+(i===4?' l5':'');e.textContent=t;overlay.appendChild(e);return e;});
+  const els=lines.map((t,i)=>{const e=document.createElement('div');e.className='intro-line'+(i===5?' l5':'');e.textContent=t;overlay.appendChild(e);return e;});
   document.body.appendChild(overlay);
-  els.forEach((e,i)=>setTimeout(()=>e.classList.add('show'),300+i*600));
-  setTimeout(()=>{overlay.classList.add('fade-out');setTimeout(()=>overlay.remove(),600);},300+4*600+2200);
+  els.forEach((e,i)=>setTimeout(()=>e.classList.add('show'),300+i*1200));
+  setTimeout(()=>{overlay.classList.add('fade-out');setTimeout(()=>overlay.remove(),600);},300+5*1200+2200);
 }
 
 function showHomePage(){
