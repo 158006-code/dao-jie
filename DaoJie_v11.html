@@ -1127,24 +1127,26 @@ function showIntroText(){
   const lines=[
     '天地大劫，道界崩裂。',
     '无数强者被劫气裹挟涌入混沌战场。',
-    '劫气腐蚀一切道法，所有修士境界尽皆封印。',
-    '你这个一无所有的练气期，偏偏与劫气共鸣——怒火越盛，战力越强。',
+    '你这个一无所有的练气期，',
+    '还被打乱了生物钟，从此境界停滞，',
+    '却未曾想与劫气产生了共鸣——',
+    '愤怒之下，怒火越盛，战力越强。',
     '收金丹妖兽，炼元婴傀儡，打化神大能，锤爆仙帝魔尊。',
     '愤怒的练气期，横扫三界！'
   ];
   const overlay=document.createElement('div');overlay.className='intro-overlay';
-  const els=lines.map((t,i)=>{const e=document.createElement('div');e.className='intro-line'+(i===5?' l5':'');e.textContent=t;overlay.appendChild(e);return e;});
+  const els=lines.map((t,i)=>{const e=document.createElement('div');e.className='intro-line'+(i===7?' l5':'');e.textContent=t;overlay.appendChild(e);return e;});
   document.body.appendChild(overlay);
   els.forEach((e,i)=>setTimeout(()=>e.classList.add('show'),300+i*1200));
   // 末句落地：震屏+金光
-  const landTime=300+5*1200+800;
+  const landTime=300+7*1200+800;
   setTimeout(()=>{
     overlay.classList.add('shake');
     const flash=document.createElement('div');flash.className='intro-flash';flash.style.opacity='1';
     document.body.appendChild(flash);
     requestAnimationFrame(()=>{flash.style.opacity='0';setTimeout(()=>flash.remove(),500);});
   },landTime);
-  setTimeout(()=>{overlay.classList.add('fade-out');setTimeout(()=>overlay.remove(),600);},300+5*1200+2200);
+  setTimeout(()=>{overlay.classList.add('fade-out');setTimeout(()=>overlay.remove(),600);},300+7*1200+2200);
 }
 
 function showHomePage(){
