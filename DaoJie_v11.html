@@ -1456,12 +1456,8 @@ function selectStage(stageId){
   const isCurrent=node.realm===currentRealm&&node.stage===currentStage;
   const isCleared=node.realm<currentRealm||(node.realm===currentRealm&&node.stage<currentStage);
 
-  if(isCurrent){startBattle();return;}
-  if(isCleared){
-    _replayStageId=stageId;
-    startBattle();
-    return;
-  }
+  _replayStageId=stageId;
+  startBattle();
 }
 
 function closeCharPage(){
