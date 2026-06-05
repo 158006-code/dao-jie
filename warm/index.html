@@ -1134,7 +1134,7 @@ function _update(){
 
   // v18: 静止惩罚系统 —— 玩家不动时敌人快速聚拢并加速
   const moved=Math.hypot(G.mx-prevMx,G.my-prevMy)>0.5;
-  if(moved){G.stillTimer=0;}else{G.stillTimer=(G.stillTimer||0)+1;}
+  if(moved){G.stillTimer=0;ecoAlertTimer=0;document.getElementById('eco-alert').classList.remove('show');}else{G.stillTimer=(G.stillTimer||0)+1;}
   // 静止超过1.5秒（90帧）开始施压
   const stillPressure=Math.min(1,(G.stillTimer||0)/180); // 0→1 线性，3秒满压
   if(stillPressure>0){
