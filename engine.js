@@ -298,3 +298,18 @@ function updateProjectiles(G){
   });
   for(let i=dp.length-1;i>=0;i--)G.projs.splice(dp[i],1);
 }
+
+// ── 视角/运动模式 ──
+function clamp(val,min,max){return Math.max(min,Math.min(max,val));}
+function applyViewMode(G){
+  switch(G.viewMode){
+    case'free':
+      G.bounds=null;break;
+    case'vertical':
+      G.bounds={left:W*0.2,right:W*0.8,top:null,bottom:null};
+      G.mx=clamp(G.mx,W*0.2+12,W*0.8-12);break;
+    case'arena':
+      G.bounds={left:0,right:W,top:0,bottom:H};
+      G.mx=clamp(G.mx,12,W-12);G.my=clamp(G.my,12,H-12);break;
+  }
+}

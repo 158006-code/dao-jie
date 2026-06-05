@@ -3,6 +3,27 @@
 // 敌人生成 · AI · 灵虫 · Boss触发
 // ══════════════════════════════════════════
 
+// ── 视角刷怪 ──
+function randBetween(a,b){return a+Math.random()*(b-a);}
+function getSpawnPos(G){
+  const OFF=60;
+  switch(G.viewMode){
+    case'vertical':{
+      const fromTop=Math.random()<0.5;
+      return{x:randBetween(W*0.1,W*0.9),y:fromTop?-OFF:H+OFF};
+    }
+    default:{
+      const side=Math.floor(Math.random()*4);
+      switch(side){
+        case 0:return{x:randBetween(0,W),y:-OFF};
+        case 1:return{x:randBetween(0,W),y:H+OFF};
+        case 2:return{x:-OFF,y:randBetween(0,H)};
+        case 3:return{x:W+OFF,y:randBetween(0,H)};
+      }
+    }
+  }
+}
+
 // ── 敌人生成 ──
 function getAvailableTypes(sec){return ENEMY_TYPES.filter(t=>sec>=t.unlockSec);}
 function spawnEnemyAt(G,typeKey,x,y){
@@ -31,12 +52,7 @@ function spawnEnemyAt(G,typeKey,x,y){
   });
 }
 function spawnEnemy(G){
-  const s=Math.floor(Math.random()*4);
-  let x,y;
-  if(s===0){x=Math.random()*W;y=-15;}
-  else if(s===1){x=W+15;y=Math.random()*H;}
-  else if(s===2){x=Math.random()*W;y=H+15;}
-  else{x=-15;y=Math.random()*H;}
+  const pos=getSpawnPos(G);let x=pos.x,y=pos.y;
   const sec=Math.floor(G.elapsed/FPS);
   const avail=getAvailableTypes(sec);
   const base={normal:35,swift:20,armored:12,ranged:10,bomber:8,elite:6,queen:3,stealth:5,regen:5,magnetic:4,void:4,
@@ -302,7 +318,7 @@ function updateEnemyAI(G,sec){
 
     if(e.special==='ranged'){
       const dx=G.mx-e.x,dy=G.my-e.y,d=Math.hypot(dx,dy)||1;
-      if(d<e.keepDist){e.vx-=(dx/d)*e.spd*spdMult*0.15;e.vy-=(dy/d)*e.spd*spdMult*0.15;}
+      if(d<e.keepDist){let fx=-(dx/d)*e.spd*spdMult*0.15,fy=-(dy/d)*e.spd*spdMult*0.15;if(G.viewMode==='vertical'){fx=0;fy*=1.4;}e.vx+=fx;e.vy+=fy;}
       else{e.vx+=(dx/d)*e.spd*spdMult*0.08;e.vy+=(dy/d)*e.spd*spdMult*0.08;}
       e.rangedTimer++;if(e.rangedTimer>=e.rangedCd&&d<200){e.rangedTimer=0;e.rangedCd=70+Math.floor(Math.random()*20);addProj(G,e.x,e.y,(dx/d)*3.5,(dy/d)*3.5,{dmg:e.atk*5,r:4,color:'#A060C0',life:80,isEnemyBullet:true});}
     } else if(e.special==='suicidal'){
@@ -322,11 +338,14 @@ function updateEnemyAI(G,sec){
       else{const dx=G.mx-e.x,dy=G.my-e.y,d=Math.hypot(dx,dy)||1;e.vx+=(dx/d)*e.spd*spdMult*0.08;e.vy+=(dy/d)*e.spd*spdMult*0.08;}
     } else {
       const dx=G.mx-e.x,dy=G.my-e.y,d=Math.hypot(dx,dy)||1;
-      e.vx+=(dx/d)*e.spd*spdMult*0.1;e.vy+=(dy/d)*e.spd*spdMult*0.1;
+      let cx=(dx/d)*e.spd*spdMult*0.1,cy=(dy/d)*e.spd*spdMult*0.1;
+      if(G.viewMode==='vertical'){cx*=0.2;cy*=1.3;}
+      e.vx+=cx;e.vy+=cy;
     }
     const ev=Math.hypot(e.vx,e.vy);if(ev>e.spd*2.2){e.vx=e.vx/ev*e.spd*2.2;e.vy=e.vy/ev*e.spd*2.2;}
     if(e.special==='void'){e.x+=e.vx;e.y+=e.vy;}
     else{e.x=Math.max(-e.sz,Math.min(W+e.sz,e.x+e.vx));e.y=Math.max(-e.sz,Math.min(H+e.sz,e.y+e.vy));}
+    if(G.viewMode==='arena'){e.x=clamp(e.x,e.sz,W-e.sz);e.y=clamp(e.y,e.sz,H-e.sz);}
     const d2=Math.hypot(G.mx-e.x,G.my-e.y);
     e.hitCd=(e.hitCd||0);if(e.hitCd>0)e.hitCd--;
     if(d2<14&&e.hitCd<=0){e.hitCd=35;const dmgDealt=e.atk;applyPlayerDamage(G,dmgDealt);applyReflect(G,dmgDealt);G.combo=0;G.comboTimer=0;G.comboMilestone=0;G.pendingUpgrade=0;G.noDmgTimer=0;screenShake(4);playSound('hurt');addPt(G,G.mx,G.my,'#E24B4A',3,1.5);addDamageText(G,G.mx+(Math.random()-0.5)*12,G.my-14,'-'+Math.ceil(dmgDealt),'#ff3333',15);}

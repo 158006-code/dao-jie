@@ -255,6 +255,7 @@ function _update(){
   if(G.keys['d']||G.keys['D']||G.keys['ArrowRight'])G.mx=Math.min(W-14,G.mx+ms);
   if(G.keys['w']||G.keys['W']||G.keys['ArrowUp'])G.my=Math.max(14,G.my-ms);
   if(G.keys['s']||G.keys['S']||G.keys['ArrowDown'])G.my=Math.min(H-14,G.my+ms);
+  applyViewMode(G);
 
   const moved=Math.hypot(G.mx-prevMx,G.my-prevMy)>0.5;
   if(moved){G.stillTimer=0;}else{G.stillTimer=(G.stillTimer||0)+1;}

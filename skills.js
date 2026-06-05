@@ -235,7 +235,8 @@ function initGame(){
   };
   // viewMode分区 + 阶段初始化
   const stageId=_currentRealm+1;
-  if(stageId<=3)G.viewMode='free';else if(stageId<=6)G.viewMode='horizontal';else if(stageId<=9)G.viewMode='vertical';else G.viewMode='arena';
+  const VM={1:'free',2:'free',3:'free',4:'vertical',5:'vertical',6:'free',7:'free',8:'free',9:'vertical',10:'arena'};
+  G.viewMode=VM[stageId]||'free';
   G.stagePhase=0;
   G.activeBossAt=(stageId===10)?STAGE_10_BOSS_AT:BOSS_AT;
   G.totalTime=(stageId===10)?540:360;
