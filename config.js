@@ -4,17 +4,35 @@
 // ══════════════════════════════════════════
 
 // ── 游戏常量 ──
-const FPS=60,TOTAL=780;
-const BOSS_AT=[180,360,540,720]; // 3/6/9/12分钟，第4Boss元婴期解锁
+const FPS=60,TOTAL=540;
+const BOSS_AT=[180,360];
+const STAGE_10_BOSS_AT=[180,360,540];
 const SPEEDS=[1,1.5,2,3];
+
+// ── THEME色板 ──
+const THEME={
+  primary:    '#6a8caf',
+  accent:     '#b7d7f2',
+  rage:       '#ff0000',
+  rageMax:    '#ff2200',
+  rageGod:    '#ffd700',
+  text:       '#203040',
+  textLight:  '#eef7ff',
+  background: '#eef7ff',
+  panel:      '#dce8f2',
+  enemy:      '#6b7280',
+  elite:      '#7c3aed',
+  bossAlert:  '#ff8800',
+  boss:       '#ff6600',
+};
 
 // ── 时间提示 ──
 const TIME_ALERTS=[
-  {at:60,text:'乱流初现',color:'green'},
-  {at:120,text:'灵力涌动',color:'green'},
-  {at:180,text:'魔潮来临！',color:'orange'},
-  {at:300,text:'天道崩裂！！',color:'#E24B4A'},
-  {at:420,text:'万法失控！！！',color:'#ff2200'},
+  {at:60, text:'灵气初涌',       color:'#6a8caf'},
+  {at:120,text:'风起云涌',       color:'#5a9fc0'},
+  {at:180,text:'煞气冲天！',     color:'#ff8800'},
+  {at:300,text:'天劫降临！！',   color:'#E24B4A'},
+  {at:420,text:'万道崩毁！！！', color:'#ff2200'},
 ];
 const WEAPONS={
   spore_cannon:{
@@ -602,34 +620,32 @@ const VICTORY_DROP_WEIGHTS=[
 ];
 
 const REALMS=[
-  {name:'练气期',sub:'初入修行',stages:3,icon:'🌊',stageNames:['乱流试炼','魔潮初临','妖核降世']},
-  {name:'筑基期',sub:'灵根初凝',stages:3,icon:'⚡',stageNames:['雷劫洗礼','道魔对决','天道审判']},
-  {name:'金丹期',sub:'丹炉炼心',stages:4,icon:'🔥',stageNames:['丹炉试炼','魔火领域','天地灵脉','万法失控']},
-  {name:'元婴期',sub:'神识出窍',stages:4,icon:'🌀',stageNames:['元婴渡世','道心磨砺','古神苏醒','天地共鸣']},
-  {name:'化神期',sub:'道法自然',stages:5,icon:'💫',stageNames:['化神渡劫','万象归一','天魔降临','道心归一','飞升证道']},
+  {name:'青木谷',  sub:'灵根初醒', stages:1, icon:'🌿', stageNames:['青木试炼'], enemyTypes:['mortal','qi_refine'], bossType:'outer_elder'},
+  {name:'黑风岭',  sub:'妖风四起', stages:1, icon:'🌑', stageNames:['黑风试炼'], enemyTypes:['qi_refine','foundation'], bossType:'foundation_guard'},
+  {name:'赤炎窟',  sub:'烈焰焚身', stages:1, icon:'🔥', stageNames:['赤炎试炼'], enemyTypes:['foundation'], bossType:'core_disciple'},
+  {name:'散灵荒野', sub:'灵气溃散', stages:1, icon:'🏜️', stageNames:['荒野试炼'], enemyTypes:['foundation','golden_core'], bossType:'golden_core'},
+  {name:'幽冥古道', sub:'鬼气森森', stages:1, icon:'💀', stageNames:['幽冥试炼'], enemyTypes:['golden_core'], bossType:'mine_warden'},
+  {name:'血月试炼', sub:'杀意沸腾', stages:1, icon:'🌙', stageNames:['血月试炼'], enemyTypes:['golden_core','nascent_soul'], bossType:'war_general'},
+  {name:'云海秘境', sub:'仙踪难觅', stages:1, icon:'☁️', stageNames:['秘境试炼'], enemyTypes:['nascent_soul'], bossType:'soul_guardian'},
+  {name:'天渊裂缝', sub:'虚空破碎', stages:1, icon:'🌌', stageNames:['天渊试炼'], enemyTypes:['nascent_soul','deity_transform'], bossType:'rift_elder'},
+  {name:'锁妖之地', sub:'万妖封印', stages:1, icon:'🔗', stageNames:['锁妖试炼'], enemyTypes:['deity_transform'], bossType:'seal_keeper'},
+  {name:'灭府战场', sub:'天道终结', stages:1, icon:'⚔️', stageNames:['灭府试炼'], enemyTypes:['deity_transform','mahayana'], bossType:'heavenly_sovereign', isFinalStage:true},
 ];
+
+const stageNames=REALMS.map(r=>r.name);
 
 // 关卡地图（按境界展开的线性节点）
 const STAGE_MAP=[
   {id:'s1',  realm:0,stage:0,type:'normal', dropMin:'white',dropMax:'green'},
-  {id:'s2',  realm:0,stage:1,type:'elite',  dropMin:'green',dropMax:'blue'},
-  {id:'s3',  realm:0,stage:2,type:'boss',   dropMin:'blue', dropMax:'purple'},
-  {id:'s4',  realm:1,stage:0,type:'normal', dropMin:'white',dropMax:'green'},
-  {id:'s5',  realm:1,stage:1,type:'special',dropMin:'green',dropMax:'gold'},
-  {id:'s6',  realm:1,stage:2,type:'boss',   dropMin:'blue', dropMax:'purple'},
-  {id:'s7',  realm:2,stage:0,type:'normal', dropMin:'white',dropMax:'green'},
-  {id:'s8',  realm:2,stage:1,type:'elite',  dropMin:'green',dropMax:'blue'},
-  {id:'s9',  realm:2,stage:2,type:'special',dropMin:'green',dropMax:'gold'},
-  {id:'s10', realm:2,stage:3,type:'boss',   dropMin:'purple',dropMax:'gold'},
-  {id:'s11', realm:3,stage:0,type:'normal', dropMin:'white',dropMax:'green'},
-  {id:'s12', realm:3,stage:1,type:'elite',  dropMin:'green',dropMax:'blue'},
-  {id:'s13', realm:3,stage:2,type:'special',dropMin:'green',dropMax:'gold'},
-  {id:'s14', realm:3,stage:3,type:'boss',   dropMin:'purple',dropMax:'gold'},
-  {id:'s15', realm:4,stage:0,type:'normal', dropMin:'white',dropMax:'green'},
-  {id:'s16', realm:4,stage:1,type:'elite',  dropMin:'green',dropMax:'blue'},
-  {id:'s17', realm:4,stage:2,type:'normal', dropMin:'white',dropMax:'green'},
-  {id:'s18', realm:4,stage:3,type:'special',dropMin:'green',dropMax:'gold'},
-  {id:'s19', realm:4,stage:4,type:'boss',   dropMin:'purple',dropMax:'red'},
+  {id:'s2',  realm:1,stage:0,type:'normal', dropMin:'white',dropMax:'green'},
+  {id:'s3',  realm:2,stage:0,type:'elite',  dropMin:'green',dropMax:'blue'},
+  {id:'s4',  realm:3,stage:0,type:'elite',  dropMin:'green',dropMax:'blue'},
+  {id:'s5',  realm:4,stage:0,type:'special',dropMin:'green',dropMax:'gold'},
+  {id:'s6',  realm:5,stage:0,type:'special',dropMin:'green',dropMax:'gold'},
+  {id:'s7',  realm:6,stage:0,type:'boss',   dropMin:'blue', dropMax:'purple'},
+  {id:'s8',  realm:7,stage:0,type:'boss',   dropMin:'purple',dropMax:'gold'},
+  {id:'s9',  realm:8,stage:0,type:'boss',   dropMin:'purple',dropMax:'gold'},
+  {id:'s10', realm:9,stage:0,type:'boss',   dropMin:'purple',dropMax:'red'},
 ];
 
 // 关卡差异化规则

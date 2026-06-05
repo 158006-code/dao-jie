@@ -333,3 +333,18 @@ function updateEnemyAI(G,sec){
     if(e.hasKB&&e.kbCd<=0){G.bugs.forEach(b=>{if(Math.hypot(b.x-e.x,b.y-e.y)<e.sz/2+6){knockback(b,e.x,e.y,4);e.kbCd=45;addPt(G,b.x,b.y,'#EF9F27',3,1.5);}});}
   });
 }
+
+// ── Boss出场清场 ──
+function spawnDissipateParticles(G,x,y,opts){
+  const {count,color,duration,spread}=opts;
+  for(let i=0;i<count;i++){
+    const p=getPt();const a=Math.random()*Math.PI*2;
+    p.x=x;p.y=y;p.vx=(Math.random()-0.5)*spread;p.vy=(Math.random()-0.5)*spread-20;
+    p.life=1;p.color=color;p.r=3+Math.random()*4;
+    G.pts.push(p);
+  }
+}
+function clearAllEnemies(G){
+  G.enemies.forEach(e=>spawnDissipateParticles(G,e.x,e.y,{count:12,color:'#aaddff',duration:800,spread:40}));
+  G.enemies.length=0;
+}

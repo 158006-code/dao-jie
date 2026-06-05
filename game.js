@@ -50,6 +50,8 @@ function triggerTreasureFlash(){
 
 // ── Boss触发 ──
 function triggerBoss(i){
+  clearAllEnemies(G);
+  G.stagePhase+=1;
   G.bossMode=true;G.bossPhase=i+1;
   screenShake(6);playSound('boss');
   const def=JSON.parse(JSON.stringify(BOSS_DEFS[i]));
@@ -89,7 +91,7 @@ function updateBoss(G){
     document.getElementById('boss-wrap').classList.remove('show');
     document.getElementById('boss-phase-dots').textContent='';
     setTimeout(resizeCanvas,10);
-    const reqBoss=(G._bossAt||BOSS_AT).length-1;
+    const reqBoss=(G.activeBossAt||BOSS_AT).length-1;
     if(bi>=reqBoss){doVictory();return true;}
     showUpgrade();return true;
   }
@@ -102,7 +104,7 @@ function updateHUD(){
   document.getElementById('h-lv').textContent=G.lv;
   document.getElementById('xp-bar').style.width=Math.min(100,G.xp/G.xpNext*100)+'%';
   if(!G.bossMode){
-    const bossAt=G._bossAt||BOSS_AT;
+    const bossAt=G.activeBossAt||BOSS_AT;
     const maxTime=G.timeLimit>0?G.timeLimit:bossAt[bossAt.length-1];
     const sl=Math.max(0,maxTime-Math.floor(G.elapsed/FPS));
     document.getElementById('h-time').textContent=`${Math.floor(sl/60)}:${(sl%60).toString().padStart(2,'0')}`+(G.timeLimit>0?' ⏳':'');
@@ -243,7 +245,7 @@ function _update(){
   if(phaseLabelEl)phaseLabelEl.textContent=phaseNames[phaseIdx];
 
   if(!G.bossMode){
-    const bossAt=G._bossAt||BOSS_AT;
+    const bossAt=G.activeBossAt||BOSS_AT;
     for(let i=0;i<bossAt.length;i++){if(!G.bossTriggered[i]&&sec>=bossAt[i]-(G.bossEarly||0)){G.bossTriggered[i]=true;triggerBoss(i);return;}}
   }
 

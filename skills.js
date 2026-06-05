@@ -191,10 +191,6 @@ function initGame(){
   const _stageNode=STAGE_MAP.find(s=>s.realm===_currentRealm&&s.stage===_currentStage);
   const _stageCfg=_stageNode?STAGE_CONFIGS[_stageNode.type]:STAGE_CONFIGS.normal;
 
-  let _localBossAt=[...BOSS_AT];
-  if(_currentRealm===0)_localBossAt=BOSS_AT.slice(0,2);
-  if(_currentRealm<3)_localBossAt=_localBossAt.slice(0,3);
-
   const _prog=_prog3;_prog.totalRuns=(_prog.totalRuns||0)+1;saveProgress(_prog);
   const _bossEarly=_stageCfg.bossEarly||0;
   G={
@@ -207,7 +203,7 @@ function initGame(){
     keys:{},paused:true,dead:false,won:false,upgrading:false,
     slots:Array(10).fill(null).map(()=>({id:null,lv:0,timer:0,state:{},stars:0})),
     pendingStarFor:{},
-    _bossAt:_localBossAt,bossPhase:0,boss:null,bossMode:false,bossTriggered:Array(_localBossAt.length).fill(false),
+    _bossAt:BOSS_AT,bossPhase:0,boss:null,bossMode:false,bossTriggered:Array(BOSS_AT.length).fill(false),
     spawnTimer:0,bugTimer:0,
     swarmBonus:0,bugHpMult:1*_stageCfg.enemyHpMult,spawnMult:1,killSpawn:0,leechLv:0,dmgReduce:_baseDmgReduce,regenRate:0,eliteRate:0.1*_stageCfg.eliteRateMult,
     baseAtkMult:_baseAtk,baseSpdMult:_baseSpd,baseCdMult:_baseCd,baseDmgFlat:_baseDmgFlat,
@@ -235,7 +231,15 @@ function initGame(){
     comboSpeedBonus:_baseComboSpeed,comboDmgBonus:_baseComboDmg,
     evolveRateBonus:_baseEvolveRate,xpBoost:_baseXpBoost,
     starDmgBonus:_baseStarDmg,evolveRangeBonus:_baseEvolveRange,
+    stagePhase:0,viewMode:'free',activeBossAt:null,totalTime:360,
   };
+  // viewMode分区 + 阶段初始化
+  const stageId=_currentRealm+1;
+  if(stageId<=3)G.viewMode='free';else if(stageId<=6)G.viewMode='horizontal';else if(stageId<=9)G.viewMode='vertical';else G.viewMode='arena';
+  G.stagePhase=0;
+  G.activeBossAt=(stageId===10)?STAGE_10_BOSS_AT:BOSS_AT;
+  G.totalTime=(stageId===10)?540:360;
+  G.bossTriggered=Array(G.activeBossAt.length).fill(false);
   manualPaused=false;speedIdx=0;SPEED=1;buffToastTimer=0;
   document.getElementById('buff-toast').style.opacity='0';
   document.getElementById('speed-toggle-btn').textContent='1x ▶';
