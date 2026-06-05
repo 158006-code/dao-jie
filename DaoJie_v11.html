@@ -1154,7 +1154,7 @@ function showHomePage(){
   document.getElementById('char-overlay').classList.remove('show');
   initFishingCanvas();
   updateVaultDot();
-  if(_firstVisit){_firstVisit=false;showIntroText();}
+  if(_firstVisit){_firstVisit=false;/*showIntroText();*/}
   // 主页显示当前进度
   const p=getProgress();
   const realm=REALMS[Math.min(p.realmIdx,REALMS.length-1)];
