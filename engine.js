@@ -306,8 +306,8 @@ function applyViewMode(G){
     case'free':
       G.bounds=null;break;
     case'vertical':
-      G.bounds={left:W*0.2,right:W*0.8,top:null,bottom:null};
-      G.mx=clamp(G.mx,W*0.2+12,W*0.8-12);break;
+      G.bounds={left:W*0.25,right:W*0.75,top:null,bottom:null};
+      G.mx=clamp(G.mx,W*0.25+12,W*0.75-12);break;
     case'arena':
       G.bounds={left:0,right:W,top:0,bottom:H};
       G.mx=clamp(G.mx,12,W-12);G.my=clamp(G.my,12,H-12);break;

@@ -147,6 +147,8 @@ function updateHUD(){
   } else {
     hudEquip2.style.display='none';
   }
+  const vmEl=document.getElementById('h-viewmode');
+  if(vmEl){const labels={free:'🌐 自由',vertical:'↕ 竖版',arena:'🏟 竞技场'};vmEl.textContent=labels[G.viewMode]||G.viewMode;}
 }
 
 // ── GameOver ──
