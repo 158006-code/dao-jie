@@ -842,9 +842,9 @@ function updateDangerZones(G){
     const inZone=dx*dx+dy*dy<z.r*z.r;
     if(inZone){
       switch(z.type){
-        case'plasma':G.mhp-=0.035;if(G.elapsed%20===0)addPt(G,G.mx,G.my,'#7aadff',3,1.5);break; // v14: 降低
-        case'spore':if(G.elapsed%40===0){G.mhp-=0.025;addPt(G,G.mx,G.my,'#7fff44',2,1);}break; // v14: 降低
-        case'corrosion':G.mhp-=0.04;break; // v14: 降低
+        case'plasma':if(G.elapsed%20===0){G.mhp-=0.5;addPt(G,G.mx,G.my,'#7aadff',3,1.5);}break; // v23: 降低伤害
+        case'spore':if(G.elapsed%40===0){G.mhp-=0.3;addPt(G,G.mx,G.my,'#7fff44',2,1);}break; // v23: 降低伤害
+        case'corrosion':if(G.elapsed%20===0){G.mhp-=0.6;}break; // v23: 改为周期伤害
       }
     }
     if(z.type==='spore'&&z.active&&G.elapsed%90===0){
@@ -1075,8 +1075,7 @@ function _update(){
     const pdx=G.mx-z.x,pdy=G.my-z.y;
     if(pdx*pdx+pdy*pdy<z.r*z.r){
       if(z.hostile){
-        G.mhp-=0.012;
-        // v16: 菌毯反噬有文字反馈
+        if(G.elapsed%40===0)G.mhp-=0.25; // v23: 从每帧0.012改为每40帧0.25，降低总体伤害
         if(G.elapsed%80===0)addDamageText(G,G.mx+(Math.random()-0.5)*16,G.my-12,'菌毯侵蚀','#ff4422',10);
       }
       else if(phaseTime<180){G.mhp=Math.min(G.mmaxhp,G.mhp+0.025);}
@@ -1106,6 +1105,7 @@ function _update(){
   G.noDmgTimer=(G.noDmgTimer||0)+1;
   TIME_ALERTS.forEach(a=>{if(!shownAlerts.has(a.sec)&&sec>=a.sec){shownAlerts.add(a.sec);showAlert(a.msg,a.cls);}});
   if(alertTimer>0){alertTimer--;if(alertTimer<=0)document.getElementById('alert-banner').classList.remove('show');}
+  // v23: ecoAlert 由移动逻辑直接控制，不依赖独立倒计时
   if(ecoAlertTimer>0){ecoAlertTimer--;if(ecoAlertTimer<=0)document.getElementById('eco-alert').classList.remove('show');}
 
   const phaseNames=['前期·孵化','中期·扩张','后期·失控','末期·背叛'];
@@ -1132,26 +1132,33 @@ function _update(){
   if(G.keys['w']||G.keys['W']||G.keys['ArrowUp'])G.my=Math.max(14,G.my-ms);
   if(G.keys['s']||G.keys['S']||G.keys['ArrowDown'])G.my=Math.min(H-14,G.my+ms);
 
-  // v18: 静止惩罚系统 —— 玩家不动时敌人快速聚拢并加速
-  const moved=Math.hypot(G.mx-prevMx,G.my-prevMy)>0.5;
-  if(moved){G.stillTimer=0;ecoAlertTimer=0;document.getElementById('eco-alert').classList.remove('show');}else{G.stillTimer=(G.stillTimer||0)+1;}
-  // 静止超过1.5秒（90帧）开始施压
-  const stillPressure=Math.min(1,(G.stillTimer||0)/180); // 0→1 线性，3秒满压
+  // v23: 静止惩罚 —— 玩家不动时敌人聚拢，移动立即全部清零
+  const moved=Math.hypot(G.mx-prevMx,G.my-prevMy)>0.2;
+  if(moved){
+    // 一切包围效果立即清除
+    G.stillTimer=0;
+    G.stillWarned=false;
+    if(ecoAlertTimer>0){ecoAlertTimer=0;document.getElementById('eco-alert').classList.remove('show');}
+  } else {
+    G.stillTimer=(G.stillTimer||0)+1;
+  }
+  // 静止超过2秒（120帧）开始施压
+  const stillPressure=Math.min(1,(G.stillTimer-120)/120); // 2~4秒线性加压，4秒满压
   if(stillPressure>0){
     G.enemies.forEach(e=>{
       const dx=G.mx-e.x,dy=G.my-e.y,d=Math.hypot(dx,dy)||1;
-      // 加速朝玩家冲 + 额外吸力（满压×4.5）
-      const surge=1+stillPressure*4.5;
-      e.vx+=(dx/d)*e.spd*0.06*surge;
-      e.vy+=(dy/d)*e.spd*0.06*surge;
+      const surge=1+stillPressure*3;
+      e.vx+=(dx/d)*e.spd*0.04*surge;
+      e.vy+=(dy/d)*e.spd*0.04*surge;
     });
-    // 静止满2/4/6秒额外刷怪（3只，更有压迫感）
-    if(G.stillTimer===120||G.stillTimer===240||G.stillTimer===360){
-      for(let i=0;i<3;i++)spawnEnemy(G);
+    // 静止满3/6秒额外刷怪
+    if(!G.stillWarned&&G.stillTimer>=150){G.stillWarned=true;showEcoAlert('⚠ 停留原地会被包围！');}
+    if(G.stillTimer===180||G.stillTimer===360){
+      for(let i=0;i<2;i++)spawnEnemy(G);
     }
-    // 满压时（>3秒静止）：环境伤害，每秒3点，模拟被完全包围
-    if(stillPressure>=1&&G.elapsed%20===0){
-      G.mhp-=1;
+    // 满压时（>4秒静止）：缓慢环境伤害
+    if(stillPressure>=1&&G.elapsed%40===0){
+      G.mhp-=0.5;
       addDamageText(G,G.mx+(Math.random()-0.5)*20,G.my-18,'包围！','#ff8800',11);
     }
   }
@@ -1520,7 +1527,7 @@ function _update(){
   if(G.xp>=G.xpNext){G.xp-=G.xpNext;G.xpNext=Math.floor(G.xpNext*1.38);G.lv++;screenShake(4);playSound('levelup');showUpgrade();return;}
   if((G.pendingUpgrade||0)>0&&!G.upgrading){G.pendingUpgrade--;showUpgrade();return;}
   if(G.mhp<=0){doGameover();return;}
-  if(G.bugs.length===0&&G.enemies.length>10)G.mhp-=0.06; // 无虫惩罚加重
+  if(G.bugs.length===0&&G.enemies.length>10&&G.elapsed%30===0)G.mhp-=0.3; // v23: 无虫惩罚大幅降低，每30帧触发
   updateBuffToast();
   updateHUD();
 }
@@ -1987,9 +1994,9 @@ function draw(){
     ctx.save();ctx.strokeStyle='#E24B4A';ctx.lineWidth=2.5;ctx.globalAlpha=dangerAlpha*2;ctx.shadowBlur=10;ctx.shadowColor='#E24B4A';
     ctx.beginPath();ctx.arc(G.mx,G.my,dangerR,0,Math.PI*2);ctx.stroke();ctx.restore();
   }
-  // v18: 静止警告 —— 静止超过1.5秒显示收缩的橙色压力环
-  if((G.stillTimer||0)>90){
-    const sp=Math.min(1,(G.stillTimer-90)/90);
+  // v23: 静止警告 —— 静止超过2秒（120帧）显示收缩的橙色压力环
+  if((G.stillTimer||0)>120){
+    const sp=Math.min(1,((G.stillTimer||0)-120)/120);
     // 压力环：从屏幕边缘向玩家收缩，多圈叠加暗示包围逼近
     const maxRingR=Math.max(W,H)*0.72;
     const minRingR=38;
@@ -2003,7 +2010,6 @@ function draw(){
     ctx.strokeStyle='#ff6600';ctx.lineWidth=1.5;ctx.globalAlpha=warnAlpha*0.6;
     ctx.setLineDash([5,8]);ctx.beginPath();ctx.arc(G.mx,G.my,warnR2,0,Math.PI*2);ctx.stroke();
     ctx.setLineDash([]);ctx.restore();
-    if(G.stillTimer===90)showEcoAlert('⚠ 停留原地会被包围！');
   }
   // V13: 狂暴流高combo：玩家周围世界扭曲
   if(G.activeBuild==='berserk'&&tier>=4){
