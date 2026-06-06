@@ -3,6 +3,24 @@
 // 修改名称/数值/平衡性只需改此文件
 // ══════════════════════════════════════════
 
+// ── 怒火境界系统配置 ──
+const RAGE_TIERS = [
+  { tier:0, name:'愤怒', threshold:0,   multiplier:1.0,  color:'#cccccc', glowColor:'rgba(200,200,200,0.15)', particleColor:'#cccccc' },
+  { tier:1, name:'怒火愤怒', threshold:10,  multiplier:1.25, color:'#ffcc00', glowColor:'rgba(255,200,0,0.20)',   particleColor:'#ffdd44' },
+  { tier:2, name:'失控愤怒', threshold:25,  multiplier:1.55, color:'#ff8800', glowColor:'rgba(255,136,0,0.25)',   particleColor:'#ff9922' },
+  { tier:3, name:'暴怒', threshold:50,  multiplier:1.90, color:'#ff4400', glowColor:'rgba(255,68,0,0.30)',    particleColor:'#ff5500' },
+  { tier:4, name:'炽怒', threshold:80,  multiplier:2.30, color:'#ff2200', glowColor:'rgba(255,34,0,0.35)',    particleColor:'#ff3300' },
+  { tier:5, name:'狂怒', threshold:120, multiplier:2.80, color:'#cc0000', glowColor:'rgba(180,0,0,0.40)',     particleColor:'#ff0000' },
+  { tier:6, name:'杀怒', threshold:200, multiplier:3.50, color:'#880000', glowColor:'rgba(140,0,0,0.50)',     particleColor:'#cc0000' },
+  { tier:7, name:'绝怒', threshold:350, multiplier:4.20, color:'#440022', glowColor:'rgba(80,0,30,0.55)',     particleColor:'#880033' },
+  { tier:8, name:'极怒', threshold:500, multiplier:5.00, color:'#220011', glowColor:'rgba(50,0,20,0.65)',     particleColor:'#660022' },
+];
+
+// 余怒窗口（帧数）
+const RAGE_WINDOW_NORMAL = 240;  // 4秒
+const RAGE_WINDOW_HIT    = 360;  // 受伤后延长到6秒
+const RAGE_DROP_IMMUNITY = 120;  // 掉级保护帧数
+
 // ── 游戏常量 ──
 const FPS=60,TOTAL=540;
 const BOSS_AT=[180,360];

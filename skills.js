@@ -284,51 +284,74 @@ function updateWeaponUI(){
   });
 }
 
-// ── 连斩系统（提取自_update）──
+// ── 怒火连斩系统 ──
 function updateCombo(G){
-  if(G.comboTimer>0){G.comboTimer--;}else{G.combo=0;}
+  // 余怒倒计时（不直接清零combo，只在timer归零时才清）
+  if(G.comboTimer>0){
+    G.comboTimer--;
+  } else {
+    G.combo=0;
+  }
   if(G.combo>(G._maxCombo||0))G._maxCombo=G.combo;
-  const prevTier=G.comboTier||0;
-  G.comboTier=0;
-  if(G.combo>=10)G.comboTier=1;if(G.combo>=25)G.comboTier=2;if(G.combo>=50)G.comboTier=3;
-  if(G.combo>=80)G.comboTier=4;if(G.combo>=120)G.comboTier=5;if(G.combo>=200)G.comboTier=6;
-  if(G.combo>=350)G.comboTier=7;if(G.combo>=500)G.comboTier=8;
 
-  if(G.comboTier>prevTier){
-    const tierNames=['','初鸣','连斩','破势','狂斩','剑意大成','道力爆发','失控冲天','万法归一'];
-    const tierColors=['','#aaff44','#ffcc00','#ff9900','#ff4400','#ff2200','#cc00ff','#ff00aa','#ff00ff'];
-    const tierBuffs=['','攻速+5%','攻速+10%','道力+15%','道力+25%','道力+40%','领域失控','天地共鸣','万法失控'];
-    const tc=tierColors[G.comboTier]||'#ff8800';
-    showBuffToast('⚡ '+tierNames[G.comboTier]+' · '+tierBuffs[G.comboTier],tc);
-    screenShake(G.comboTier*1);playSound('sync');
-    for(let i=0;i<G.comboTier;i++){setTimeout(()=>{if(!G||G.dead)return;addExplosionWave(G,G.mx,G.my,14+i*6,tc);},i*80);}
+  // 掉级保护倒计时
+  if((G.dropImmunityTimer||0)>0)G.dropImmunityTimer--;
+
+  // 计算当前应该在哪个tier（从高到低找第一个满足threshold的）
+  let newTier=0;
+  for(let i=RAGE_TIERS.length-1;i>=0;i--){
+    if(G.combo>=RAGE_TIERS[i].threshold){newTier=RAGE_TIERS[i].tier;break;}
+  }
+
+  const prevTier=G.rageTier||0;
+
+  // 掉级保护：有免疫时不允许降级
+  if(newTier<prevTier&&G.dropImmunityTimer>0){
+    newTier=prevTier;
+  }
+
+  G.rageTier=newTier;
+  G.comboTier=newTier; // 保持兼容，其他地方读comboTier的继续有效
+
+  // 升级：触发特效+提示
+  if(G.rageTier>prevTier){
+    const rt=RAGE_TIERS[G.rageTier];
+    showBuffToast('🔥 '+rt.name+' · 怒火+'+Math.round((rt.multiplier-1)*100)+'%',rt.color);
+    screenShake(G.rageTier*1.2);
+    playSound('sync');
+    for(let i=0;i<G.rageTier;i++){
+      setTimeout(()=>{if(!G||G.dead)return;addExplosionWave(G,G.mx,G.my,14+i*7,rt.color);},i*80);
+    }
     triggerTreasureFlash();
-    document.getElementById('h-sync-disp').style.display='block';
-    document.getElementById('h-sync-disp').textContent='⚡ '+tierNames[G.comboTier]+' ×'+G.combo;
-    document.getElementById('h-sync-disp').style.color=tc;
-    if(G.comboTier>=6){if(Math.random()<0.3)G.infectionMap.push({x:Math.random()*W,y:Math.random()*H,r:60,life:500,pulse:0,hostile:false});}
-    if(G.comboTier>=6){G.infection=Math.min(1,(G.infection||0)+0.08);}
-    if(G.comboTier>=7){G.worldCorrupt=true;}
-    if(G.comboTier>=8){G.overmind=true;}
+    const el=document.getElementById('h-sync-disp');
+    if(el){el.style.display='block';el.textContent='🔥 '+rt.name+' ×'+G.combo;el.style.color=rt.color;}
   }
-  if(G.comboTier===0)document.getElementById('h-sync-disp').style.display='none';
 
-  const berserkBonus=G.activeBuild==='berserk'&&G.noDmgTimer>300?1+(G.berserkerLv||0)*0.12:1;
-  const baseAtk=G.baseAtkMult||1,baseSpd=G.baseSpdMult||1;
-  G.buffs={atk:1.2*berserkBonus*baseAtk,spd:1.15*baseSpd,dmgFlat:G.baseDmgFlat||0};
-  switch(G.comboTier){
-    case 1:G.buffs.spd=1.2*baseSpd;break;
-    case 2:G.buffs.spd=1.25*baseSpd;break;
-    case 3:G.buffs.atk=1.35*berserkBonus*baseAtk;G.buffs.spd=1.2*baseSpd;break;
-    case 4:G.buffs.atk=1.45*berserkBonus*baseAtk;G.buffs.spd=1.3*baseSpd;break;
-    case 5:G.buffs.atk=1.6*berserkBonus*baseAtk;G.buffs.spd=1.3*baseSpd;break;
-    case 6:G.buffs.atk=1.8*berserkBonus*baseAtk;G.buffs.spd=1.4*baseSpd;G.infection=Math.min(1,(G.infection||0)+0.002);break;
-    case 7:G.buffs.atk=2.0*berserkBonus*baseAtk;G.worldCorrupt=true;break;
-    case 8:G.buffs.atk=2.5*berserkBonus*baseAtk;G.overmind=true;break;
+  // 掉级：触发保护计时器
+  if(G.rageTier<prevTier){
+    G.dropImmunityTimer=RAGE_DROP_IMMUNITY;
+    const rt=RAGE_TIERS[G.rageTier];
+    const el=document.getElementById('h-sync-disp');
+    if(el&&G.rageTier>0){el.textContent='🔥 '+rt.name+' ×'+G.combo;el.style.color=rt.color;}
   }
-  if(G.activeBuild==='berserk'&&G.comboTier>=5){
-    G.dmgReduce=Math.max(0,G.dmgReduce);
+
+  if(G.rageTier===0){
+    const el=document.getElementById('h-sync-disp');
+    if(el)el.style.display='none';
   }
+
+  // 应用buffs（读RAGE_TIERS配置的multiplier）
+  const rt=RAGE_TIERS[G.rageTier];
+  const baseAtk=G.baseAtkMult||1;
+  const baseSpd=G.baseSpdMult||1;
+  G.buffs={
+    atk: rt.multiplier * baseAtk,
+    spd: (1.1+G.rageTier*0.04) * baseSpd,
+    dmgFlat: G.baseDmgFlat||0,
+  };
+
+  // 狂怒（tier5）专属：高速感知（视觉粒子密度加倍，在draw里处理）
+  G.rageMaxActive=(G.rageTier>=5);
 }
 
 // ── 法宝combo效果（提取自_update）──
