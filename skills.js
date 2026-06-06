@@ -199,7 +199,6 @@ function initGame(){
     xp:0,xpNext:25,lv:1,kills:0,elapsed:0,
     combo:0,comboTimer:0,comboTier:0,rageTier:0,dropImmunityTimer:0,rageMaxActive:false,damageTexts:[],waves:[],
     infection:0,eliteFlash:0,slimePools:[],infectionMap:[],
-    comboMilestone:0,pendingUpgrade:0,
     keys:{},paused:true,dead:false,won:false,upgrading:false,
     slots:Array(10).fill(null).map(()=>({id:null,lv:0,timer:0,state:{},stars:0})),
     pendingStarFor:{},

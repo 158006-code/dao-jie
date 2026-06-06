@@ -313,9 +313,6 @@ function _update(){
       addExplosionWave(G,e.x,e.y,12,'#ff6633');
       if(G.combo>=2&&G.combo%10===0)addDamageText(G,e.x,e.y-18,G.combo+' 连斩！','#ff8800',20);
       G.enemies.forEach(other=>{if(other.special==='devourer'&&Math.hypot(other.x-e.x,other.y-e.y)<60)other.devourCount++;});
-      const milestoneStep=G.combo>=300?100:80;
-      const milestone=Math.floor(G.combo/milestoneStep);
-      if(milestone>G.comboMilestone){G.comboMilestone=milestone;const reward=milestone*milestoneStep;screenShake(6);playSound('levelup');showAlert('🔥 '+reward+' 连杀！奖励技能！','green');G.pendingUpgrade=(G.pendingUpgrade||0)+1;}
       if(G.combo===300){showBuffToast('☠ 300连杀 · 世界开始失控！','#ff2200');screenShake(8);for(let j=0;j<5;j++)spawnEnemy(G);}
       playSound(e.special==='elite'||e.special==='suicidal'?'hit':'kill');
       if(e.special==='elite'||e.special==='suicidal')G.eliteFlash=35;
@@ -339,7 +336,6 @@ function _update(){
   G.pts=G.pts.filter(p=>{if(p.life<=0){recyclePt(p);return false;}return true;});
 
   if(G.xp>=G.xpNext){G.xp-=G.xpNext;G.xpNext=Math.floor(G.xpNext*1.38/(G.xpBoost||1));G.lv++;screenShake(4);playSound('levelup');showUpgrade();return;}
-  if((G.pendingUpgrade||0)>0&&!G.upgrading){G.pendingUpgrade--;showUpgrade();return;}
   if(G.elapsed/FPS>=G.totalTime){G.won=false;doGameover();return;}
   if(G.mhp<=0){doGameover();return;}
   if(G.bugs.length===0&&G.enemies.length>10)applyPlayerDamage(G,0.06);
