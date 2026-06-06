@@ -104,12 +104,11 @@ function updateHUD(){
   document.getElementById('h-lv').textContent=G.lv;
   document.getElementById('xp-bar').style.width=Math.min(100,G.xp/G.xpNext*100)+'%';
   if(!G.bossMode){
-    const bossAt=G.activeBossAt||BOSS_AT;
-    const maxTime=G.timeLimit>0?G.timeLimit:bossAt[bossAt.length-1];
-    const sl=Math.max(0,maxTime-Math.floor(G.elapsed/FPS));
-    document.getElementById('h-time').textContent=`${Math.floor(sl/60)}:${(sl%60).toString().padStart(2,'0')}`+(G.timeLimit>0?' ⏳':'');
-    if(G.timeLimit>0&&sl<=30)document.getElementById('h-time').style.color='#ff6644';
-    else if(!G.bossMode)document.getElementById('h-time').style.color='#D4B8FF';
+    const elapsed=Math.floor(G.elapsed/FPS);
+    const maxTime=G.totalTime||360;
+    document.getElementById('h-time').textContent=`${Math.floor(elapsed/60)}:${(elapsed%60).toString().padStart(2,'0')}`;
+    if(maxTime-elapsed<=30)document.getElementById('h-time').style.color='#ff6644';
+    else document.getElementById('h-time').style.color='#D4B8FF';
   } else {
     document.getElementById('h-time').textContent='⚡BOSS';
   }
@@ -341,7 +340,7 @@ function _update(){
 
   if(G.xp>=G.xpNext){G.xp-=G.xpNext;G.xpNext=Math.floor(G.xpNext*1.38/(G.xpBoost||1));G.lv++;screenShake(4);playSound('levelup');showUpgrade();return;}
   if((G.pendingUpgrade||0)>0&&!G.upgrading){G.pendingUpgrade--;showUpgrade();return;}
-  if(G.timeLimit>0&&G.elapsed/FPS>=G.timeLimit){G.won=false;doGameover();return;}
+  if(G.elapsed/FPS>=G.totalTime){G.won=false;doGameover();return;}
   if(G.mhp<=0){doGameover();return;}
   if(G.bugs.length===0&&G.enemies.length>10)applyPlayerDamage(G,0.06);
   updateBuffToast();
