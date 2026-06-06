@@ -113,10 +113,9 @@ function updateHUD(){
   } else {
     document.getElementById('h-time').textContent='⚡BOSS';
   }
-  const tier=G.comboTier||0;
+  const tier=G.rageTier||0;
   const hpPct=G.mhp/G.mmaxhp;
-  const tierColors=['','#aaff44','#ffcc00','#ff9900','#ff4400','#ff2200','#cc00ff','#ff00aa','#ff00ff'];
-  const tc=tierColors[tier];
+  const tc=RAGE_TIERS[tier]?RAGE_TIERS[tier].color:'';
   if(tc&&tier>=3){
     document.getElementById('top-bar').style.borderBottomColor=tc+'66';
   } else {
@@ -931,8 +930,7 @@ function draw(){
     ctx.restore();
   }
   if(tier>=1){
-    const tierColors=['','#aaff44','#ffcc00','#ff9900','#ff4400','#ff2200','#cc00ff','#ff00aa','#ff00ff'];
-    const tc=tierColors[tier]||'#ff8800';
+    const tc=(RAGE_TIERS[tier]||RAGE_TIERS[0]).color;
     for(let ri=0;ri<Math.min(tier,4);ri++){
       const angOffset=G.elapsed*0.04*(1+ri*0.3)+ri*Math.PI*0.5,arcR=18+ri*7,arcLen=0.4+ri*0.1;
       ctx.save();ctx.strokeStyle=tc;ctx.lineWidth=1.5-ri*0.2;ctx.globalAlpha=0.5-ri*0.08;ctx.shadowBlur=6;ctx.shadowColor=tc;
@@ -941,12 +939,11 @@ function draw(){
     }
     if(tier>=5){const pulseR=16+(G.elapsed*1.2)%24,pulseAlpha=1-(pulseR-16)/24;ctx.save();ctx.strokeStyle=tc;ctx.lineWidth=1.5;ctx.globalAlpha=pulseAlpha*0.4;ctx.beginPath();ctx.arc(G.mx,G.my,pulseR,0,Math.PI*2);ctx.stroke();ctx.restore();}
   }
-  if(tier>=7){const tc7=tier>=8?'#ff00ff':'#ff00aa';ctx.save();ctx.globalAlpha=0.22+Math.sin(G.elapsed*0.08)*0.08;ctx.fillStyle=tc7;ctx.beginPath();ctx.arc(G.mx,G.my,24+Math.sin(G.elapsed*0.05)*4,0,Math.PI*2);ctx.fill();ctx.restore();}
+  if(tier>=7){const tc7=(RAGE_TIERS[tier]||RAGE_TIERS[0]).color;ctx.save();ctx.globalAlpha=0.22+Math.sin(G.elapsed*0.08)*0.08;ctx.fillStyle=tc7;ctx.beginPath();ctx.arc(G.mx,G.my,24+Math.sin(G.elapsed*0.05)*4,0,Math.PI*2);ctx.fill();ctx.restore();}
 
   const dodgeAlpha=G.dodgeTimer>0?0.5+0.2*Math.sin(G.elapsed*0.3):1;
 
-  const tierColors2=['#1D9E75','#1D9E75','#aaee44','#ffcc00','#ff8800','#ff3300','#cc00ff','#ff00aa','#ff00ff'];
-  const bodyColor=hpPct<0.3?'#E24B4A':(tierColors2[tier]||'#1D9E75');
+  const bodyColor=hpPct<0.3?'#E24B4A':(tier>=1?(RAGE_TIERS[tier]||RAGE_TIERS[0]).color:'#1D9E75');
   const glowStr=14+tier*7+(hpPct<0.3?12:0);
   ctx.save();ctx.globalAlpha*=dodgeAlpha;ctx.shadowBlur=glowStr;ctx.shadowColor=bodyColor;
   ctx.fillStyle=`rgba(29,158,117,${0.1+0.06*Math.sin(G.elapsed*0.05)})`;
@@ -983,14 +980,13 @@ function draw(){
   });
   G.damageTexts=(G.damageTexts||[]).filter(t=>{if(t.life<=0){recycleDmg(t);return false;}return true;});
 
-  // ── Combo UI ──
-  if(G.combo>=2){
-    ctx.save();const tc=G.comboTier>=7?'#ff00aa':G.comboTier>=5?'#ff3300':G.comboTier>=3?'#ff8800':G.comboTier>=1?'#ffcc00':'#ffff44';
-    const scale=1+Math.sin(G.elapsed*0.2)*0.07*(1+G.comboTier*0.05);
-    ctx.translate(W/2,78);ctx.scale(scale,scale);ctx.textAlign='center';ctx.shadowColor=tc;ctx.shadowBlur=16+G.comboTier*4;ctx.fillStyle=tc;
-    const tierNames=['','热身','狩猎','侵蚀','暴走','母巢同步','污染扩张','世界侵蚀','灵虫暴走'];
-    const tierLabel=G.comboTier>0?' ['+tierNames[G.comboTier]+']':'';
-    ctx.font='bold 26px Arial';ctx.fillText(G.combo+' 连斩'+tierLabel,0,0);ctx.restore();
+  // ── 怒火连斩 UI ──
+  if(G.rageTier>0){
+    const rt=RAGE_TIERS[G.rageTier]||RAGE_TIERS[0];
+    ctx.save();const tc=rt.color;
+    const scale=1+Math.sin(G.elapsed*0.2)*0.07*(1+G.rageTier*0.05);
+    ctx.translate(W/2,78);ctx.scale(scale,scale);ctx.textAlign='center';ctx.shadowColor=tc;ctx.shadowBlur=16+G.rageTier*4;ctx.fillStyle=tc;
+    ctx.font='bold 26px Arial';ctx.fillText(G.combo+' 连斩 · '+rt.name,0,0);ctx.restore();
   }
 
   ctx.restore();
