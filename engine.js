@@ -175,7 +175,6 @@ function applyBossDamage(G, boss, rawDmg){
   if(boss.onDamage&&boss.key==='old_teeth'){boss.onDamage(G,boss,dmg);}
   if(boss.onDamage&&boss.key==='dainty'){dmg = boss.onDamage(G,boss,dmg) ?? dmg;}
   boss.hp -= dmg;
-  if(boss.hp<=0&&!boss.fakeDeathTriggered){bossTaunt(boss,'death',G);}
   return dmg;
 }
 
@@ -260,8 +259,8 @@ function updateProjectiles(G){
           if(G.critRate>0&&Math.random()<G.critRate){bsFinalDmg*=2;}
           if(e===G.boss){bsFinalDmg=applyBossDamage(G,G.boss,bsFinalDmg);}
           else{e.hp-=bsFinalDmg;}
-          e._hitShake=(e._hitShake||0)+4;
-          if(e.key==='berserker') e._hitCount=(e._hitCount||0)+1;
+          if(bsFinalDmg>0){e._hitShake=(e._hitShake||0)+4;}
+          if(bsFinalDmg>0&&e.key==='berserker') e._hitCount=(e._hitCount||0)+1;
           if(p.poison&&!e.immuneDot){e.poison=Math.max(e.poison||0,p.poison);}
           addDamageText(G,e.x+(Math.random()-0.5)*10,e.y-4,Math.ceil(bsFinalDmg)+'','#88ddaa',13);
           addPt(G,e.x,e.y,'#9FE1CB',1,1);
@@ -285,8 +284,8 @@ function updateProjectiles(G){
         if(G.critRate>0&&Math.random()<G.critRate){finalDmg*=2;addDamageText(G,e.x+(Math.random()-0.5)*10,e.y-16,'暴击!','#ffcc00',18);}
         if(e===G.boss){finalDmg=applyBossDamage(G,G.boss,finalDmg);}
         else{e.hp-=finalDmg;}
-        e._hitShake=(e._hitShake||0)+6;
-        if(e.key==='berserker') e._hitCount=(e._hitCount||0)+1;
+        if(finalDmg>0){e._hitShake=(e._hitShake||0)+6;}
+        if(finalDmg>0&&e.key==='berserker') e._hitCount=(e._hitCount||0)+1;
         if(G.comboHit>0){e._comboHitCnt=(e._comboHitCnt||0)+1;if(e._comboHitCnt>=3){e._comboHitCnt=0;for(let ci=0;ci<G.comboHit;ci++){e.hp-=(p.dmg*0.5)/(e.defMult||1);addDamageText(G,e.x+(Math.random()-0.5)*10,e.y-8,'连击!','#ff8800',14);}playSound('hit');}}
         if(e.shield>0&&!p.poison){e.shield=Math.max(0,e.shield-0.3);addPt(G,e.x,e.y,'#4488CC',3,1.5);hit=true;p._pierced++;if(p._pierced>totalPierce){dp.push(i);recycleProj(p);}return;}
         hit=true;

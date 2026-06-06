@@ -89,6 +89,7 @@ function updateBoss(G){
   if(bd<boss.sz/2+12&&!boss.charging&&!boss._charging&&!boss._down&&G.bossHitCd<=0){G.bossHitCd=25;applyPlayerDamage(G,0.5);applyReflect(G,0.5);addPt(G,G.mx,G.my,'#E24B4A',3,2);}
   document.getElementById('boss-bar').style.width=Math.max(0,boss.hp/boss.maxhp*100)+'%';
   if(boss.hp<=0&&!boss._down){
+    bossTaunt(boss,'death',G);
     screenShake(18);triggerFlash();playSound('bossdeath');
     addExplosionWave(G,boss.x,boss.y,40,'#ff0000');
     addDamageText(G,boss.x,boss.y,'天道审判','#ff3300',34);
