@@ -352,6 +352,17 @@ function draw(){
   // ── 背景 ──
   ctx.fillStyle='#050a05';ctx.fillRect(0,0,W,H);
 
+  // ── 视角边界可视 ──
+  if(G.viewMode==='vertical'){
+    ctx.fillStyle='rgba(80,0,0,0.35)';ctx.fillRect(0,0,W*0.25,H);ctx.fillRect(W*0.75,0,W*0.25,H);
+    ctx.strokeStyle='rgba(255,60,30,0.6)';ctx.lineWidth=2;ctx.setLineDash([8,4]);
+    ctx.beginPath();ctx.moveTo(W*0.25,0);ctx.lineTo(W*0.25,H);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(W*0.75,0);ctx.lineTo(W*0.75,H);ctx.stroke();ctx.setLineDash([]);
+  }else if(G.viewMode==='arena'){
+    ctx.strokeStyle='rgba(255,120,30,0.5)';ctx.lineWidth=3;ctx.setLineDash([10,4]);
+    ctx.strokeRect(6,6,W-12,H-12);ctx.setLineDash([]);
+  }
+
   // ── 世界脉冲闪光 ──
   if((G.worldPulseFlash||0)>0){
     const pf=G.worldPulseFlash;
