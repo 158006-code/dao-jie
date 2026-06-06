@@ -477,143 +477,204 @@ const STAGE_ENEMY_RULES={
 };
 
 const BOSS_DEFS=[
+  // ── Boss1：假筑基 ──
   {
-    name:'上古邪修',hp:600,spd:0.85,sz:36,col:'#C97B3A',reward:5,
-    chargeTimer:0,chargeCd:160,charging:false,chargeDir:{x:0,y:0},chargeSpd:0,
-    splitTimer:0,splitCd:200,bulletTimer:0,bulletCd:80,bulletAngle:0,
-    phaseDesc:['降魔阶段','领域展开','道魔合一'],
+    key:'fake_zhuji',name:'筑基失败的假筑基',hp:800,spd:0.55,sz:32,col:'#C97B3A',reward:4,
+    _rageRequire:0,
+    taunts:{spawn:['我是筑基了！你们练气期的根本打不过我！'],half:['哼，还没结束呢……'],fake_death:['……（装死）'],revive:['你别想杀我！'],death:['不公平！一定是灵根的问题！']},
+    fakeDeathTriggered:false,fakeDeathTimer:0,
     update(G,boss){
       const pct=boss.hp/boss.maxhp;
-      const phase=pct>0.66?0:pct>0.33?1:2;
-      boss._phase=phase;
-      boss.splitTimer++;
-      const splitCd=phase===0?160:phase===1?120:80;
-      if(boss.splitTimer>=splitCd){boss.splitTimer=0;
-        const n=phase===0?3:phase===1?4:6;
-        for(let i=0;i<n;i++)spawnEnemyAt(G,Math.random()<0.3?'berserker':'normal',boss.x+(Math.random()-0.5)*60,boss.y+(Math.random()-0.5)*60,'late');}
-      // 阶段2：领域扩散
-      if(phase>=1&&G.elapsed%45===0){
-        G.infectionMap.push({x:boss.x+(Math.random()-0.5)*80,y:boss.y+(Math.random()-0.5)*80,r:50+Math.random()*30,life:600,pulse:Math.random()*999,hostile:true});
-      }
-      // 阶段3：高速冲锋
-      boss.chargeTimer++;
-      const chargeCd=phase>=2?100:200;
-      if(boss.chargeTimer>=chargeCd&&!boss.charging){
-        boss.chargeTimer=0;boss.charging=true;
-        const dx=G.mx-boss.x,dy=G.my-boss.y,d=Math.hypot(dx,dy)||1;
-        boss.chargeDir={x:dx/d,y:dy/d};boss.chargeSpd=phase>=2?9:6;
-        addPt(G,boss.x,boss.y,'#EF9F27',10,3);
-      }
-      if(boss.charging){
-        boss.x+=boss.chargeDir.x*boss.chargeSpd;boss.y+=boss.chargeDir.y*boss.chargeSpd;
-        boss.chargeSpd*=0.9;if(boss.chargeSpd<0.5)boss.charging=false;
-        if(Math.hypot(G.mx-boss.x,G.my-boss.y)<boss.sz/2+12){applyPlayerDamage(G,2);applyReflect(G,2);}
-      }
-      boss.bulletTimer++;
-      if(boss.bulletTimer>=boss.bulletCd){
-        boss.bulletTimer=0;boss.bulletAngle+=0.5;
-        const bulletN=phase>=2?6:4;
-        for(let i=0;i<bulletN;i++){const a=boss.bulletAngle+i/bulletN*Math.PI*2;addProj(G,boss.x,boss.y,Math.cos(a)*3.5,Math.sin(a)*3.5,{dmg:7,r:5,color:'#E85D24',life:80,isBossBullet:true});}
-      }
+      if(boss.hp<=0&&!boss.fakeDeathTriggered){boss.fakeDeathTriggered=true;boss.invincible=true;boss.hp=1;boss.fakeDeathTimer=180;boss._down=true;bossTaunt(boss,'fake_death',G);screenShake(8);showEcoAlert('⚠ 假筑基·假死！');}
+      if(boss.fakeDeathTimer>0){boss.fakeDeathTimer--;boss.vx=0;boss.vy=0;if(boss.fakeDeathTimer===0){boss._down=false;boss.invincible=false;boss.hp=boss.maxhp*1.0;boss.spd*=1.5;bossTaunt(boss,'revive',G);screenShake(12);addExplosionWave(G,boss.x,boss.y,60,'#ff6600');showEcoAlert('💀 假筑基·复活！速度提升！');}return;}
+      if(pct<0.5&&!boss._halfTaunt){boss._halfTaunt=true;bossTaunt(boss,'half',G);}
+      boss._chargeT=(boss._chargeT||0)+1;
+      if(boss._chargeT>=150&&!boss._charging){boss._chargeT=0;boss._charging=true;const dx=G.mx-boss.x,dy=G.my-boss.y,d=Math.hypot(dx,dy)||1;boss._chargeVx=dx/d*7;boss._chargeVy=dy/d*7;}
+      if(boss._charging){boss.x+=boss._chargeVx;boss.y+=boss._chargeVy;boss._chargeVx*=0.88;boss._chargeVy*=0.88;if(Math.hypot(boss._chargeVx,boss._chargeVy)<0.4)boss._charging=false;}
+      if(!boss._spawnTaunt){boss._spawnTaunt=true;bossTaunt(boss,'spawn',G);}
     }
   },
+  // ── Boss2：伪筑基 ──
   {
-    name:'天道化身',hp:1200,spd:0.60,sz:44,col:'#3A7B3A',reward:8,
-    spitTimer:0,spitCd:100,puddleTimer:0,puddleCd:160,puddles:[],
-    phaseDesc:['灵脉侵染','魔气封域','领域失控'],
+    key:'fake_skill',name:'卡瓶颈的伪筑基',hp:1100,spd:0.68,sz:30,col:'#8040A8',reward:5,
+    _rageRequire:0,
+    taunts:{spawn:['我的大招蓄力中……'],half:['我的必杀马上就好了！'],empty_skill:['……怎么没效果？','不对不对，再来一次！','功法问题，怪不得我'],death:['是功法的问题！绝对是！']},
+    emptySkillCd:0,charging:0,
     update(G,boss){
-      const pct=boss.hp/boss.maxhp;const phase=pct>0.66?0:pct>0.33?1:2;boss._phase=phase;
-      if(G.elapsed%30===0){
-        G.infectionMap.push({x:Math.random()*W,y:Math.random()*H,r:40+Math.random()*40,life:500+Math.random()*200,pulse:Math.random()*999,hostile:phase>=1});
-      }
-      if(G.elapsed%35===0)G.bugs.forEach(b=>{if(Math.hypot(b.x-boss.x,b.y-boss.y)<130){b.hp-=0.7;addPt(G,b.x,b.y,'#639922',1,0.5);}});
-      boss.spitTimer++;
-      if(boss.spitTimer>=boss.spitCd){
-        boss.spitTimer=0;const ang=Math.atan2(G.my-boss.y,G.mx-boss.x);
-        const n=phase>=2?7:phase>=1?5:3;
-        for(let i=-(Math.floor(n/2));i<=Math.floor(n/2);i++){
-          const a=ang+i*0.22;addProj(G,boss.x,boss.y,Math.cos(a)*4,Math.sin(a)*4,{dmg:4,r:6,color:'#639922',life:70,poison:200,isBossBullet:true,splash:25});
-        }
-      }
-      boss.puddleTimer++;
-      if(boss.puddleTimer>=boss.puddleCd){boss.puddleTimer=0;boss.puddles.push({x:boss.x,y:boss.y,r:50+phase*15,life:400});}
-      boss.puddles.forEach(p=>{p.life--;if(G.elapsed%16===0)G.bugs.forEach(b=>{if(Math.hypot(b.x-p.x,b.y-p.y)<p.r){b.hp-=0.3;}});});
-      boss.puddles=boss.puddles.filter(p=>p.life>0);
-      // V13阶段3：强制领域反噬
-      if(phase>=2){G.mycelBetray=Math.min(1,(G.mycelBetray||0)+0.003);}
+      const pct=boss.hp/boss.maxhp;
+      if(!boss._spawnTaunt){boss._spawnTaunt=true;bossTaunt(boss,'spawn',G);}
+      if(pct<0.5&&!boss._halfTaunt){boss._halfTaunt=true;bossTaunt(boss,'half',G);}
+      boss.emptySkillCd++;if(boss.emptySkillCd>=1200){boss.emptySkillCd=0;boss.charging3=90;playSound('sync');showEcoAlert('⚡ 伪筑基·大招蓄力！！');}
+      if(boss.charging3>0){boss.charging3--;boss.vx=0;boss.vy=0;if(boss.charging3%4===0)addPt(G,boss.x+(Math.random()-0.5)*40,boss.y+(Math.random()-0.5)*40,'#aa88ff',3,2);if(boss.charging3===0){addExplosionWave(G,boss.x,boss.y,80,'#aa88ff');addExplosionWave(G,boss.x,boss.y,50,'#8855ff');screenShake(6);setTimeout(()=>bossTaunt(boss,'empty_skill',G),500);}}
+      boss._bulletT=(boss._bulletT||0)+1;if(boss._bulletT>=90){boss._bulletT=0;for(let i=0;i<4;i++){const a=i/4*Math.PI*2+G.elapsed*0.02;addProj(G,boss.x,boss.y,Math.cos(a)*2.5,Math.sin(a)*2.5,{dmg:5,r:5,color:'#aa88ff',life:80,isBossBullet:true});}}
     }
   },
+  // ── Boss3：老掉牙 ──
   {
-    name:'域外天魔',hp:2800,spd:0.52,sz:58,col:'#7B3AC9',reward:15,
-    spawnT:0,beamTimer:0,beamCd:130,beamActive:false,beamAngle:0,beamDur:0,
-    meteorTimer:0,meteorCd:220,
-    phaseDesc:['古神苏醒','天道封印','古神降临'],
+    key:'old_teeth',name:'老掉牙的筑基初期',hp:1350,spd:0.35,sz:34,col:'#888870',reward:5,
+    _rageRequire:0,
+    taunts:{spawn:['当年老夫筑基的时候……'],taunt:['当年老夫筑基时，那灵气……','你们年轻人不懂……','这世道真的变了……','再让我说一句话……'],half:['老夫还有话要说！'],death:['老夫话还没说完……']},
+    _dmgSinceTaunt:0,taunting:0,
     update(G,boss){
-      const pct=boss.hp/boss.maxhp;const phase=pct>0.66?0:pct>0.33?1:2;boss._phase=phase;
-      boss.spawnT++;const spawnCd=phase>=2?45:phase>=1?55:70;
-      if(boss.spawnT>=spawnCd){boss.spawnT=0;spawnEnemyAt(G,Math.random()<0.4?'roller':'normal',boss.x+(Math.random()-0.5)*80,boss.y+(Math.random()-0.5)*80,'late');}
-      boss.beamTimer++;
-      if(!boss.beamActive&&boss.beamTimer>=boss.beamCd){boss.beamTimer=0;boss.beamActive=true;boss.beamDur=90+phase*20;boss.beamAngle=Math.atan2(G.my-boss.y,G.mx-boss.x);}
-      if(boss.beamActive){
-        boss.beamDur--;boss.beamAngle+=0.022+phase*0.008;if(boss.beamDur<=0)boss.beamActive=false;
-        G.bugs.forEach(b=>{const ang=Math.atan2(b.y-boss.y,b.x-boss.x);let diff=Math.abs(ang-boss.beamAngle);if(diff>Math.PI)diff=Math.PI*2-diff;if(diff<0.15&&Math.hypot(b.x-boss.x,b.y-boss.y)<220){b.hp-=1.8;}});
-        const mAng=Math.atan2(G.my-boss.y,G.mx-boss.x);let diff=Math.abs(mAng-boss.beamAngle);if(diff>Math.PI)diff=Math.PI*2-diff;if(diff<0.15&&Math.hypot(G.mx-boss.x,G.my-boss.y)<220){applyPlayerDamage(G,0.9);applyReflect(G,0.9);}
-      }
-      boss.meteorTimer++;if(boss.meteorTimer>=boss.meteorCd){
-        boss.meteorTimer=0;const n=4+phase*2;
-        for(let i=0;i<n;i++){
-          const tx=Math.random()*W,ty=Math.random()*H;
-          G.dangerCircles.push({x:tx,y:ty,r:55,life:60,warn:true,color:'#9B4AFF'});
-          setTimeout(()=>{if(!G||G.dead||G.won)return;addPt(G,tx,ty,'#E85D24',18,3);addExplosionWave(G,tx,ty,50,'#9B4AFF');
-            G.bugs.forEach(b=>{if(Math.hypot(b.x-tx,b.y-ty)<55){b.hp-=5;knockback(b,tx,ty,5);}});
-            if(Math.hypot(G.mx-tx,G.my-ty)<55){applyPlayerDamage(G,12);applyReflect(G,12);}},i*350/SPEED);
-        }
-      }
-      // V13阶段3：UI腐蚀 + 世界脉冲加速
-      if(phase>=2){G.worldCorrupt=true;G.uiCorrupt=Math.min(1,(G.uiCorrupt||0)+0.004);}
-      if(phase>=1){G.worldPulseActive=true;}
-    }
+      const pct=boss.hp/boss.maxhp;
+      if(!boss._spawnTaunt){boss._spawnTaunt=true;bossTaunt(boss,'spawn',G);}
+      if(pct<0.5&&!boss._halfTaunt){boss._halfTaunt=true;bossTaunt(boss,'half',G);}
+      if(boss.taunting>0){boss.taunting--;boss.vx=0;boss.vy=0;return;}
+      boss._aoeT=(boss._aoeT||0)+1;if(boss._aoeT>=200){boss._aoeT=0;addExplosionWave(G,boss.x,boss.y,70,'#888870');if(Math.hypot(G.mx-boss.x,G.my-boss.y)<70)applyPlayerDamage(G,8);}
+    },
+    onDamage(G,boss,dmg){boss._dmgSinceTaunt=(boss._dmgSinceTaunt||0)+dmg;if(boss._dmgSinceTaunt>=300&&boss.taunting<=0){boss._dmgSinceTaunt=0;boss.taunting=180;bossTaunt(boss,'taunt',G);showEcoAlert('💬 老掉牙·絮叨中！趁机猛打！');}}
   },
-  // 元婴期专属Boss（realmIdx>=3解锁）
+  // ── Boss4：带法宝 ──
   {
-    name:'元婴道身',hp:3600,spd:0.45,sz:62,col:'#FFCC33',reward:20,
-    chargeTimer:0,chargeCd:120,charging:false,chargeDir:{x:0,y:0},chargeSpd:0,
-    bulletTimer:0,bulletCd:50,bulletAngle:0,splitTimer:0,splitCd:180,
-    beamTimer:0,beamCd:320,beamActive:false,beamDur:0,beamAngle:0,
-    phaseDesc:['道身降世','元婴出窍','天人五衰'],
+    key:'has_treasure',name:'带法宝的筑基初期',hp:1600,spd:0.60,sz:32,col:'#C0901A',reward:6,
+    _rageRequire:0,
+    taunts:{spawn:['我有法宝！你们练气期的算什么！'],treasure_break:['我的宝贝！','那是家传的！','你赔！'],all_broken:['……没有法宝我也能打！'],death:['法宝质量太差了……']},
+    treasures:[],_treasureTimer:0,
     update(G,boss){
-      const sec=Math.floor(G.elapsed/60);
-      // 阶段切换
-      if(boss.hp<boss.maxhp*0.6&&boss._phase<1){boss._phase=1;G.infection=Math.min(1,(G.infection||0)+0.3);showAlert('💫 元婴道身出窍！','#FFCC33');}
-      if(boss.hp<boss.maxhp*0.25&&boss._phase<2){boss._phase=2;G.worldCorrupt=true;G.overmind=true;showAlert('⚡ 天人五衰·万法寂灭','#ff3322');}
-      // 阶段1+：弹幕扇形散射
-      boss.bulletTimer++;
-      if(boss.bulletTimer>=boss.bulletCd&&boss._phase>=0){
-        boss.bulletTimer=0;boss.bulletAngle+=0.6;
-        for(let i=0;i<(boss._phase>=1?8:5);i++){
-          const ang=boss.bulletAngle+i*Math.PI*2/(boss._phase>=1?8:5);
-          addProj(G,boss.x,boss.y,Math.cos(ang)*3.5,Math.sin(ang)*3.5,{r:4,color:'#FFCC33',life:90,dmg:1.5,isBossBullet:true});
-        }
-      }
-      // 阶段1+：分身突进
-      boss.chargeTimer++;
-      if(boss.chargeTimer>=boss.chargeCd&&boss._phase>=1&&!boss.charging){
-        boss.chargeTimer=0;boss.charging=true;
-        const ang=Math.atan2(G.my-boss.y,G.mx-boss.x);
-        boss.chargeDir={x:Math.cos(ang)*8,y:Math.sin(ang)*8};boss.chargeSpd=8;
-        setTimeout(()=>{if(boss.hp>0){boss.charging=false;addExplosionWave(G,boss.x,boss.y,50,'#FFCC33');if(Math.hypot(G.mx-boss.x,G.my-boss.y)<60)applyPlayerDamage(G,8);}},600);
-      }
-      // 阶段2：全场金雷
-      if(boss._phase>=2&&G.elapsed%90===0){
-        for(let i=0;i<4;i++){
-          const tx=Math.random()*G.mx*2,ty=Math.random()*G.my*2;
-          addExplosionWave(G,tx,ty,25,'#FFCC33');
-          if(Math.hypot(G.mx-tx,G.my-ty)<35)applyPlayerDamage(G,3);
-          G.bugs.forEach(b=>{if(Math.hypot(b.x-tx,b.y-ty)<35)b.hp-=4;});
-        }
-      }
+      const pct=boss.hp/boss.maxhp;
+      if(!boss._spawnTaunt){boss._spawnTaunt=true;bossTaunt(boss,'spawn',G);}
+      boss._treasureTimer++;if(boss._treasureTimer>=600&&boss.treasures.length<3){boss._treasureTimer=0;boss.treasures.push({angle:Math.random()*Math.PI*2,hp:120,maxHp:120,r:65});}
+      boss.treasures.forEach(t=>{t.angle+=0.025;});
+      if(boss.treasures.length===0&&!boss._allBrokenTaunt&&boss._spawnTaunt){boss._allBrokenTaunt=true;bossTaunt(boss,'all_broken',G);}
+      const bulletCd=boss.treasures.length>0?120:70;
+      boss._bulletT=(boss._bulletT||0)+1;if(boss._bulletT>=bulletCd){boss._bulletT=0;const n=3+(3-boss.treasures.length);const ang=Math.atan2(G.my-boss.y,G.mx-boss.x);for(let i=0;i<n;i++){const a=ang+(i-(n-1)/2)*0.28;addProj(G,boss.x,boss.y,Math.cos(a)*3.5,Math.sin(a)*3.5,{dmg:7,r:5,color:'#C0901A',life:75,isBossBullet:true});}}
     }
   },
+  // ── Boss5：有后台 ──
+  {
+    key:'has_backing',name:'有后台的筑基初期',hp:1900,spd:0.65,sz:34,col:'#4060A0',reward:7,
+    _rageRequire:0,
+    taunts:{spawn:['我后台硬！你打不了我！'],call_backup:['兄弟们！上！'],backup_dead:['没用的废物！'],no_backup:['……不管了，我自己上！'],death:['等我上面知道了……']},
+    _backupWaves:0,
+    update(G,boss){
+      const pct=boss.hp/boss.maxhp;
+      if(!boss._spawnTaunt){boss._spawnTaunt=true;bossTaunt(boss,'spawn',G);}
+      const waveThresh=[0.75,0.50,0.25,0.05];
+      waveThresh.forEach((t,i)=>{if(pct<t&&(boss._backupWaves||0)<=i){boss._backupWaves=(boss._backupWaves||0)+1;bossTaunt(boss,'call_backup',G);for(let j=0;j<4;j++){const angle=Math.random()*Math.PI*2;spawnEnemyAt(G,'berserker',boss.x+Math.cos(angle)*80,boss.y+Math.sin(angle)*80,'late');const e2=G.enemies[G.enemies.length-1];if(e2)e2._isBackup=true;}showEcoAlert('🚨 援军到来！先清援军再打Boss！');}});
+      const hasBackup=G.enemies.some(e=>e._isBackup);boss._hasBackup=hasBackup;
+      if(!hasBackup&&boss._backupWaves>0&&!boss._noBackupTaunt){boss._noBackupTaunt=true;bossTaunt(boss,'backup_dead',G);setTimeout(()=>bossTaunt(boss,'no_backup',G),2000);}
+      boss._bulletT=(boss._bulletT||0)+1;const cd=hasBackup?150:90;if(boss._bulletT>=cd){boss._bulletT=0;const a2=Math.atan2(G.my-boss.y,G.mx-boss.x);addProj(G,boss.x,boss.y,Math.cos(a2)*4,Math.sin(a2)*4,{dmg:9,r:6,color:'#4060A0',life:80,isBossBullet:true});}
+    }
+  },
+  // ── Boss6：吃不停 ──
+  {
+    key:'always_eat',name:'吃不停的筑基中期',hp:2200,spd:0.58,sz:36,col:'#A05828',reward:8,
+    _rageRequire:1,
+    taunts:{spawn:['还不够……我还没吃够……'],devour:['好吃！','嗝——','再来一个！'],enrage:['吃饱了！打！','能量补满了！'],death:['……减肥明天再说……']},
+    _devour:0,enrage:0,
+    update(G,boss){
+      const pct=boss.hp/boss.maxhp;
+      if(!boss._spawnTaunt){boss._spawnTaunt=true;bossTaunt(boss,'spawn',G);}
+      if(boss.enrage>0){boss.enrage--;boss.spd=boss._baseSpd*1.6;}else{boss.spd=boss._baseSpd||0.58;boss._baseSpd=boss._baseSpd||boss.spd;}
+      if(boss._devour>=5){boss._devour=0;boss.enrage=480;boss.hp=Math.min(boss.maxhp,boss.hp+200);bossTaunt(boss,'enrage',G);screenShake(10);addExplosionWave(G,boss.x,boss.y,50,'#A05828');showEcoAlert('😤 吃不停·吃饱狂暴8秒！少让小怪死！');}
+      if(G.elapsed%300===0)bossTaunt(boss,'devour',G);
+      boss.sz=36+Math.floor((1-pct)*16);
+    }
+  },
+  // ── Boss7：娇滴滴 ──
+  {
+    key:'dainty',name:'娇滴滴的筑基中期',hp:2000,spd:0.62,sz:30,col:'#E060A0',reward:8,
+    _rageRequire:0,
+    taunts:{spawn:['你、你干嘛……人家还没准备好……'],jiaoqi:['哇呜……你好过分……','为什么要这么打人家……'],counter:['你惹我生气了！','哼！'],death:['哼！']},
+    jiaoDun:0,_counterTimer:0,
+    update(G,boss){
+      const pct=boss.hp/boss.maxhp;
+      if(!boss._spawnTaunt){boss._spawnTaunt=true;bossTaunt(boss,'spawn',G);}
+      if(pct<0.5&&!boss._halfTaunt){boss._halfTaunt=true;}
+      if(boss.jiaoDun>0){boss.jiaoDun--;const dx2=G.mx-boss.x,dy2=G.my-boss.y,d2=Math.hypot(dx2,dy2)||1;boss.x-=dx2/d2*1.2;boss.y-=dy2/d2*1.2;}
+      if(boss._counterTimer>0){boss._counterTimer--;boss.spd=boss._baseSpd*2.0;}else{boss.spd=boss._baseSpd||0.62;boss._baseSpd=boss._baseSpd||boss.spd;}
+      if(boss.jiaoDun<=0){boss._bulletT=(boss._bulletT||0)+1;if(boss._bulletT>=80){boss._bulletT=0;const n2=boss._counterTimer>0?8:4;for(let i2=0;i2<n2;i2++){const a3=i2/n2*Math.PI*2+G.elapsed*0.03;addProj(G,boss.x,boss.y,Math.cos(a3)*3,Math.sin(a3)*3,{dmg:6,r:5,color:'#E060A0',life:70,isBossBullet:true});}}}
+    },
+    onDamage(G,boss,dmg){if(dmg>80&&boss.jiaoDun<=0){boss.jiaoDun=1200;bossTaunt(boss,'jiaoqi',G);showEcoAlert('💔 娇滴滴·护盾！用小伤害磨！');setTimeout(()=>{boss._counterTimer=180;bossTaunt(boss,'counter',G);},20000);}}
+  },
+  // ── Boss8：我爸是紫府 ──
+  {
+    key:'dad_zifu',name:'我爸是紫府的筑基中期',hp:2600,spd:0.60,sz:34,col:'#6030C0',reward:9,
+    _rageRequire:2,
+    taunts:{spawn:['我爸是紫府！你打我试试！'],shield_on:['护盾开了！你打不穿的！'],shield_break:['怎么……怎么可能！'],half:['我爸听到了你完蛋！'],death:['我爸……会为我报仇的……']},
+    _shieldTimer:0,shield:false,
+    update(G,boss){
+      const pct=boss.hp/boss.maxhp;
+      if(!boss._spawnTaunt){boss._spawnTaunt=true;bossTaunt(boss,'spawn',G);}
+      if(pct<0.5&&!boss._halfTaunt){boss._halfTaunt=true;bossTaunt(boss,'half',G);}
+      boss._shieldTimer++;if(boss._shieldTimer>=1800&&!boss.shield){boss._shieldTimer=0;boss.shield=true;bossTaunt(boss,'shield_on',G);showEcoAlert('🛡 我爸护盾！需暴怒(50连)才能打破！');}
+      boss._bulletT=(boss._bulletT||0)+1;if(boss._bulletT>=100){boss._bulletT=0;const ang2=Math.atan2(G.my-boss.y,G.mx-boss.x);for(let i2=-2;i2<=2;i2++){const a3=ang2+i2*0.2;addProj(G,boss.x,boss.y,Math.cos(a3)*4,Math.sin(a3)*4,{dmg:9,r:5,color:'#6030C0',life:80,isBossBullet:true});}}
+    },
+    onDamage(G,boss,dmg){if(boss.shield){if((G.rageTier||0)>=2){boss.shield=false;boss._shieldTimer=0;bossTaunt(boss,'shield_break',G);screenShake(12);addExplosionWave(G,boss.x,boss.y,60,'#6030C0');return dmg;}else{addDamageText(G,boss.x,boss.y-25,'怒气不足！','#aaaaaa',14);return 0;}}return dmg;}
+  },
+  // ── Boss9：爱发vlog ──
+  {
+    key:'vlogger',name:'爱发vlog的筑基后期',hp:2500,spd:0.65,sz:30,col:'#E04020',reward:10,
+    _rageRequire:0,
+    taunts:{spawn:['等一下，我开个播——'],vlog_start:['大家好！今天来打个练气期！','关注一下哦～'],vlog_hit:['停！这帧不好看！','哎这镜头歪了！'],vlog_end:['这条发布了哦～'],death:['这条……不发了……']},
+    _vlogTimer:0,vlogging:0,
+    update(G,boss){
+      const pct=boss.hp/boss.maxhp;
+      if(!boss._spawnTaunt){boss._spawnTaunt=true;bossTaunt(boss,'spawn',G);}
+      boss._vlogTimer++;if(boss._vlogTimer>=1500&&boss.vlogging<=0){boss._vlogTimer=0;boss.vlogging=480;bossTaunt(boss,'vlog_start',G);showEcoAlert('📱 直播中！周围敌人攻击+30%！打Boss中断直播！');}
+      if(boss.vlogging>0){boss.vlogging--;if(G.elapsed%30===0){G.enemies.forEach(e=>{if(Math.hypot(e.x-boss.x,e.y-boss.y)<150)e.vlogBuff=60;});}if(boss.vlogging===0)bossTaunt(boss,'vlog_end',G);}
+      boss._bulletT=(boss._bulletT||0)+1;if(boss._bulletT>=85){boss._bulletT=0;const ang2=Math.atan2(G.my-boss.y,G.mx-boss.x)+((Math.random()-0.5)*0.4);addProj(G,boss.x,boss.y,Math.cos(ang2)*4.5,Math.sin(ang2)*4.5,{dmg:10,r:5,color:'#E04020',life:75,isBossBullet:true});}
+    },
+    onDamage(G,boss,dmg){if(boss.vlogging>0){boss.vlogging=0;bossTaunt(boss,'vlog_hit',G);}return dmg;}
+  },
+  // ── Boss10：功法霸道 ──
+  {
+    key:'dominator',name:'功法霸道的筑基后期',hp:3000,spd:0.55,sz:36,col:'#203080',reward:11,
+    _rageRequire:3,
+    taunts:{spawn:['功法天下第一！你的攻击在我面前毫无意义！'],rage_break:['怎么……反而变强了！这不可能！'],half:['继续！我的功法无敌！'],death:['……功法有……问题……']},
+    update(G,boss){
+      const pct=boss.hp/boss.maxhp;
+      if(!boss._spawnTaunt){boss._spawnTaunt=true;bossTaunt(boss,'spawn',G);}
+      if(pct<0.5&&!boss._halfTaunt){boss._halfTaunt=true;bossTaunt(boss,'half',G);}
+      if((G.rageTier||0)>=3&&!boss._rageBroken){boss._rageBroken=true;bossTaunt(boss,'rage_break',G);showEcoAlert('🔥 炽怒突破霸道！伤害+20%！');}
+      if((G.rageTier||0)<3)boss._rageBroken=false;
+      boss._bulletT=(boss._bulletT||0)+1;if(boss._bulletT>=70){boss._bulletT=0;const ang2=Math.atan2(G.my-boss.y,G.mx-boss.x);addProj(G,boss.x,boss.y,Math.cos(ang2)*5,Math.sin(ang2)*5,{dmg:11,r:6,color:'#203080',life:90,isBossBullet:true});if(pct<0.5){for(let i2=1;i2<=2;i2++){addProj(G,boss.x,boss.y,Math.cos(ang2+i2*0.35)*3.5,Math.sin(ang2+i2*0.35)*3.5,{dmg:7,r:4,color:'#4060C0',life:70,isBossBullet:true});addProj(G,boss.x,boss.y,Math.cos(ang2-i2*0.35)*3.5,Math.sin(ang2-i2*0.35)*3.5,{dmg:7,r:4,color:'#4060C0',life:70,isBossBullet:true});}}}
+    },
+    dmgMult(G){if((G.rageTier||0)>=3)return 1.20;return 0.85;}
+  },
+  // ── Boss11：壕气冲天 ──
+  {
+    key:'rich_armor',name:'壕气冲天的筑基后期',hp:3200,spd:0.58,sz:38,col:'#C8A000',reward:12,
+    _rageRequire:0,
+    taunts:{spawn:['钱能解决一切！你伤不了我！'],recharge:['再充一次！','钱不是问题！'],armor_break:['退款！','我要投诉！'],death:['……钱也不是万能的……']},
+    armorStack:3,_armorTimer:0,_critStreak:0,
+    update(G,boss){
+      const pct=boss.hp/boss.maxhp;
+      if(!boss._spawnTaunt){boss._spawnTaunt=true;bossTaunt(boss,'spawn',G);}
+      boss._armorTimer++;if(boss._armorTimer>=1200&&boss.armorStack<3){boss._armorTimer=0;boss.armorStack++;bossTaunt(boss,'recharge',G);addExplosionWave(G,boss.x,boss.y,40,'#C8A000');showEcoAlert('💰 壕气充值护甲！连续暴击5次击碎一层！');}
+      boss._bulletT=(boss._bulletT||0)+1;const cd2=Math.max(50,90-boss.armorStack*15);if(boss._bulletT>=cd2){boss._bulletT=0;const n3=3+boss.armorStack;for(let i3=0;i3<n3;i3++){const a4=i3/n3*Math.PI*2+G.elapsed*0.015;addProj(G,boss.x,boss.y,Math.cos(a4)*3.5,Math.sin(a4)*3.5,{dmg:10,r:5,color:'#C8A000',life:80,isBossBullet:true});}}
+    },
+    onDamage(G,boss,dmg){const armorRes=1.0-boss.armorStack*0.15;const actualDmg=dmg*armorRes;if(dmg>50){boss._critStreak=(boss._critStreak||0)+1;if(boss._critStreak>=5){boss._critStreak=0;if(boss.armorStack>0){boss.armorStack--;bossTaunt(boss,'armor_break',G);screenShake(8);addExplosionWave(G,boss.x,boss.y,45,'#ff8800');}}}else{boss._critStreak=0;}return actualDmg;}
+  },
+  // ── Boss12：作威作福（终Boss）──
+  {
+    key:'tyrant',name:'作威作福的半步紫府',hp:3800,spd:0.50,sz:44,col:'#802010',reward:20,
+    _rageRequire:4,
+    taunts:{spawn:['区区练气期……你们也配？'],phase2:['威压！让你看看真正的差距！'],phase3_norage:['怎么，你还想赢？就这点怒气？'],phase3_rage:['这……不可能……你……'],death:['不可能……我半步紫府……怎么……']},
+    _phase:0,
+    update(G,boss){
+      if(!boss._spawnTaunt){boss._spawnTaunt=true;bossTaunt(boss,'spawn',G);}
+      const pct=boss.hp/boss.maxhp;const newPhase=pct>0.6?0:pct>0.3?1:2;
+      if(newPhase!==boss._phase){boss._phase=newPhase;if(newPhase===1){bossTaunt(boss,'phase2',G);showEcoAlert('⚠ 作威作福·威压！你的攻击-40%！');}if(newPhase===2){const rageOk=(G.rageTier||0)>=4;bossTaunt(boss,rageOk?'phase3_rage':'phase3_norage',G);if(!rageOk)showEcoAlert('❗ 需狂怒(120连)！否则伤害×0.25！');else showEcoAlert('🔥 狂怒压制！全力输出！');}}
+      boss._bulletT=(boss._bulletT||0)+1;const cd=newPhase===2?50:newPhase===1?65:80;if(boss._bulletT>=cd){boss._bulletT=0;const ang=Math.atan2(G.my-boss.y,G.mx-boss.x);const n=newPhase===2?8:newPhase===1?6:4;for(let i=0;i<n;i++){const a=ang+i/n*Math.PI*2;const spd2=newPhase>=1?5:4;addProj(G,boss.x,boss.y,Math.cos(a)*spd2,Math.sin(a)*spd2,{dmg:12+newPhase*3,r:6,color:'#ff2200',life:85,isBossBullet:true});}}
+      if(newPhase>=2){boss._chargeT=(boss._chargeT||0)+1;if(boss._chargeT>=100&&!boss._charging){boss._chargeT=0;boss._charging=true;const dx=G.mx-boss.x,dy=G.my-boss.y,d2=Math.hypot(dx,dy)||1;boss._chargeVx=dx/d2*9;boss._chargeVy=dy/d2*9;}if(boss._charging){boss.x+=boss._chargeVx;boss.y+=boss._chargeVy;boss._chargeVx*=0.87;boss._chargeVy*=0.87;if(Math.hypot(boss._chargeVx,boss._chargeVy)<0.5)boss._charging=false;}}
+    },
+    dmgMult(G,boss){const pct=boss.hp/boss.maxhp;if(pct<0.6)return 0.60;if(pct<0.3){if((G.rageTier||0)>=4)return 1.0;if(G.elapsed%60===0)addDamageText(G,boss.x,boss.y-30,'怒气不足！','#ff8844',16);return 0.25;}return 1.0;}
+  },
+];
+
+// ── 关卡Boss配置 ──
+const STAGE_BOSS_MAP=[
+  ['fake_zhuji','fake_skill',1.00],
+  ['fake_skill','old_teeth',1.12],
+  ['old_teeth','has_treasure',1.25],
+  ['has_treasure','has_backing',1.40],
+  ['has_backing','always_eat',1.55],
+  ['always_eat','dainty',1.72],
+  ['dainty','dad_zifu',1.90],
+  ['dad_zifu','vlogger',2.10],
+  ['vlogger','dominator',2.32],
+  ['dominator','rich_armor','tyrant',2.60],
 ];
 
 const QUALITY_DEFS=[

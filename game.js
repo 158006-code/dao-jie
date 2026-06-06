@@ -54,8 +54,16 @@ function triggerBoss(i){
   G.stagePhase+=1;
   G.bossMode=true;G.bossPhase=i+1;
   screenShake(6);playSound('boss');
-  const def=JSON.parse(JSON.stringify(BOSS_DEFS[i]));
-  def.update=BOSS_DEFS[i].update;def.phaseDesc=BOSS_DEFS[i].phaseDesc;
+  // 从STAGE_BOSS_MAP找Boss key
+  const stageId=G.stageId||1;
+  const bossCfg=STAGE_BOSS_MAP[stageId-1]||STAGE_BOSS_MAP[0];
+  const bossKey=bossCfg[i]||bossCfg[0];
+  const hpMult=bossCfg[bossCfg.length-1]; // 最后一项是hpMult
+  const defSrc=BOSS_DEFS.find(b=>b.key===bossKey)||BOSS_DEFS[0];
+  const def=JSON.parse(JSON.stringify(defSrc));
+  def.update=defSrc.update;def.onDamage=defSrc.onDamage;def.dmgMult=defSrc.dmgMult;
+  def.taunts=defSrc.taunts;
+  def.hp=Math.floor(def.hp*(typeof hpMult==='number'?hpMult:1.0));
   G.boss={...def,x:W/2,y:-100,vx:0,vy:0,maxhp:def.hp,poison:0,puddles:def.puddles||[],_phase:0};
   document.getElementById('boss-name').textContent=def.name;
   document.getElementById('boss-wrap').classList.add('show');
@@ -69,7 +77,7 @@ function updateBoss(G){
   if(boss.poison>0){boss.poison--;if(boss.poison%18===0){boss.hp-=0.35;addPt(G,boss.x,boss.y,'#639922',2,0.8);}}
   if(boss.frostDot>0){boss.frostDot--;if(G.elapsed%30===0&&boss._frostDmg>0)boss.hp-=boss._frostDmg;}
   boss.vx*=0.9;boss.vy*=0.9;
-  if(!boss.charging){const dx=G.mx-boss.x,dy=G.my-boss.y,d=Math.hypot(dx,dy)||1;boss.vx+=(dx/d)*boss.spd*0.07;boss.vy+=(dy/d)*boss.spd*0.07;}
+  if(!boss.charging&&!boss._charging&&!boss._down){const dx=G.mx-boss.x,dy=G.my-boss.y,d=Math.hypot(dx,dy)||1;boss.vx+=(dx/d)*boss.spd*0.07;boss.vy+=(dy/d)*boss.spd*0.07;}
   const bv=Math.hypot(boss.vx,boss.vy);if(bv>boss.spd*2){boss.vx=boss.vx/bv*boss.spd*2;boss.vy=boss.vy/bv*boss.spd*2;}
   boss.x+=boss.vx;boss.y+=boss.vy;
   boss.x=Math.max(-boss.sz,Math.min(W+boss.sz,boss.x));boss.y=Math.max(-boss.sz,Math.min(H+boss.sz,boss.y));
@@ -78,9 +86,9 @@ function updateBoss(G){
   document.getElementById('boss-phase-dots').textContent=phaseDots.map((p,i)=>i===currentPhase?`[${p}]`:p).join(' → ');
   const bd=Math.hypot(G.mx-boss.x,G.my-boss.y);
   G.bossHitCd=(G.bossHitCd||0);if(G.bossHitCd>0)G.bossHitCd--;
-  if(bd<boss.sz/2+12&&!boss.charging&&G.bossHitCd<=0){G.bossHitCd=25;applyPlayerDamage(G,0.5);applyReflect(G,0.5);addPt(G,G.mx,G.my,'#E24B4A',3,2);}
+  if(bd<boss.sz/2+12&&!boss.charging&&!boss._charging&&!boss._down&&G.bossHitCd<=0){G.bossHitCd=25;applyPlayerDamage(G,0.5);applyReflect(G,0.5);addPt(G,G.mx,G.my,'#E24B4A',3,2);}
   document.getElementById('boss-bar').style.width=Math.max(0,boss.hp/boss.maxhp*100)+'%';
-  if(boss.hp<=0){
+  if(boss.hp<=0&&!boss._down){
     screenShake(18);triggerFlash();playSound('bossdeath');
     addExplosionWave(G,boss.x,boss.y,40,'#ff0000');
     addDamageText(G,boss.x,boss.y,'天道审判','#ff3300',34);
@@ -307,6 +315,8 @@ function _update(){
   G.enemies.forEach((e,i)=>{
     if(e.hp<=0){
       de.push(i);G.kills++;G.xp+=2+G.phase*2;
+      // 吃不停Boss吞噬计数
+      if(G.boss&&G.boss.key==='always_eat'){G.boss._devour=(G.boss._devour||0)+1;if(G.boss._devour%5===1)bossTaunt(G.boss,'devour',G);}
       if(G.comboTimer>0){G.combo++;}else{G.combo=1;}
       G.comboTimer=RAGE_WINDOW_NORMAL;
       screenShake(G.combo>=20?6:2);
@@ -1317,7 +1327,7 @@ function draw(){
     const stacks = e._hitCount||0;
     const redness = Math.min(1, stacks/10);
     const colBase=ep==='late'?'#6a1010':ep==='mid'?'#8a1818':'#AA2020';
-    const col = 'rgb('+Math.floor(parseInt(colBase.slice(1,3),16)+redness*60)+','+Math.floor(parseInt(colBase.slice(3,5),16)-redness*20)+','+Math.floor(parseInt(colBase.slice(5,7),16)-redness*20)+')';
+    const col = 'rgb('+Math.floor(parseInt(colBase.slice(1,3),16)+redness*60)+','+Math.max(0,Math.floor(parseInt(colBase.slice(3,5),16)-redness*20))+','+Math.max(0,Math.floor(parseInt(colBase.slice(5,7),16)-redness*20))+')';
     const glowVal=ep==='late'?(stacks*2+10):ep==='mid'?(stacks*2+4):stacks*2;
     const headR=ep==='late'?13:ep==='mid'?12:11;
     drawMonsterBase(ctx, e.x, e.y, {
@@ -1889,6 +1899,9 @@ function draw(){
       ctx.restore();
     }
 
+    // Boss台词气泡
+    drawBossDialogue(ctx, G);
+
     // 跳过提示
     if(t<160){
       ctx.save();
@@ -1904,8 +1917,6 @@ function draw(){
 
 // ── 怒气需求检查（Boss绑定空架子）──
 function checkRageRequirement(G, boss){
-  // 各Boss具体逻辑后续填入
-  // 返回 { met: bool, required: tierName, current: tierName }
   const required = boss._rageRequire||0;
   const met = (G.rageTier||0)>=required;
   return {
@@ -1913,6 +1924,46 @@ function checkRageRequirement(G, boss){
     required: RAGE_TIERS[required]?RAGE_TIERS[required].name:'无',
     current:  RAGE_TIERS[G.rageTier||0].name,
   };
+}
+
+// ── Boss台词系统 ──
+function bossTaunt(boss, trigger, G){
+  const lines = boss.taunts?.[trigger];
+  if(!lines||!lines.length) return;
+  const text = lines[Math.floor(Math.random()*lines.length)];
+  showBossDialogue(boss, text);
+}
+
+function showBossDialogue(boss, text){
+  if(!G) return;
+  G.bossDialogue = { text, timer: 240, maxTimer: 240, bossName: boss.name };
+}
+
+function drawBossDialogue(ctx, G){
+  if(!G.bossDialogue||G.bossDialogue.timer<=0) return;
+  G.bossDialogue.timer--;
+  const d = G.bossDialogue;
+  const alpha = d.timer > 30 ? 1 : d.timer/30;
+  const bossY = G.boss ? G.boss.y : H/2;
+
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  const tw = ctx.measureText(d.text).width + 24;
+  const bx = Math.max(tw/2+8, Math.min(W-tw/2-8, G.boss ? G.boss.x : W/2));
+  const by = bossY - (G.boss ? G.boss.sz/2 : 30) - 36;
+  ctx.fillStyle = 'rgba(0,0,0,0.82)';
+  ctx.beginPath();
+  const r=8, x=bx-tw/2, y=by-22;
+  ctx.moveTo(x+r,y);ctx.lineTo(x+tw-r,y);ctx.arcTo(x+tw,y,x+tw,y+r,r);
+  ctx.lineTo(x+tw,y+18);ctx.arcTo(x+tw,y+22,x+tw-r,y+22,r);
+  ctx.lineTo(bx+6,y+22);ctx.lineTo(bx,y+30);ctx.lineTo(bx-6,y+22);
+  ctx.lineTo(x+r,y+22);ctx.arcTo(x,y+22,x,y+22-r,r);
+  ctx.lineTo(x,y+r);ctx.arcTo(x,y,x+r,y,r);
+  ctx.closePath();ctx.fill();
+  ctx.fillStyle='#ffffff';ctx.font='bold 13px Arial';ctx.textAlign='center';
+  ctx.shadowColor='rgba(0,0,0,0)';ctx.shadowBlur=0;
+  ctx.fillText(d.text, bx, by-5);
+  ctx.restore();
 }
 
 // ── 装备实际加成计算（初版）──
