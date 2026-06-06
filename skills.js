@@ -231,10 +231,11 @@ function initGame(){
     comboSpeedBonus:_baseComboSpeed,comboDmgBonus:_baseComboDmg,
     evolveRateBonus:_baseEvolveRate,xpBoost:_baseXpBoost,
     starDmgBonus:_baseStarDmg,evolveRangeBonus:_baseEvolveRange,
-    stagePhase:0,viewMode:'free',activeBossAt:null,totalTime:360,
+    stagePhase:0,viewMode:'free',activeBossAt:null,totalTime:360,envParticles:[],
   };
   // viewMode分区 + 阶段初始化
   const stageId=_currentRealm+1;
+  G.stageId=stageId;
   const VM={1:'free',2:'free',3:'free',4:'vertical',5:'vertical',6:'free',7:'free',8:'free',9:'vertical',10:'arena'};
   G.viewMode=VM[stageId]||'free';
   G.stagePhase=0;

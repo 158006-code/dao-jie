@@ -343,6 +343,340 @@ function _update(){
   updateHUD();
 }
 
+// ══════ 场景环境绘制 ══════
+// 每关三层叠加：底色(由draw负责) + 地面纹理 + 环境粒子/装饰，全部纯Canvas
+function drawMapEnvironment(ctx,G){
+  const id=G.stageId||1;const t=G.elapsed;
+  // 更新环境粒子
+  if(!G.envParticles)G.envParticles=[];
+  G.envParticles.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.life--;});
+  G.envParticles=G.envParticles.filter(p=>p.life>0);
+
+  // 辅助：限频生成粒子(max 30全局上限)
+  function _esp(x,y,vx,vy,life,color,size,scene){
+    if(G.envParticles.length>=30)return;
+    G.envParticles.push({x,y,vx,vy,life,maxLife:life,color,size,_scene:scene});
+  }
+  function _spawn(scene,maxN,fn){
+    if(G.envParticles.filter(p=>p._scene===scene).length<maxN&&Math.random()<0.025)fn();
+  }
+  // 绘制指定场景粒子
+  function _drawP(scene){
+    ctx.save();
+    G.envParticles.forEach(p=>{
+      if(p._scene!==scene)return;
+      const a=Math.min(1,p.life/p.maxLife*1.4)*0.55;
+      ctx.globalAlpha=a;ctx.fillStyle=p.color;
+      ctx.beginPath();ctx.arc(p.x,p.y,p.size*(0.4+0.6*p.life/p.maxLife),0,Math.PI*2);ctx.fill();
+    });
+    ctx.restore();
+  }
+
+  // ══════ 10关场景 ══════
+
+  // ── 第1关：废弃丹室 ── 砖缝+破损炼丹炉+灵石粒子
+  function _s1(){
+    ctx.save();
+    // 砖缝(错缝)
+    ctx.strokeStyle='rgba(180,120,60,0.07)';ctx.lineWidth=1;
+    for(let x=0;x<W;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+    for(let y=0;y<H;y+=28){
+      ctx.beginPath();ctx.moveTo(y%56===0?20:0,y);ctx.lineTo(W,y);ctx.stroke();
+    }
+    // 破损炼丹炉（右上区域）
+    const fx=W*0.68,fy=H*0.22;
+    ctx.globalAlpha=0.09;ctx.strokeStyle='#8B7355';ctx.lineWidth=2;
+    ctx.beginPath();ctx.arc(fx,fy,30,Math.PI,0);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(fx-30,fy);ctx.lineTo(fx-34,fy+36);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(fx+30,fy);ctx.lineTo(fx+34,fy+36);ctx.stroke();
+    ctx.beginPath();ctx.arc(fx,fy+36,34,0,Math.PI);ctx.stroke();
+    ctx.globalAlpha=0.05;ctx.beginPath();ctx.moveTo(fx-8,fy-18);ctx.lineTo(fx+12,fy+4);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(fx+4,fy-22);ctx.lineTo(fx-6,fy);ctx.stroke();
+    // 灵石粒子
+    _spawn(1,6,()=>_esp(Math.random()*W,Math.random()*H,(Math.random()-0.5)*0.25,-0.15-Math.random()*0.35,180+Math.random()*180,'rgba(130,230,160,0.45)',1.2+Math.random()*2.2,1));
+    _drawP(1);ctx.restore();
+  }
+
+  // ── 第2关：龟裂洞府 ── 龟裂地面+墙壁裂纹+结界残片
+  function _s2(){
+    ctx.save();
+    ctx.strokeStyle='rgba(100,90,80,0.08)';ctx.lineWidth=1;
+    // 龟裂地面（几道大裂缝）
+    const cracks=[[W*0.15,H*0.1,W*0.45,H*0.55],[W*0.55,H*0.2,W*0.75,H*0.7],[W*0.3,H*0.65,W*0.6,H*0.85],[W*0.7,H*0.15,W*0.4,H*0.5]];
+    cracks.forEach(([x1,y1,x2,y2])=>{
+      ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x1+(x2-x1)*0.3+Math.sin(t*0.01+x1)*5,y1+(y2-y1)*0.3+Math.cos(t*0.01+y1)*3);
+      ctx.lineTo(x2,y2);ctx.stroke();
+      // 细小分支
+      const mx=(x1+x2)/2,my=(y1+y2)/2;
+      ctx.beginPath();ctx.moveTo(mx,my);ctx.lineTo(mx+(Math.random()-0.5)*40,my+(Math.random()-0.5)*40);ctx.stroke();
+    });
+    // 墙壁裂纹(顶部和两侧)
+    ctx.globalAlpha=0.06;ctx.strokeStyle='#706860';
+    for(let x=0;x<W;x+=60+Math.random()*30){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x+Math.sin(x)*8,8+Math.random()*16);ctx.stroke();}
+    // 结界残片闪烁
+    ctx.globalAlpha=0.05+Math.sin(t*0.04)*0.03;
+    for(let i=0;i<3;i++){
+      const dx=W*0.2+i*W*0.25,dy=H*0.15+i*H*0.12;
+      ctx.strokeStyle='rgba(120,160,220,0.5)';ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(dx-6,dy-3);ctx.lineTo(dx,dy-8);ctx.lineTo(dx+6,dy-3);ctx.lineTo(dx,dy+2);ctx.closePath();ctx.stroke();
+    }
+    ctx.restore();
+    _drawP(2);
+  }
+
+  // ── 第3关：残破宗门广场 ── 石板地+青苔+断裂旗帜
+  function _s3(){
+    ctx.save();
+    // 大块石板
+    ctx.strokeStyle='rgba(140,130,110,0.07)';ctx.lineWidth=1.5;
+    const gs=55;
+    for(let x=0;x<W;x+=gs){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+    for(let y=0;y<H;y+=gs){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+    // 随机石板破损
+    ctx.globalAlpha=0.04;ctx.fillStyle='rgba(80,70,50,0.5)';
+    for(let i=0;i<6;i++){const rx=Math.floor(Math.random()*W/gs)*gs,ry=Math.floor(Math.random()*H/gs)*gs;ctx.fillRect(rx+4,ry+4,gs-8,gs-8);}
+    // 青苔
+    ctx.globalAlpha=0.06;ctx.fillStyle='#3a6a3a';
+    for(let i=0;i<8;i++){const mx=Math.random()*W,my=Math.random()*H;ctx.beginPath();ctx.ellipse(mx,my,8+Math.random()*12,3+Math.random()*4,Math.random()*Math.PI,0,Math.PI*2);ctx.fill();}
+    // 断裂旗帜（左侧）
+    const fp=W*0.18;
+    ctx.globalAlpha=0.1;ctx.strokeStyle='#888';ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(fp,H*0.1);ctx.lineTo(fp,H*0.55);ctx.stroke(); // 旗杆
+    ctx.globalAlpha=0.06;ctx.fillStyle='#aa6644';
+    ctx.beginPath();ctx.moveTo(fp,H*0.12);ctx.lineTo(fp+35,H*0.16);ctx.lineTo(fp+30,H*0.28);ctx.lineTo(fp,H*0.26);ctx.closePath();ctx.fill();
+    ctx.beginPath();ctx.moveTo(fp,H*0.14);ctx.lineTo(fp-12,H*0.17);ctx.lineTo(fp-9,H*0.23);ctx.lineTo(fp,H*0.22);ctx.closePath();ctx.fill(); // 撕裂
+    ctx.restore();
+    _drawP(3);
+  }
+
+  // ── 第4关：法宝仓库·储物间 ── 货架轮廓+发光法器+符文地板
+  function _s4(){
+    ctx.save();
+    // 符文地板
+    ctx.strokeStyle='rgba(100,140,180,0.06)';ctx.lineWidth=1;
+    for(let y=0;y<H;y+=50){
+      ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();
+      // 符文标记(简化为小十字)
+      ctx.globalAlpha=0.04;
+      for(let x=25;x<W;x+=50){
+        ctx.beginPath();ctx.moveTo(x-4,y-25);ctx.lineTo(x+4,y-25);ctx.moveTo(x,y-29);ctx.lineTo(x,y-21);ctx.stroke();
+      }
+      ctx.globalAlpha=1;
+    }
+    // 货架(水平线条组)
+    ctx.strokeStyle='rgba(160,130,90,0.09)';ctx.lineWidth=2;
+    for(let y=H*0.2;y<H*0.75;y+=H*0.17){
+      ctx.beginPath();ctx.moveTo(W*0.08,y);ctx.lineTo(W*0.45,y);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(W*0.55,y);ctx.lineTo(W*0.92,y);ctx.stroke();
+    }
+    // 发光法器
+    const artifacts=[{x:W*0.2,y:H*0.28},{x:W*0.38,y:H*0.45},{x:W*0.65,y:H*0.32},{x:W*0.78,y:H*0.6}];
+    artifacts.forEach((a,i)=>{
+      const glow=0.07+Math.sin(t*0.03+i)*0.03;
+      ctx.globalAlpha=glow;ctx.fillStyle=i%2===0?'#44aacc':'#dd8844';
+      ctx.shadowBlur=8;ctx.shadowColor=i%2===0?'#44aacc':'#dd8844';
+      ctx.beginPath();ctx.arc(a.x,a.y,3+i%2*1.5,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
+    });
+    ctx.restore();
+    _drawP(4);
+  }
+
+  // ── 第5关：豪华厅堂 ── 红毯纹理+屏风轮廓+灯笼
+  function _s5(){
+    ctx.save();
+    // 红毯（中央竖向宽带）
+    const carpetL=W*0.28,carpetR=W*0.72;
+    ctx.globalAlpha=0.07;ctx.fillStyle='#8B1A1A';
+    ctx.fillRect(carpetL,0,carpetR-carpetL,H);
+    // 地毯边线
+    ctx.globalAlpha=0.1;ctx.strokeStyle='#C9A050';ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(carpetL-2,0);ctx.lineTo(carpetL-2,H);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(carpetR+2,0);ctx.lineTo(carpetR+2,H);ctx.stroke();
+    // 地毯菱形花纹
+    ctx.globalAlpha=0.04;ctx.strokeStyle='#C9A050';ctx.lineWidth=1;
+    for(let y=0;y<H;y+=80){
+      ctx.beginPath();ctx.moveTo(W*0.5,y-40);ctx.lineTo(carpetR-4,y);ctx.lineTo(W*0.5,y+40);ctx.lineTo(carpetL+4,y);ctx.closePath();ctx.stroke();
+    }
+    // 屏风轮廓(两侧)
+    ctx.globalAlpha=0.06;ctx.strokeStyle='#6B8B6B';ctx.lineWidth=2;
+    for(let py=H*0.12;py<H*0.82;py+=H*0.22){
+      const px=W*0.08;ctx.strokeRect(px,py,38,60);
+      ctx.beginPath();ctx.moveTo(px+19,py+60);ctx.lineTo(px+19,py+74);ctx.stroke();
+    }
+    // 灯笼(顶部悬挂)
+    ctx.globalAlpha=0.08+Math.sin(t*0.02)*0.03;ctx.fillStyle='#DD5533';
+    for(let lx=W*0.2;lx<W;lx+=W*0.25){
+      ctx.fillStyle='#DD5533';ctx.beginPath();ctx.arc(lx,18,10,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle='#AA3300';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(lx,0);ctx.lineTo(lx,8);ctx.stroke();
+    }
+    ctx.restore();
+    _drawP(5);
+  }
+
+  // ── 第6关：修仙食堂·灵厨房 ── 方砖地+锅炉蒸汽+食材粒子
+  function _s6(){
+    ctx.save();
+    // 方砖地
+    ctx.strokeStyle='rgba(160,140,100,0.07)';ctx.lineWidth=1;
+    const ts=42;
+    for(let x=0;x<W;x+=ts){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+    for(let y=0;y<H;y+=ts){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+    // 棋盘格暗纹
+    ctx.globalAlpha=0.03;ctx.fillStyle='rgba(100,80,40,0.5)';
+    for(let y=0;y<H;y+=ts*2){for(let x=0;x<W;x+=ts*2){ctx.fillRect(x,y,ts,ts);ctx.fillRect(x+ts,y+ts,ts,ts);}}
+    // 大锅炉(右下)
+    const potX=W*0.78,potY=H*0.68;
+    ctx.globalAlpha=0.08;ctx.strokeStyle='#555';ctx.lineWidth=2.5;
+    ctx.beginPath();ctx.arc(potX,potY,28,0,Math.PI*2);ctx.stroke();
+    ctx.beginPath();ctx.arc(potX,potY,32,Math.PI*0.8,Math.PI*0.2);ctx.stroke(); // 锅沿
+    ctx.globalAlpha=0.05;ctx.fillStyle='#444';ctx.beginPath();ctx.arc(potX,potY,24,0,Math.PI*2);ctx.fill();
+    // 蒸汽粒子
+    _spawn(6,8,()=>_esp(potX+(Math.random()-0.5)*28,potY-16-Math.random()*10,(Math.random()-0.5)*0.3,-0.3-Math.random()*0.6,100+Math.random()*160,'rgba(200,200,210,0.35)',2+Math.random()*4,6));
+    // 食材碎屑
+    _spawn(6,4,()=>_esp(Math.random()*W,Math.random()*H,(Math.random()-0.5)*0.2,-0.1-Math.random()*0.2,120+Math.random()*150,['rgba(200,160,60,0.4)','rgba(180,100,40,0.4)','rgba(140,180,60,0.4)'][Math.floor(Math.random()*3)],1+Math.random()*2,6));
+    _drawP(6);ctx.restore();
+  }
+
+  // ── 第7关：美容修炼室·奢华内室 ── 粉色雾气+飘花瓣+镜子反光
+  function _s7(){
+    ctx.save();
+    // 粉色雾气(柔光底色)
+    ctx.globalAlpha=0.03+Math.sin(t*0.015)*0.012;
+    const fog=ctx.createRadialGradient(W*0.4,H*0.3,60,W*0.5,H*0.5,H*0.8);
+    fog.addColorStop(0,'rgba(255,180,200,0.15)');fog.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=fog;ctx.fillRect(0,0,W,H);
+    // 地面柔光纹
+    ctx.globalAlpha=0.05;ctx.strokeStyle='rgba(220,180,190,0.3)';ctx.lineWidth=1;
+    for(let x=0;x<W;x+=55){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x+15,H);ctx.stroke();}
+    // 镜子反光（对角线闪光）
+    ctx.globalAlpha=0.04+Math.sin(t*0.025)*0.02;
+    for(let i=0;i<3;i++){
+      const mx=W*0.15+i*W*0.3,my=H*0.1+i*0.1;
+      ctx.strokeStyle='rgba(200,220,240,0.6)';ctx.lineWidth=2;
+      ctx.beginPath();ctx.moveTo(mx-20,my);ctx.lineTo(mx+20,my);ctx.stroke();
+      ctx.strokeStyle='rgba(240,240,255,0.4)';ctx.lineWidth=0.5;
+      ctx.beginPath();ctx.moveTo(mx-20,my-2);ctx.lineTo(mx+20,my-2);ctx.stroke();
+    }
+    // 花瓣粒子
+    _spawn(7,10,()=>{
+      const sx=Math.random()*W,sy=-5;
+      _esp(sx,sy,(Math.random()-0.5)*0.4,0.2+Math.random()*0.5,200+Math.random()*250,['rgba(255,150,180,0.5)','rgba(255,200,210,0.5)','rgba(255,180,200,0.5)'][Math.floor(Math.random()*3)],2+Math.random()*3,7);
+    });
+    _drawP(7);ctx.restore();
+  }
+
+  // ── 第8关：紫府家族祠堂·权贵厅 ── 金纹地板+族徽+护盾光柱
+  function _s8(){
+    ctx.save();
+    // 金纹地板
+    ctx.strokeStyle='rgba(180,150,80,0.06)';ctx.lineWidth=1;
+    for(let x=0;x<W;x+=60){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+    for(let y=0;y<H;y+=60){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+    // 对角金纹
+    ctx.globalAlpha=0.03;ctx.strokeStyle='rgba(200,170,80,0.4)';ctx.lineWidth=1;
+    for(let y=0;y<H;y+=120){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y+60);ctx.stroke();}
+    // 族徽(中央上方)
+    const ex=W*0.5,ey=H*0.18;
+    ctx.globalAlpha=0.08+Math.sin(t*0.02)*0.02;
+    ctx.strokeStyle='#C9A050';ctx.lineWidth=2;
+    // 六芒星徽章
+    for(let i=0;i<6;i++){const a1=i/6*Math.PI*2,a2=(i+2)/6*Math.PI*2;ctx.beginPath();ctx.moveTo(ex+Math.cos(a1)*24,ey+Math.sin(a1)*24);ctx.lineTo(ex+Math.cos(a2)*24,ey+Math.sin(a2)*24);ctx.stroke();}
+    ctx.beginPath();ctx.arc(ex,ey,18,0,Math.PI*2);ctx.stroke();
+    // 护盾光柱(四角)
+    ctx.globalAlpha=0.05+Math.sin(t*0.03)*0.025;
+    const pillars=[[W*0.1,H*0.25],[W*0.9,H*0.25],[W*0.1,H*0.7],[W*0.9,H*0.7]];
+    pillars.forEach(([px,py])=>{
+      const grad=ctx.createLinearGradient(px,py-80,px,py+80);
+      grad.addColorStop(0,'rgba(180,140,60,0)');grad.addColorStop(0.5,'rgba(200,160,80,0.25)');grad.addColorStop(1,'rgba(180,140,60,0)');
+      ctx.fillStyle=grad;ctx.fillRect(px-4,py-80,8,160);
+      ctx.strokeStyle='rgba(200,160,80,0.3)';ctx.lineWidth=1;ctx.beginPath();ctx.arc(px,py,6,0,Math.PI*2);ctx.stroke();
+    });
+    ctx.restore();
+    _drawP(8);
+  }
+
+  // ── 第9关：vlog直播基地 ── 霓虹格子地+光圈+收录机粒子
+  function _s9(){
+    ctx.save();
+    // 霓虹透视线(消失点在中央上方)
+    const vpX=W*0.5,vpY=H*0.35;
+    ctx.strokeStyle='rgba(80,200,220,0.07)';ctx.lineWidth=1;
+    for(let x=-W;x<W*2;x+=70){ctx.beginPath();ctx.moveTo(x,H);ctx.lineTo(vpX+(x-vpX)*0.15,vpY);ctx.stroke();}
+    // 横向霓虹线
+    for(let y=H*0.4;y<H;y+=45){
+      ctx.strokeStyle='rgba(200,80,220,0.05)';ctx.lineWidth=1.5;
+      ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();
+    }
+    // 光圈（摄像机光圈效果）
+    ctx.globalAlpha=0.04+Math.sin(t*0.035)*0.02;
+    for(let i=0;i<3;i++){
+      const ax=W*0.2+i*W*0.3,ay=H*0.25+i*H*0.12;
+      ctx.strokeStyle='rgba(100,200,240,0.5)';ctx.lineWidth=1;
+      for(let r=8;r<=28;r+=6){ctx.beginPath();ctx.arc(ax,ay,r,0,Math.PI*2);ctx.stroke();}
+      // 十字准星
+      ctx.beginPath();ctx.moveTo(ax-4,ay);ctx.lineTo(ax+4,ay);ctx.moveTo(ax,ay-4);ctx.lineTo(ax,ay+4);ctx.stroke();
+    }
+    // 收录机粒子(闪烁小点)
+    _spawn(9,8,()=>_esp(Math.random()*W,Math.random()*H*0.6+H*0.4,(Math.random()-0.5)*0.2,-0.1,80+Math.random()*120,['rgba(255,80,80,0.6)','rgba(80,255,80,0.6)','rgba(80,80,255,0.6)'][Math.floor(Math.random()*3)],1+Math.random()*2,9));
+    _drawP(9);ctx.restore();
+  }
+
+  // ── 第10关：擂台·八角擂台 ── 八角形平台+边界光柱+云雾
+  function _s10(){
+    ctx.save();
+    const cx=W*0.5,cy=H*0.5,platformR=Math.min(W,H)*0.42;
+    // 八角形地板
+    ctx.globalAlpha=0.06;
+    ctx.fillStyle='#3a3020';ctx.beginPath();
+    for(let i=0;i<8;i++){
+      const a=i/8*Math.PI*2-Math.PI/8;
+      const nx=cx+Math.cos(a)*platformR,ny=cy+Math.sin(a)*platformR;
+      i===0?ctx.moveTo(nx,ny):ctx.lineTo(nx,ny);
+    }
+    ctx.closePath();ctx.fill();
+    // 八角形边缘线
+    ctx.globalAlpha=0.12;ctx.strokeStyle='#C9A050';ctx.lineWidth=2.5;
+    ctx.beginPath();
+    for(let i=0;i<8;i++){
+      const a=i/8*Math.PI*2-Math.PI/8;
+      const nx=cx+Math.cos(a)*platformR,ny=cy+Math.sin(a)*platformR;
+      i===0?ctx.moveTo(nx,ny):ctx.lineTo(nx,ny);
+    }
+    ctx.closePath();ctx.stroke();
+    // 内圈
+    ctx.globalAlpha=0.06;ctx.strokeStyle='#aa8840';ctx.lineWidth=1;ctx.setLineDash([6,8]);
+    ctx.beginPath();ctx.arc(cx,cy,platformR*0.55,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
+    // 对角线(八角顶点连线)
+    ctx.globalAlpha=0.04;ctx.strokeStyle='#887030';ctx.lineWidth=1;
+    for(let i=0;i<4;i++){const a=i/4*Math.PI;ctx.beginPath();ctx.moveTo(cx+Math.cos(a)*platformR,cy+Math.sin(a)*platformR);ctx.lineTo(cx+Math.cos(a+Math.PI)*platformR,cy+Math.sin(a+Math.PI)*platformR);ctx.stroke();}
+    // 边界光柱(8个顶点)
+    ctx.globalAlpha=0.07+Math.sin(t*0.04)*0.03;
+    for(let i=0;i<8;i++){
+      const a=i/8*Math.PI*2-Math.PI/8;
+      const px=cx+Math.cos(a)*platformR,py=cy+Math.sin(a)*platformR;
+      const grad=ctx.createLinearGradient(px,py-60,px,py);
+      grad.addColorStop(0,'rgba(255,200,80,0)');grad.addColorStop(0.4,'rgba(255,180,60,0.35)');grad.addColorStop(1,'rgba(255,160,40,0)');
+      ctx.fillStyle=grad;ctx.fillRect(px-3,py-60,6,60);
+      ctx.fillStyle='rgba(255,200,100,0.5)';ctx.shadowBlur=12;ctx.shadowColor='#ffaa44';
+      ctx.beginPath();ctx.arc(px,py,4,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
+    }
+    // 云雾环绕
+    ctx.globalAlpha=0.025+Math.sin(t*0.02)*0.01;
+    for(let i=0;i<16;i++){
+      const ca=i/16*Math.PI*2,cr=platformR+18+Math.sin(t*0.015+i)*12;
+      const clx=cx+Math.cos(ca)*cr,cly=cy+Math.sin(ca)*cr;
+      ctx.fillStyle='rgba(200,200,210,0.4)';
+      ctx.beginPath();ctx.arc(clx,cly,8+Math.sin(i*2.5)*4,0,Math.PI*2);ctx.fill();
+    }
+    ctx.restore();
+    _drawP(10);
+  }
+
+  // 执行当前关卡的场景绘制
+  const scenes={1:_s1,2:_s2,3:_s3,4:_s4,5:_s5,6:_s6,7:_s7,8:_s8,9:_s9,10:_s10};
+  if(scenes[id])scenes[id]();
+}
+
 // ══════ 绘制 ══════
 function draw(){
   ctx.save();
@@ -351,6 +685,9 @@ function draw(){
 
   // ── 背景 ──
   ctx.fillStyle='#050a05';ctx.fillRect(0,0,W,H);
+
+  // ── 场景环境 ──
+  drawMapEnvironment(ctx,G);
 
   // ── 视角边界可视 ──
   if(G.viewMode==='vertical'){

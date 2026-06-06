@@ -620,16 +620,16 @@ const VICTORY_DROP_WEIGHTS=[
 ];
 
 const REALMS=[
-  {name:'青木谷',  sub:'灵根初醒', stages:1, icon:'🌿', stageNames:['青木试炼'], enemyTypes:['mortal','qi_refine'], bossType:'outer_elder'},
-  {name:'黑风岭',  sub:'妖风四起', stages:1, icon:'🌑', stageNames:['黑风试炼'], enemyTypes:['qi_refine','foundation'], bossType:'foundation_guard'},
-  {name:'赤炎窟',  sub:'烈焰焚身', stages:1, icon:'🔥', stageNames:['赤炎试炼'], enemyTypes:['foundation'], bossType:'core_disciple'},
-  {name:'散灵荒野', sub:'灵气溃散', stages:1, icon:'🏜️', stageNames:['荒野试炼'], enemyTypes:['foundation','golden_core'], bossType:'golden_core'},
-  {name:'幽冥古道', sub:'鬼气森森', stages:1, icon:'💀', stageNames:['幽冥试炼'], enemyTypes:['golden_core'], bossType:'mine_warden'},
-  {name:'血月试炼', sub:'杀意沸腾', stages:1, icon:'🌙', stageNames:['血月试炼'], enemyTypes:['golden_core','nascent_soul'], bossType:'war_general'},
-  {name:'云海秘境', sub:'仙踪难觅', stages:1, icon:'☁️', stageNames:['秘境试炼'], enemyTypes:['nascent_soul'], bossType:'soul_guardian'},
-  {name:'天渊裂缝', sub:'虚空破碎', stages:1, icon:'🌌', stageNames:['天渊试炼'], enemyTypes:['nascent_soul','deity_transform'], bossType:'rift_elder'},
-  {name:'锁妖之地', sub:'万妖封印', stages:1, icon:'🔗', stageNames:['锁妖试炼'], enemyTypes:['deity_transform'], bossType:'seal_keeper'},
-  {name:'灭府战场', sub:'天道终结', stages:1, icon:'⚔️', stageNames:['灭府试炼'], enemyTypes:['deity_transform','mahayana'], bossType:'heavenly_sovereign', isFinalStage:true},
+  {name:'筑基失败现场', sub:'废弃丹室·砖缝灵石', stages:1, icon:'🧪', stageNames:['丹室残骸'], enemyTypes:['mortal','qi_refine'], bossType:'outer_elder'},
+  {name:'关卡瓶颈修炼房', sub:'龟裂洞府·结界残片', stages:1, icon:'🕳️', stageNames:['洞府裂缝'], enemyTypes:['qi_refine','foundation'], bossType:'foundation_guard'},
+  {name:'老掉牙的道场', sub:'荒弃广场·石板青苔', stages:1, icon:'⛩️', stageNames:['道场青苔'], enemyTypes:['foundation'], bossType:'core_disciple'},
+  {name:'法宝仓库', sub:'储物间·符文货架', stages:1, icon:'✨', stageNames:['库房符文'], enemyTypes:['foundation','golden_core'], bossType:'golden_core'},
+  {name:'后台会客厅', sub:'豪华厅堂·红毯屏风', stages:1, icon:'🏛️', stageNames:['会厅红毯'], enemyTypes:['golden_core'], bossType:'mine_warden'},
+  {name:'修仙食堂', sub:'灵厨房·锅炉蒸汽', stages:1, icon:'🍲', stageNames:['食堂锅炉'], enemyTypes:['golden_core','nascent_soul'], bossType:'war_general'},
+  {name:'美容修炼室', sub:'奢华内室·花瓣雾气', stages:1, icon:'🪞', stageNames:['内室花瓣'], enemyTypes:['nascent_soul'], bossType:'soul_guardian'},
+  {name:'紫府家族祠堂', sub:'权贵厅·族徽金纹', stages:1, icon:'🏯', stageNames:['祠堂金纹'], enemyTypes:['nascent_soul','deity_transform'], bossType:'rift_elder'},
+  {name:'vlog直播基地', sub:'现代外景·霓虹光圈', stages:1, icon:'🎬', stageNames:['外景霓虹'], enemyTypes:['deity_transform'], bossType:'seal_keeper'},
+  {name:'擂台·半步紫府领地', sub:'八角高台·光柱云雾', stages:1, icon:'🏟️', stageNames:['紫府擂台'], enemyTypes:['deity_transform','mahayana'], bossType:'heavenly_sovereign', isFinalStage:true},
 ];
 
 const stageNames=REALMS.map(r=>r.name);
