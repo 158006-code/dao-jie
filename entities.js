@@ -348,7 +348,7 @@ function updateEnemyAI(G,sec){
     if(G.viewMode==='arena'){e.x=clamp(e.x,e.sz,W-e.sz);e.y=clamp(e.y,e.sz,H-e.sz);}
     const d2=Math.hypot(G.mx-e.x,G.my-e.y);
     e.hitCd=(e.hitCd||0);if(e.hitCd>0)e.hitCd--;
-    if(d2<14&&e.hitCd<=0){e.hitCd=35;const dmgDealt=e.atk;applyPlayerDamage(G,dmgDealt);applyReflect(G,dmgDealt);G.combo=0;G.comboTimer=0;G.comboMilestone=0;G.pendingUpgrade=0;G.noDmgTimer=0;screenShake(4);playSound('hurt');addPt(G,G.mx,G.my,'#E24B4A',3,1.5);addDamageText(G,G.mx+(Math.random()-0.5)*12,G.my-14,'-'+Math.ceil(dmgDealt),'#ff3333',15);}
+    if(d2<14&&e.hitCd<=0){e.hitCd=35;const dmgDealt=e.atk;applyPlayerDamage(G,dmgDealt);applyReflect(G,dmgDealt);G.comboMilestone=0;G.pendingUpgrade=0;G.noDmgTimer=0;screenShake(4);playSound('hurt');addPt(G,G.mx,G.my,'#E24B4A',3,1.5);addDamageText(G,G.mx+(Math.random()-0.5)*12,G.my-14,'-'+Math.ceil(dmgDealt),'#ff3333',15);}
     if(e.hasKB&&e.kbCd<=0){G.bugs.forEach(b=>{if(Math.hypot(b.x-e.x,b.y-e.y)<e.sz/2+6){knockback(b,e.x,e.y,4);e.kbCd=45;addPt(G,b.x,b.y,'#EF9F27',3,1.5);}});}
   });
 }

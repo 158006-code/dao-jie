@@ -146,6 +146,10 @@ function applyPlayerDamage(G,amount){
     amount-=G.shieldHp;G.shieldHp=0;
   }
   G.mhp-=amount;
+  // 受伤时：延长余怒窗口到6秒（不清零combo，激怒效果）
+  if(G.comboTimer>0){
+    G.comboTimer=Math.max(G.comboTimer, RAGE_WINDOW_HIT);
+  }
 }
 function applyReflect(G,dmgAmount){
   if(!G.reflectRate||dmgAmount<=0)return;
@@ -223,7 +227,7 @@ function updateProjectiles(G){
     if(p.life<=0||p.x<-10||p.x>W+10||p.y<-10||p.y>H+10){dp.push(i);recycleProj(p);return;}
     if(p.isBossBullet||p.isEnemyBullet){
       G.bugs.forEach(b=>{if(Math.hypot(b.x-p.x,b.y-p.y)<8){b.hp-=p.dmg*0.4;}});
-      if(!p._hitPlayer&&Math.hypot(G.mx-p.x,G.my-p.y)<14){p._hitPlayer=true;const ebDmg=p.dmg*0.5;applyPlayerDamage(G,ebDmg);applyReflect(G,ebDmg);G.combo=0;G.comboTimer=0;G.noDmgTimer=0;screenShake(5);triggerFlash();playSound('hurt');addDamageText(G,G.mx+(Math.random()-0.5)*12,G.my-14,'-'+Math.ceil(ebDmg),'#ff3333',15);dp.push(i);recycleProj(p);}
+      if(!p._hitPlayer&&Math.hypot(G.mx-p.x,G.my-p.y)<14){p._hitPlayer=true;const ebDmg=p.dmg*0.5;applyPlayerDamage(G,ebDmg);applyReflect(G,ebDmg);G.noDmgTimer=0;screenShake(5);triggerFlash();playSound('hurt');addDamageText(G,G.mx+(Math.random()-0.5)*12,G.my-14,'-'+Math.ceil(ebDmg),'#ff3333',15);dp.push(i);recycleProj(p);}
       return;
     }
     if(p.isBugShot){

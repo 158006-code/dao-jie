@@ -303,7 +303,7 @@ function _update(){
     if(e.hp<=0){
       de.push(i);G.kills++;G.xp+=2+G.phase*2;
       if(G.comboTimer>0){G.combo++;}else{G.combo=1;}
-      G.comboTimer=190;
+      G.comboTimer=RAGE_WINDOW_NORMAL;
       screenShake(G.combo>=20?6:2);
       addExplosionWave(G,e.x,e.y,12,'#ff6633');
       if(G.combo>=2&&G.combo%10===0)addDamageText(G,e.x,e.y-18,G.combo+' 连斩！','#ff8800',20);
@@ -981,15 +981,63 @@ function draw(){
   G.damageTexts=(G.damageTexts||[]).filter(t=>{if(t.life<=0){recycleDmg(t);return false;}return true;});
 
   // ── 怒火连斩 UI ──
-  if(G.rageTier>0){
-    const rt=RAGE_TIERS[G.rageTier]||RAGE_TIERS[0];
-    ctx.save();const tc=rt.color;
-    const scale=1+Math.sin(G.elapsed*0.2)*0.07*(1+G.rageTier*0.05);
-    ctx.translate(W/2,78);ctx.scale(scale,scale);ctx.textAlign='center';ctx.shadowColor=tc;ctx.shadowBlur=16+G.rageTier*4;ctx.fillStyle=tc;
-    ctx.font='bold 26px Arial';ctx.fillText(G.combo+' 连斩 · '+rt.name,0,0);ctx.restore();
+  if(G.combo>=2){
+    const rt=RAGE_TIERS[G.rageTier||0];
+    const tc=rt.color;
+    const tierLabel=G.rageTier>0?' 【'+rt.name+'】':'';
+    // 余怒倒计时视觉：timer/RAGE_WINDOW_NORMAL 比例决定字体抖动幅度
+    const timerRatio=(G.comboTimer||0)/RAGE_WINDOW_NORMAL;
+    const urgency=timerRatio<0.3?1.0:timerRatio<0.6?0.5:0; // 越快到期抖得越厉害
+    const scale=1+Math.sin(G.elapsed*0.2)*0.07*(1+G.rageTier*0.05)+urgency*Math.sin(G.elapsed*0.5)*0.04;
+    ctx.save();
+    ctx.translate(W/2,78);ctx.scale(scale,scale);ctx.textAlign='center';
+    ctx.shadowColor=tc;ctx.shadowBlur=16+G.rageTier*5;ctx.fillStyle=tc;
+    ctx.font='bold 26px Arial';
+    ctx.fillText(G.combo+' 怒火连斩'+tierLabel,0,0);
+    // 余怒倒计时条（combo文字下方8px，宽80px）
+    if(G.comboTimer>0&&G.combo>=1){
+      const barW=80,barH=3;
+      const filled=barW*(G.comboTimer/RAGE_WINDOW_HIT);
+      const barColor=timerRatio<0.3?'#ff2200':timerRatio<0.6?'#ff8800':tc;
+      ctx.fillStyle='rgba(0,0,0,0.4)';ctx.fillRect(-barW/2,12,barW,barH);
+      ctx.fillStyle=barColor;ctx.fillRect(-barW/2,12,filled,barH);
+    }
+    ctx.restore();
   }
 
   ctx.restore();
+}
+
+// ── 怒气需求检查（Boss绑定空架子）──
+function checkRageRequirement(G, boss){
+  // 各Boss具体逻辑后续填入
+  // 返回 { met: bool, required: tierName, current: tierName }
+  const required = boss._rageRequire||0;
+  const met = (G.rageTier||0)>=required;
+  return {
+    met,
+    required: RAGE_TIERS[required]?RAGE_TIERS[required].name:'无',
+    current:  RAGE_TIERS[G.rageTier||0].name,
+  };
+}
+
+// ── 装备实际加成计算（初版）──
+function applyEquipBonuses(G){
+  // 读取装备的 rageUnlock 字段，未达到tier时该装备bonus×0
+  // 目前 TREASURE_POOL 尚未有 rageUnlock 字段，此函数预留接口
+  // 后续 config.js 给每件装备加 rageUnlock:{tier:X} 后，在此计算生效
+  const equips=[G.vaultEquip,G.vaultEquip2].filter(Boolean);
+  equips.forEach(eq=>{
+    if(!eq.rageUnlock)return; // 无解锁要求，正常生效
+    const reqTier=eq.rageUnlock.tier||0;
+    if((G.rageTier||0)<reqTier){
+      // 未达到境界：本帧该装备加成归零（不改原始数据，只影响buffs）
+      // 具体属性归零逻辑在各weapon的onEquip之后处理，此处记录标记
+      eq._bonusActive=false;
+    } else {
+      eq._bonusActive=true;
+    }
+  });
 }
 
 // ── 主循环 ──
