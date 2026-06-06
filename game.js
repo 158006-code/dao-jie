@@ -443,17 +443,7 @@ function drawMapEnvironment(ctx,G){
   function _s2(){
     ctx.save();
 
-    // 裂缝（固定位置，不抖动）
-    ctx.strokeStyle='rgba(140,120,100,0.45)';ctx.lineWidth=2;
-    G._cracks.forEach(([x1,y1,x2,y2],[off])=>{
-      const [ox,oy]=G._crackOff[G._cracks.indexOf([x1,y1,x2,y2])]||[0,0];
-      ctx.beginPath();
-      ctx.moveTo(x1,y1);
-      ctx.lineTo((x1+x2)/2+ox,(y1+y2)/2+oy);
-      ctx.lineTo(x2,y2);
-      ctx.stroke();
-    });
-    // 直接用固定偏移绘制
+    // 裂缝（固定偏移，不抖动）
     ctx.strokeStyle='rgba(140,120,100,0.45)';ctx.lineWidth=2.5;
     G._cracks.forEach(([x1,y1,x2,y2],i)=>{
       const [ox,oy]=G._crackOff[i];
@@ -543,7 +533,7 @@ function drawMapEnvironment(ctx,G){
     ctx.beginPath();ctx.moveTo(fp+8,H*0.14);ctx.lineTo(fp+36,H*0.17);ctx.moveTo(fp+6,H*0.20);ctx.lineTo(fp+34,H*0.23);ctx.stroke();
 
     // 右侧残破石柱
-    const col1x=W*0.82,col1y=H*0.5;
+    const col1x=W*0.82;
     ctx.globalAlpha=0.22;ctx.fillStyle='#7a7060';
     ctx.fillRect(col1x-14,H*0.15,28,H*0.7);
     ctx.globalAlpha=0.10;ctx.fillStyle='#aaa090';
