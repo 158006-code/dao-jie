@@ -1,4 +1,4 @@
-// ══════════════════════════════════════════
+﻿// ══════════════════════════════════════════
 // 道劫：万法失控 — 主循环/渲染 (game.js)
 // _update编排 · draw · HUD · GameOver · Victory
 // ══════════════════════════════════════════
@@ -343,649 +343,247 @@ function _update(){
   updateHUD();
 }
 
-// ══════ 场景环境绘制 ══════
-function drawMapEnvironment(ctx,G){
-  const id=G.stageId||1;const t=G.elapsed;
+// ══════ 场景背景系统：离屏预渲染 + 动态层 + 粒子 ══════
+const _sceneCache={};let _sceneCacheId=-1;
+function _makeCanvas(w,h){
+  try{const oc=new OffscreenCanvas(w,h);oc.getContext('2d');return oc;}
+  catch(e){const c=document.createElement('canvas');c.width=w;c.height=h;return c;}
+}
+function drawSceneBackground(ctx,G){
+  const id=G.stageId||1;
+  if(_sceneCacheId!==id||!_sceneCache[id]||_sceneCache[id].width!==W||_sceneCache[id].height!==H)buildSceneCache(id);
+  ctx.drawImage(_sceneCache[id],0,0);
+  drawSceneAnimated(ctx,G,id);
+  updateAndDrawEnvParticles(ctx,G,id);
+}
+function buildSceneCache(id){
+  const oc=_makeCanvas(W,H);const c=oc.getContext('2d');_sceneCacheId=id;_sceneCache[id]=oc;
+  const B={1:_b1,2:_b2,3:_b3,4:_b4,5:_b5,6:_b6,7:_b7,8:_b8,9:_b9,10:_b10};
+  if(B[id])B[id](c);
+}
+// ── 工具函数 ──
+function _noise(c,x,y,w,h,alpha,r,g,b){
+  const img=c.createImageData(w,h);const d=img.data;
+  for(let i=0;i<w*h;i++){const n=Math.random();d[i*4]=r;d[i*4+1]=g;d[i*4+2]=b;d[i*4+3]=n*alpha*255;}
+  c.putImageData(img,x,y);
+}
+function _brickWall(c,bw,bh,r,g,b,alpha){
+  c.save();
+  for(let y=0;y<H;y+=bh){const off=Math.floor(y/bh)%2*(bw/2);for(let x=-bw+off;x<W+bw;x+=bw){const sh=0.85+Math.random()*0.3;c.fillStyle=`rgba(${Math.round(r*sh)},${Math.round(g*sh)},${Math.round(b*sh)},${alpha})`;c.fillRect(x+1,y+1,bw-2,bh-2);}}
+  c.strokeStyle=`rgba(${Math.round(r*0.35)},${Math.round(g*0.35)},${Math.round(b*0.35)},${alpha*1.4})`;c.lineWidth=2;
+  for(let y=0;y<=H;y+=bh){c.beginPath();c.moveTo(0,y);c.lineTo(W,y);c.stroke();}
+  for(let y=0;y<H;y+=bh){const off=Math.floor(y/bh)%2*(bw/2);for(let x=-bw+off;x<W+bw;x+=bw){c.beginPath();c.moveTo(x,y);c.lineTo(x,y+bh);c.stroke();}}
+  c.restore();
+}
+function _stoneFloor(c,gs,r,g,b,alpha){
+  c.save();
+  for(let y=0;y<H;y+=gs){for(let x=0;x<W;x+=gs){const sh=0.80+Math.random()*0.40;c.fillStyle=`rgba(${Math.round(r*sh)},${Math.round(g*sh)},${Math.round(b*sh)},${alpha})`;c.fillRect(x+1,y+1,gs-2,gs-2);}}
+  c.strokeStyle=`rgba(${Math.round(r*0.3)},${Math.round(g*0.3)},${Math.round(b*0.3)},${alpha*1.6})`;c.lineWidth=2;
+  for(let x=0;x<=W;x+=gs){c.beginPath();c.moveTo(x,0);c.lineTo(x,H);c.stroke();}
+  for(let y=0;y<=H;y+=gs){c.beginPath();c.moveTo(0,y);c.lineTo(W,y);c.stroke();}
+  c.restore();
+}
+function _radialVignette(c,col1,col2){
+  const vg=c.createRadialGradient(W/2,H/2,H*0.15,W/2,H/2,H*0.85);vg.addColorStop(0,col1);vg.addColorStop(1,col2);
+  c.fillStyle=vg;c.fillRect(0,0,W,H);
+}
+// ── 第1关：废弃丹室 ──
+function _b1(c){
+  const bg=c.createLinearGradient(0,0,W,H);bg.addColorStop(0,'#1a0d06');bg.addColorStop(0.5,'#140a04');bg.addColorStop(1,'#1f0e08');c.fillStyle=bg;c.fillRect(0,0,W,H);
+  _brickWall(c,52,28,110,72,42,0.75);
+  const burnGrad=c.createLinearGradient(0,0,0,H*0.4);burnGrad.addColorStop(0,'rgba(8,3,0,0.55)');burnGrad.addColorStop(1,'rgba(0,0,0,0)');c.fillStyle=burnGrad;c.fillRect(0,0,W,H*0.4);
+  _noise(c,0,0,W,H,18,80,45,20);
+  const fx=W*0.70,fy=H*0.28;c.save();
+  const shadow=c.createRadialGradient(fx,fy+68,5,fx,fy+68,70);shadow.addColorStop(0,'rgba(0,0,0,0.7)');shadow.addColorStop(1,'rgba(0,0,0,0)');c.fillStyle=shadow;c.beginPath();c.ellipse(fx,fy+72,65,20,0,0,Math.PI*2);c.fill();
+  for(let side of[-1,1]){const legGrad=c.createLinearGradient(fx+side*38,fy,fx+side*42,fy+52);legGrad.addColorStop(0,'#7a5830');legGrad.addColorStop(0.4,'#c09060');legGrad.addColorStop(1,'#4a3018');c.fillStyle=legGrad;c.fillRect(fx+side*38-4,fy,8,52);}
+  const bodyGrad=c.createRadialGradient(fx-18,fy-18,8,fx,fy,48);bodyGrad.addColorStop(0,'#e0b878');bodyGrad.addColorStop(0.3,'#a07840');bodyGrad.addColorStop(0.7,'#604820');bodyGrad.addColorStop(1,'#301808');c.fillStyle=bodyGrad;c.beginPath();c.arc(fx,fy,46,0,Math.PI*2);c.fill();c.strokeStyle='#8a6030';c.lineWidth=3;c.beginPath();c.arc(fx,fy,46,0,Math.PI*2);c.stroke();
+  const mouthGrad=c.createRadialGradient(fx,fy-38,4,fx,fy-38,22);mouthGrad.addColorStop(0,'rgba(255,80,10,0.9)');mouthGrad.addColorStop(0.4,'rgba(200,40,5,0.5)');mouthGrad.addColorStop(1,'rgba(100,10,0,0)');c.fillStyle=mouthGrad;c.beginPath();c.ellipse(fx,fy-38,22,10,0,0,Math.PI*2);c.fill();
+  const rimGrad=c.createLinearGradient(fx-24,fy-46,fx+24,fy-46);rimGrad.addColorStop(0,'#5a3818');rimGrad.addColorStop(0.5,'#d0a060');rimGrad.addColorStop(1,'#5a3818');c.fillStyle=rimGrad;c.beginPath();c.ellipse(fx,fy-46,24,7,0,0,Math.PI*2);c.fill();
+  for(let k=0;k<10;k++){const ka=k/10*Math.PI*2,rx=fx+Math.cos(ka)*44,ry=fy+Math.sin(ka)*44;const rg=c.createRadialGradient(rx-1.5,ry-1.5,0,rx,ry,5);rg.addColorStop(0,'#f0d080');rg.addColorStop(0.5,'#b08030');rg.addColorStop(1,'#402008');c.fillStyle=rg;c.beginPath();c.arc(rx,ry,5,0,Math.PI*2);c.fill();}
+  c.strokeStyle='#2a1408';c.lineWidth=3;c.beginPath();c.moveTo(fx-12,fy-28);c.lineTo(fx+16,fy+8);c.lineTo(fx+8,fy+24);c.stroke();c.strokeStyle='rgba(255,200,100,0.3)';c.lineWidth=1;c.beginPath();c.moveTo(fx-12,fy-28);c.lineTo(fx+16,fy+8);c.stroke();
+  c.restore();
+  [[W*0.12,H*0.72],[W*0.25,H*0.58],[W*0.38,H*0.82],[W*0.18,H*0.88]].forEach(([cx,cy],i)=>{c.save();const cg=c.createRadialGradient(cx-3,cy-4,1,cx,cy,10);cg.addColorStop(0,'rgba(150,255,180,0.9)');cg.addColorStop(0.5,'rgba(60,180,90,0.7)');cg.addColorStop(1,'rgba(20,80,40,0.3)');c.fillStyle=cg;const ang=i*0.9;c.beginPath();c.moveTo(cx+Math.cos(ang)*2,cy-10);c.lineTo(cx+Math.cos(ang+2.2)*8,cy+6);c.lineTo(cx+Math.cos(ang+4.4)*7,cy+8);c.lineTo(cx+Math.cos(ang-2.2)*8,cy+6);c.closePath();c.fill();c.shadowBlur=12;c.shadowColor='rgba(80,255,120,0.6)';c.strokeStyle='rgba(120,255,150,0.5)';c.lineWidth=1;c.stroke();c.restore();});
+  const scorch=c.createRadialGradient(fx,fy+68,5,fx,fy+68,90);scorch.addColorStop(0,'rgba(0,0,0,0.6)');scorch.addColorStop(0.5,'rgba(40,15,5,0.3)');scorch.addColorStop(1,'rgba(0,0,0,0)');c.fillStyle=scorch;c.beginPath();c.arc(fx,fy+68,90,0,Math.PI*2);c.fill();
+  const fx2=W*0.20,fy2=H*0.68;c.save();const b2=c.createRadialGradient(fx2-8,fy2-8,4,fx2,fy2,24);b2.addColorStop(0,'#806040');b2.addColorStop(1,'#302010');c.fillStyle=b2;c.beginPath();c.arc(fx2,fy2,22,0,Math.PI*2);c.fill();c.strokeStyle='#604828';c.lineWidth=2;c.stroke();c.restore();
+  _radialVignette(c,'rgba(0,0,0,0)','rgba(0,0,0,0.65)');
+}
+// ── 第2关：龟裂洞府 ──
+function _b2(c){
+  const bg=c.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#080c18');bg.addColorStop(0.6,'#060a12');bg.addColorStop(1,'#0a0e1a');c.fillStyle=bg;c.fillRect(0,0,W,H);
+  for(let y=0;y<H;y+=18){const shade=0.6+Math.random()*0.5;c.fillStyle=`rgba(${Math.round(50*shade)},${Math.round(56*shade)},${Math.round(70*shade)},0.45)`;c.fillRect(0,y,W,16);}
+  _noise(c,0,0,W,H,22,40,50,80);
+  const cracks=[[[W*0.15,0],[W*0.22,H*0.18],[W*0.18,H*0.40],[W*0.28,H*0.65],[W*0.22,H]],[[W*0.60,0],[W*0.55,H*0.22],[W*0.62,H*0.50],[W*0.58,H*0.78],[W*0.65,H]],[[0,H*0.35],[W*0.30,H*0.42],[W*0.55,H*0.38],[W*0.80,H*0.45],[W,H*0.40]],[[W*0.40,H*0.55],[W*0.52,H*0.65],[W*0.44,H*0.80],[W*0.55,H]]];
+  cracks.forEach(pts=>{c.strokeStyle='rgba(0,0,0,0.9)';c.lineWidth=8;c.lineJoin='round';c.beginPath();pts.forEach(([x,y],i)=>i===0?c.moveTo(x,y):c.lineTo(x,y));c.stroke();c.strokeStyle='rgba(10,20,50,0.95)';c.lineWidth=4;c.beginPath();pts.forEach(([x,y],i)=>i===0?c.moveTo(x,y):c.lineTo(x,y));c.stroke();const glowGrad=c.createLinearGradient(pts[0][0],pts[0][1],pts[pts.length-1][0],pts[pts.length-1][1]);glowGrad.addColorStop(0,'rgba(60,120,255,0)');glowGrad.addColorStop(0.5,'rgba(100,160,255,0.7)');glowGrad.addColorStop(1,'rgba(60,120,255,0)');c.strokeStyle=glowGrad;c.lineWidth=1.5;c.beginPath();pts.forEach(([x,y],i)=>i===0?c.moveTo(x,y):c.lineTo(x,y));c.stroke();c.strokeStyle='rgba(180,200,255,0.15)';c.lineWidth=0.5;c.beginPath();pts.forEach(([x,y],i)=>i===0?c.moveTo(x,y):c.lineTo(x,y));c.stroke();});
+  const shards=[[W*0.42,H*0.18],[W*0.22,H*0.62],[W*0.72,H*0.45]];shards.forEach(([sx,sy],i)=>{c.save();const haloGrad=c.createRadialGradient(sx,sy,5,sx,sy,45);haloGrad.addColorStop(0,'rgba(80,130,255,0.25)');haloGrad.addColorStop(1,'rgba(80,130,255,0)');c.fillStyle=haloGrad;c.beginPath();c.arc(sx,sy,45,0,Math.PI*2);c.fill();const shardGrad=c.createRadialGradient(sx-4,sy-6,2,sx,sy,18);shardGrad.addColorStop(0,'rgba(200,230,255,0.95)');shardGrad.addColorStop(0.4,'rgba(100,160,255,0.7)');shardGrad.addColorStop(1,'rgba(40,80,200,0.2)');c.fillStyle=shardGrad;const sz=14+i*3;c.beginPath();c.moveTo(sx,sy-sz);c.lineTo(sx+sz*0.6,sy);c.lineTo(sx,sy+sz);c.lineTo(sx-sz*0.6,sy);c.closePath();c.fill();c.strokeStyle='rgba(150,200,255,0.8)';c.lineWidth=1.5;c.stroke();c.fillStyle='rgba(255,255,255,0.9)';c.beginPath();c.arc(sx-3,sy-4,3,0,Math.PI*2);c.fill();c.restore();});
+  for(let i=0;i<8;i++){const sx=W*0.08+i*(W*0.12),sh=20+Math.sin(i*1.7)*16;const stGrad=c.createLinearGradient(sx,0,sx,sh);stGrad.addColorStop(0,'rgba(60,68,88,0.9)');stGrad.addColorStop(1,'rgba(30,36,50,0.3)');c.fillStyle=stGrad;c.beginPath();c.moveTo(sx-7,0);c.lineTo(sx,sh);c.lineTo(sx+7,0);c.closePath();c.fill();}
+  const waterGrad=c.createLinearGradient(0,H*0.85,0,H);waterGrad.addColorStop(0,'rgba(30,50,100,0)');waterGrad.addColorStop(1,'rgba(30,50,100,0.35)');c.fillStyle=waterGrad;c.fillRect(0,H*0.85,W,H*0.15);
+  c.strokeStyle='rgba(80,120,200,0.25)';c.lineWidth=1;for(let i=0;i<5;i++){const wy=H*0.88+i*5;c.beginPath();c.moveTo(W*0.1,wy);c.bezierCurveTo(W*0.3,wy-3,W*0.7,wy+3,W*0.9,wy);c.stroke();}
+  _radialVignette(c,'rgba(0,0,0,0)','rgba(0,0,0,0.70)');
+}
+// ── 第3关：残破宗门广场 ──
+function _b3(c){
+  const bg=c.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#0a0d08');bg.addColorStop(1,'#0e1208');c.fillStyle=bg;c.fillRect(0,0,W,H);
+  _stoneFloor(c,58,115,108,90,0.80);_noise(c,0,0,W,H,15,80,88,60);
+  const mossZones=[[W*0.08,H*0.62,70,22],[W*0.32,H*0.78,50,16],[W*0.62,H*0.55,80,18],[W*0.78,H*0.82,55,14],[W*0.18,H*0.92,90,20],[W*0.50,H*0.38,40,12],[W*0.85,H*0.30,45,15],[W*0.42,H*0.12,60,10]];
+  mossZones.forEach(([mx,my,rw,rh])=>{const mg=c.createRadialGradient(mx,my,2,mx,my,rw);mg.addColorStop(0,'rgba(50,100,38,0.85)');mg.addColorStop(0.5,'rgba(38,80,28,0.65)');mg.addColorStop(1,'rgba(20,50,15,0)');c.fillStyle=mg;c.beginPath();c.ellipse(mx,my,rw,rh,0,0,Math.PI*2);c.fill();c.fillStyle='rgba(80,150,55,0.35)';c.beginPath();c.ellipse(mx-rw*0.2,my-rh*0.3,rw*0.5,rh*0.4,0,0,Math.PI*2);c.fill();});
+  [[W*0.82,H*0.50,H*0.10,H*0.82],[W*0.91,H*0.48,H*0.15,H*0.80]].forEach(([cx,baseW,topY,botY],ci)=>{const pillarW=28;const pilGrad=c.createLinearGradient(cx-pillarW/2,0,cx+pillarW/2,0);pilGrad.addColorStop(0,'rgba(60,58,48,0.9)');pilGrad.addColorStop(0.4,'rgba(110,105,88,0.95)');pilGrad.addColorStop(0.7,'rgba(95,90,75,0.9)');pilGrad.addColorStop(1,'rgba(40,38,30,0.85)');c.fillStyle=pilGrad;c.fillRect(cx-pillarW/2,topY,pillarW,botY-topY);c.strokeStyle='rgba(40,38,30,0.6)';c.lineWidth=1;for(let y=topY+12;y<botY;y+=18){c.beginPath();c.moveTo(cx-pillarW/2+2,y);c.lineTo(cx+pillarW/2-2,y);c.stroke();}c.fillStyle='rgba(70,66,52,0.9)';c.beginPath();c.moveTo(cx-pillarW/2,topY);c.lineTo(cx-pillarW/2-8,topY-12);c.lineTo(cx-2,topY-6);c.lineTo(cx+6,topY-18);c.lineTo(cx+pillarW/2+4,topY-8);c.lineTo(cx+pillarW/2,topY);c.closePath();c.fill();c.fillStyle='rgba(0,0,0,0.4)';c.fillRect(cx+pillarW/2,topY,8,botY-topY);});
+  const fp=W*0.14;const poleGrad=c.createLinearGradient(fp-3,0,fp+3,0);poleGrad.addColorStop(0,'#555');poleGrad.addColorStop(0.4,'#bbb');poleGrad.addColorStop(1,'#444');c.fillStyle=poleGrad;c.fillRect(fp-3,H*0.06,6,H*0.56);c.fillStyle='#cca030';c.beginPath();c.arc(fp,H*0.06,7,0,Math.PI*2);c.fill();
+  const flagGrad=c.createLinearGradient(fp,H*0.10,fp+55,H*0.32);flagGrad.addColorStop(0,'rgba(180,50,30,0.95)');flagGrad.addColorStop(0.4,'rgba(210,60,35,0.9)');flagGrad.addColorStop(1,'rgba(130,35,18,0.85)');c.fillStyle=flagGrad;c.beginPath();c.moveTo(fp,H*0.10);c.bezierCurveTo(fp+30,H*0.11,fp+55,H*0.16,fp+52,H*0.22);c.bezierCurveTo(fp+54,H*0.28,fp+35,H*0.32,fp,H*0.30);c.closePath();c.fill();c.fillStyle='rgba(100,28,15,0.8)';c.beginPath();c.moveTo(fp,H*0.12);c.lineTo(fp-14,H*0.155);c.lineTo(fp-10,H*0.21);c.lineTo(fp,H*0.22);c.closePath();c.fill();
+  c.strokeStyle='rgba(220,170,50,0.60)';c.lineWidth=2;for(let k=0;k<3;k++){const fy2=H*0.14+k*H*0.05;c.beginPath();c.moveTo(fp+4,fy2);c.lineTo(fp+44-k*4,fy2);c.stroke();}c.strokeStyle='rgba(80,20,10,0.35)';c.lineWidth=1;c.beginPath();c.moveTo(fp+15,H*0.11);c.lineTo(fp+18,H*0.30);c.stroke();c.beginPath();c.moveTo(fp+32,H*0.13);c.lineTo(fp+30,H*0.30);c.stroke();
+  for(let i=0;i<18;i++){const lx=Math.random()*W,ly=H*0.55+Math.random()*H*0.40,lr=3+Math.random()*5,ang=Math.random()*Math.PI;c.fillStyle=['rgba(100,80,20,0.6)','rgba(120,70,15,0.55)','rgba(80,60,10,0.5)'][Math.floor(Math.random()*3)];c.beginPath();c.ellipse(lx,ly,lr,lr*0.4,ang,0,Math.PI*2);c.fill();}
+  _radialVignette(c,'rgba(0,0,0,0)','rgba(0,0,0,0.60)');
+}
+// ── 第4关：法宝仓库 ──
+function _b4(c){
+  const bg=c.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#080810');bg.addColorStop(1,'#060610');c.fillStyle=bg;c.fillRect(0,0,W,H);
+  for(let y=0;y<H;y+=48){for(let x=0;x<W;x+=48){const shade=0.7+Math.random()*0.4;const ev=(Math.floor(x/48)+Math.floor(y/48))%2===0;c.fillStyle=ev?`rgba(${Math.round(30*shade)},${Math.round(30*shade)},${Math.round(55*shade)},0.85)`:`rgba(${Math.round(22*shade)},${Math.round(22*shade)},${Math.round(42*shade)},0.85)`;c.fillRect(x+1,y+1,46,46);}}
+  c.strokeStyle='rgba(60,80,140,0.55)';c.lineWidth=1.5;for(let x=0;x<=W;x+=48){c.beginPath();c.moveTo(x,0);c.lineTo(x,H);c.stroke();}for(let y=0;y<=H;y+=48){c.beginPath();c.moveTo(0,y);c.lineTo(W,y);c.stroke();}
+  c.strokeStyle='rgba(100,140,220,0.30)';c.lineWidth=1;for(let y=24;y<H;y+=48){for(let x=24;x<W;x+=48){c.beginPath();c.moveTo(x-8,y);c.lineTo(x+8,y);c.moveTo(x,y-8);c.lineTo(x,y+8);c.stroke();c.beginPath();c.arc(x,y,5,0,Math.PI*2);c.stroke();c.beginPath();c.moveTo(x-5,y-5);c.lineTo(x+5,y+5);c.moveTo(x+5,y-5);c.lineTo(x-5,y+5);c.stroke();}}
+  _noise(c,0,0,W,H,12,20,20,60);
+  const shelves=[{x1:W*0.04,x2:W*0.46,rows:[H*0.20,H*0.38,H*0.56,H*0.74]},{x1:W*0.54,x2:W*0.96,rows:[H*0.20,H*0.38,H*0.56,H*0.74]}];
+  shelves.forEach(sh=>{sh.rows.forEach(sy=>{const boardGrad=c.createLinearGradient(sh.x1,sy,sh.x1,sy+H*0.17);boardGrad.addColorStop(0,'rgba(140,100,55,0.90)');boardGrad.addColorStop(0.1,'rgba(180,130,70,0.85)');boardGrad.addColorStop(0.9,'rgba(100,70,35,0.80)');boardGrad.addColorStop(1,'rgba(60,40,18,0.75)');c.fillStyle=boardGrad;c.fillRect(sh.x1,sy,sh.x2-sh.x1,H*0.17);c.fillStyle='rgba(220,180,100,0.18)';c.fillRect(sh.x1,sy,sh.x2-sh.x1,4);c.fillStyle='rgba(0,0,0,0.40)';c.fillRect(sh.x1,sy+H*0.17-4,sh.x2-sh.x1,4);const slotW=(sh.x2-sh.x1)/4;for(let k=1;k<4;k++){const slotX=sh.x1+k*slotW;c.fillStyle='rgba(60,40,18,0.70)';c.fillRect(slotX-2,sy,4,H*0.17);c.fillStyle='rgba(180,130,70,0.25)';c.fillRect(slotX-1,sy,1,H*0.17);}});for(let side of[sh.x1,sh.x2]){const colGrad=c.createLinearGradient(side-4,0,side+4,0);colGrad.addColorStop(0,'rgba(80,55,25,0.9)');colGrad.addColorStop(0.5,'rgba(150,110,55,0.9)');colGrad.addColorStop(1,'rgba(60,40,18,0.85)');c.fillStyle=colGrad;c.fillRect(side-5,H*0.12,10,H*0.76);}});
+  const artifacts=[{x:W*0.12,y:H*0.28,col:'#40ccee',col2:'rgba(40,180,220,'},{x:W*0.28,y:H*0.46,col:'#ee9940',col2:'rgba(220,140,40,'},{x:W*0.38,y:H*0.28,col:'#aa55ff',col2:'rgba(150,70,255,'},{x:W*0.62,y:H*0.46,col:'#44ee88',col2:'rgba(40,210,100,'},{x:W*0.72,y:H*0.28,col:'#ff5566',col2:'rgba(255,60,80,'},{x:W*0.85,y:H*0.64,col:'#ffee44',col2:'rgba(240,220,40,'}];
+  artifacts.forEach(({x,y,col,col2})=>{c.save();c.fillStyle='rgba(80,60,25,0.7)';c.fillRect(x-12,y+10,24,8);c.fillStyle='rgba(140,110,50,0.5)';c.fillRect(x-10,y+10,20,2);const hg=c.createRadialGradient(x,y,4,x,y,28);hg.addColorStop(0,col2+'0.40)');hg.addColorStop(1,col2+'0)');c.fillStyle=hg;c.beginPath();c.arc(x,y,28,0,Math.PI*2);c.fill();c.fillStyle=col;c.shadowBlur=20;c.shadowColor=col;c.beginPath();for(let k=0;k<6;k++){const a=k/6*Math.PI*2-Math.PI/6;c.lineTo(x+Math.cos(a)*9,y+Math.sin(a)*9);}c.closePath();c.fill();c.fillStyle='rgba(255,255,255,0.50)';c.shadowBlur=0;c.beginPath();for(let k=0;k<6;k++){const a=k/6*Math.PI*2-Math.PI/6;c.lineTo(x-3+Math.cos(a)*5,y-4+Math.sin(a)*5);}c.closePath();c.fill();c.restore();});
+  _radialVignette(c,'rgba(0,0,0,0)','rgba(0,0,0,0.65)');
+}
+// ── 第5关：豪华厅堂 ──
+function _b5(c){
+  const bg=c.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#1a0a05');bg.addColorStop(0.5,'#120804');bg.addColorStop(1,'#180a04');c.fillStyle=bg;c.fillRect(0,0,W,H);
+  for(let y=0;y<H;y+=80){for(let x=0;x<W;x+=80){const shade=0.75+Math.random()*0.35;c.fillStyle=`rgba(${Math.round(90*shade)},${Math.round(18*shade)},${Math.round(12*shade)},0.85)`;c.fillRect(x+1,y+1,78,78);c.strokeStyle=`rgba(${Math.round(130*shade)},${Math.round(25*shade)},${Math.round(18*shade)},0.3)`;c.lineWidth=1;c.beginPath();c.moveTo(x+Math.random()*80,y+Math.random()*80);c.bezierCurveTo(x+Math.random()*80,y+Math.random()*80,x+Math.random()*80,y+Math.random()*80,x+Math.random()*80,y+Math.random()*80);c.stroke();}}
+  c.strokeStyle='rgba(200,160,60,0.35)';c.lineWidth=1.5;for(let x=0;x<=W;x+=80){c.beginPath();c.moveTo(x,0);c.lineTo(x,H);c.stroke();}for(let y=0;y<=H;y+=80){c.beginPath();c.moveTo(0,y);c.lineTo(W,y);c.stroke();}
+  _noise(c,0,0,W,H,14,80,15,8);
+  const cL=W*0.28,cR=W*0.72;const carpetGrad=c.createLinearGradient(cL,0,cR,0);carpetGrad.addColorStop(0,'rgba(100,12,8,0.92)');carpetGrad.addColorStop(0.15,'rgba(140,16,10,0.88)');carpetGrad.addColorStop(0.5,'rgba(160,18,12,0.90)');carpetGrad.addColorStop(0.85,'rgba(140,16,10,0.88)');carpetGrad.addColorStop(1,'rgba(100,12,8,0.92)');c.fillStyle=carpetGrad;c.fillRect(cL,0,cR-cL,H);
+  c.strokeStyle='rgba(80,8,5,0.20)';c.lineWidth=1;for(let y=0;y<H;y+=4){c.beginPath();c.moveTo(cL,y);c.lineTo(cR,y);c.stroke();}
+  for(let x of[cL,cR]){const eg=c.createLinearGradient(x-6,0,x+6,0);eg.addColorStop(0,'rgba(160,120,30,0.5)');eg.addColorStop(0.5,'rgba(240,200,80,0.95)');eg.addColorStop(1,'rgba(160,120,30,0.5)');c.fillStyle=eg;c.fillRect(x-5,0,10,H);}
+  c.strokeStyle='rgba(200,160,50,0.35)';c.lineWidth=1;c.beginPath();c.moveTo(cL+14,0);c.lineTo(cL+14,H);c.stroke();c.beginPath();c.moveTo(cR-14,0);c.lineTo(cR-14,H);c.stroke();
+  c.strokeStyle='rgba(220,180,60,0.30)';c.lineWidth=1.5;for(let y=-60;y<H+60;y+=90){c.beginPath();c.moveTo(W*0.5,y-45);c.lineTo(cR-8,y);c.lineTo(W*0.5,y+45);c.lineTo(cL+8,y);c.closePath();c.stroke();}
+  c.strokeStyle='rgba(200,160,40,0.15)';c.lineWidth=1;for(let y=90;y<H;y+=90){c.beginPath();c.arc(W*0.5,y,18,0,Math.PI*2);c.stroke();}
+  [[W*0.05,1],[W*0.92,-1]].forEach(([bx,dir])=>{for(let py=H*0.08;py<H*0.85;py+=H*0.24){const panW=50,panH=H*0.20;c.strokeStyle='rgba(80,140,70,0.85)';c.lineWidth=3;c.strokeRect(dir>0?bx:bx-panW,py,panW,panH);c.fillStyle='rgba(20,45,20,0.55)';c.fillRect(dir>0?bx+3:bx-panW+3,py+3,panW-6,panH-6);c.strokeStyle='rgba(60,110,50,0.40)';c.lineWidth=1;for(let k=1;k<4;k++){const ky=py+panH*k/4;c.beginPath();c.moveTo(dir>0?bx+3:bx-panW+3,ky);c.lineTo(dir>0?bx+panW-3:bx-3,ky);c.stroke();}for(let k=1;k<4;k++){const kx=dir>0?bx+panW*k/4:bx-panW*k/4;c.beginPath();c.moveTo(kx,py+3);c.lineTo(kx,py+panH-3);c.stroke();}c.strokeStyle='rgba(70,110,60,0.65)';c.lineWidth=2.5;c.beginPath();c.moveTo(dir>0?bx+panW*0.3:bx-panW*0.7,py+panH);c.lineTo(dir>0?bx+panW*0.3:bx-panW*0.7,py+panH+18);c.stroke();c.beginPath();c.moveTo(dir>0?bx+panW*0.7:bx-panW*0.3,py+panH);c.lineTo(dir>0?bx+panW*0.7:bx-panW*0.3,py+panH+18);c.stroke();}});
+  [W*0.18,W*0.38,W*0.50,W*0.62,W*0.82].forEach((lx,i)=>{const ly=22+(i%2)*8;c.strokeStyle='rgba(100,80,30,0.60)';c.lineWidth=1.5;c.beginPath();c.moveTo(lx,0);c.lineTo(lx,ly-18);c.stroke();const lGrad=c.createRadialGradient(lx-5,ly-6,3,lx,ly,18);lGrad.addColorStop(0,'rgba(255,180,100,0.95)');lGrad.addColorStop(0.3,'rgba(220,50,15,0.90)');lGrad.addColorStop(0.75,'rgba(160,20,8,0.85)');lGrad.addColorStop(1,'rgba(80,8,3,0.80)');c.fillStyle=lGrad;c.beginPath();c.ellipse(lx,ly,15,20,0,0,Math.PI*2);c.fill();c.strokeStyle='rgba(100,20,8,0.60)';c.lineWidth=1;for(let k=-2;k<=2;k++){const ky=ly+k*7;const rx=Math.sqrt(Math.max(0,1-((ky-ly)/20)**2))*15;c.beginPath();c.moveTo(lx-rx,ky);c.lineTo(lx+rx,ky);c.stroke();}c.fillStyle='rgba(255,220,150,0.35)';c.beginPath();c.ellipse(lx-4,ly-7,5,8,0,0,Math.PI*2);c.fill();c.strokeStyle='rgba(200,160,30,0.55)';c.lineWidth=1;for(let k=-2;k<=2;k++){c.beginPath();c.moveTo(lx+k*3,ly+20);c.lineTo(lx+k*3+Math.sin(k)*2,ly+34);c.stroke();}const floorGlow=c.createRadialGradient(lx,ly+20,5,lx,ly+20,50);floorGlow.addColorStop(0,'rgba(255,150,30,0.12)');floorGlow.addColorStop(1,'rgba(255,150,30,0)');c.fillStyle=floorGlow;c.beginPath();c.arc(lx,ly+20,50,0,Math.PI*2);c.fill();});
+  _radialVignette(c,'rgba(0,0,0,0)','rgba(0,0,0,0.60)');
+}
+// ── 第6关：修仙食堂 ──
+function _b6(c){
+  const bg=c.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#0e0b04');bg.addColorStop(1,'#120d05');c.fillStyle=bg;c.fillRect(0,0,W,H);
+  const ts=44;for(let y=0;y<H;y+=ts){for(let x=0;x<W;x+=ts){const shade=0.75+Math.random()*0.40,ev=(Math.floor(x/ts)+Math.floor(y/ts))%2;c.fillStyle=`rgba(${ev?Math.round(120*shade):Math.round(90*shade)},${ev?Math.round(105*shade):Math.round(78*shade)},${ev?Math.round(60*shade):Math.round(45*shade)},0.85)`;c.fillRect(x+1,y+1,ts-2,ts-2);}}
+  c.strokeStyle='rgba(60,45,18,0.65)';c.lineWidth=1.5;for(let x=0;x<=W;x+=ts){c.beginPath();c.moveTo(x,0);c.lineTo(x,H);c.stroke();}for(let y=0;y<=H;y+=ts){c.beginPath();c.moveTo(0,y);c.lineTo(W,y);c.stroke();}
+  _noise(c,0,0,W,H,16,90,70,30);
+  const px=W*0.78,py=H*0.62;const sh=c.createRadialGradient(px,py+48,8,px,py+48,70);sh.addColorStop(0,'rgba(0,0,0,0.7)');sh.addColorStop(1,'rgba(0,0,0,0)');c.fillStyle=sh;c.beginPath();c.ellipse(px,py+52,65,18,0,0,Math.PI*2);c.fill();
+  [[px-25,py+28,px-28,py+58],[px+25,py+28,px+28,py+58]].forEach(([x1,y1,x2,y2])=>{const lg=c.createLinearGradient(x1-4,y1,x1+4,y1);lg.addColorStop(0,'#3a3a3a');lg.addColorStop(0.5,'#888');lg.addColorStop(1,'#2a2a2a');c.fillStyle=lg;c.fillRect(x1-4,y1,8,y2-y1);});
+  const bg2=c.createRadialGradient(px-20,py-20,8,px,py,42);bg2.addColorStop(0,'#aaaaaa');bg2.addColorStop(0.3,'#666');bg2.addColorStop(0.7,'#333');bg2.addColorStop(1,'#111');c.fillStyle=bg2;c.beginPath();c.arc(px,py,40,0,Math.PI*2);c.fill();c.strokeStyle='#555';c.lineWidth=3;c.beginPath();c.arc(px,py,40,0,Math.PI*2);c.stroke();
+  const rg=c.createLinearGradient(px-42,py-42,px+42,py-42);rg.addColorStop(0,'#333');rg.addColorStop(0.5,'#aaa');rg.addColorStop(1,'#333');c.fillStyle=rg;c.beginPath();c.ellipse(px,py-38,42,10,0,0,Math.PI*2);c.fill();c.fillStyle='rgba(80,130,40,0.65)';c.beginPath();c.ellipse(px,py-38,36,8,0,0,Math.PI*2);c.fill();
+  for(let k=0;k<6;k++){const a=k/6*Math.PI*2,sx=px+Math.cos(a)*20,sy=py-38+Math.sin(a)*8;const stG=c.createRadialGradient(sx,sy-20,2,sx,sy-20,28);stG.addColorStop(0,'rgba(200,200,210,0.28)');stG.addColorStop(1,'rgba(200,200,210,0)');c.fillStyle=stG;c.beginPath();c.arc(sx,sy-20,28,0,Math.PI*2);c.fill();}
+  for(let k=0;k<10;k++){const ka=k/10*Math.PI*2;const rg2=c.createRadialGradient(px+Math.cos(ka)*38-1,py+Math.sin(ka)*38-1,0,px+Math.cos(ka)*38,py+Math.sin(ka)*38,5);rg2.addColorStop(0,'#ddd');rg2.addColorStop(1,'#444');c.fillStyle=rg2;c.beginPath();c.arc(px+Math.cos(ka)*38,py+Math.sin(ka)*38,5,0,Math.PI*2);c.fill();}
+  _radialVignette(c,'rgba(0,0,0,0)','rgba(0,0,0,0.60)');
+}
+// ── 第7关：美容内室 ──
+function _b7(c){
+  const bg=c.createRadialGradient(W*0.4,H*0.3,60,W*0.5,H*0.5,H);bg.addColorStop(0,'#1a0a18');bg.addColorStop(0.5,'#120810');bg.addColorStop(1,'#0d060c');c.fillStyle=bg;c.fillRect(0,0,W,H);
+  for(let y=0;y<H;y+=72){for(let x=0;x<W;x+=72){const sh=0.7+Math.random()*0.5;c.fillStyle=`rgba(${Math.round(100*sh)},${Math.round(55*sh)},${Math.round(90*sh)},0.80)`;c.fillRect(x+1,y+1,70,70);c.strokeStyle=`rgba(${Math.round(140*sh)},${Math.round(80*sh)},${Math.round(120*sh)},0.25)`;c.lineWidth=0.8;c.beginPath();c.moveTo(x+Math.random()*72,y+Math.random()*72);c.bezierCurveTo(x+Math.random()*72,y+Math.random()*72,x+Math.random()*72,y+Math.random()*72,x+Math.random()*72,y+Math.random()*72);c.stroke();}}
+  c.strokeStyle='rgba(180,120,160,0.30)';c.lineWidth=1.5;for(let x=0;x<=W;x+=72){c.beginPath();c.moveTo(x,0);c.lineTo(x,H);c.stroke();}for(let y=0;y<=H;y+=72){c.beginPath();c.moveTo(0,y);c.lineTo(W,y);c.stroke();}
+  _noise(c,0,0,W,H,12,120,60,110);
+  const softGlow=c.createRadialGradient(W*0.5,H*0.4,60,W*0.5,H*0.5,H*0.7);softGlow.addColorStop(0,'rgba(255,150,200,0.12)');softGlow.addColorStop(1,'rgba(0,0,0,0)');c.fillStyle=softGlow;c.fillRect(0,0,W,H);
+  c.strokeStyle='rgba(240,160,210,0.10)';c.lineWidth=1;for(let x=-W;x<W*2;x+=60){c.beginPath();c.moveTo(x,0);c.lineTo(x+30,H);c.stroke();}
+  const mx=W*0.12,my=H*0.46;const mirGrad=c.createLinearGradient(mx-32,my-48,mx+32,my+48);mirGrad.addColorStop(0,'#7a5060');mirGrad.addColorStop(0.5,'#ccaabc');mirGrad.addColorStop(1,'#5a3848');c.strokeStyle=mirGrad;c.lineWidth=8;c.beginPath();c.ellipse(mx,my,28,42,0,0,Math.PI*2);c.stroke();
+  const mirFace=c.createLinearGradient(mx-24,my-38,mx+24,my+38);mirFace.addColorStop(0,'rgba(20,28,50,0.85)');mirFace.addColorStop(0.5,'rgba(30,40,70,0.75)');mirFace.addColorStop(1,'rgba(15,22,42,0.90)');c.fillStyle=mirFace;c.beginPath();c.ellipse(mx,my,22,36,0,0,Math.PI*2);c.fill();c.fillStyle='rgba(220,220,255,0.30)';c.beginPath();c.ellipse(mx-8,my-14,7,14,0.3,0,Math.PI*2);c.fill();c.fillStyle='rgba(255,255,255,0.15)';c.beginPath();c.ellipse(mx-10,my-20,3,5,-0.2,0,Math.PI*2);c.fill();
+  c.strokeStyle='rgba(180,140,160,0.60)';c.lineWidth=3;c.beginPath();c.moveTo(mx,my+42);c.lineTo(mx,my+65);c.stroke();c.beginPath();c.moveTo(mx-18,my+65);c.lineTo(mx+18,my+65);c.stroke();
+  const tx=W*0.80,ty=H*0.60;const tableGrad=c.createLinearGradient(tx-W*0.09,ty,tx+W*0.09,ty);tableGrad.addColorStop(0,'rgba(100,55,80,0.90)');tableGrad.addColorStop(0.5,'rgba(160,90,128,0.85)');tableGrad.addColorStop(1,'rgba(100,55,80,0.90)');c.fillStyle=tableGrad;c.fillRect(tx-W*0.09,ty,W*0.18,H*0.28);c.fillStyle='rgba(220,160,195,0.25)';c.fillRect(tx-W*0.09,ty,W*0.18,5);
+  [[tx-30,ty-10,6,'#ff88bb'],[tx-10,ty-14,5,'#ffbbdd'],[tx+18,ty-8,4,'#ff66aa'],[tx+28,ty-12,3,'#ffccee']].forEach(([ox,oy,or,oc])=>{const og=c.createRadialGradient(ox-1,oy-2,1,ox,oy,or);og.addColorStop(0,'#fff');og.addColorStop(0.4,oc);og.addColorStop(1,'rgba(0,0,0,0.2)');c.fillStyle=og;c.beginPath();c.arc(ox,oy,or,0,Math.PI*2);c.fill();});
+  c.fillStyle='rgba(80,44,64,0.80)';[[tx-W*0.07,ty+H*0.28],[tx+W*0.07-6,ty+H*0.28]].forEach(([lx,ly])=>c.fillRect(lx,ly,6,H*0.06));
+  _radialVignette(c,'rgba(0,0,0,0)','rgba(0,0,0,0.65)');
+}
+// ── 第8关：紫府祠堂 ──
+function _b8(c){
+  const bg=c.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#100c00');bg.addColorStop(0.5,'#0c0900');bg.addColorStop(1,'#140e00');c.fillStyle=bg;c.fillRect(0,0,W,H);
+  for(let y=0;y<H;y+=66){for(let x=0;x<W;x+=66){const sh=0.72+Math.random()*0.45;c.fillStyle=`rgba(${Math.round(100*sh)},${Math.round(85*sh)},${Math.round(20*sh)},0.82)`;c.fillRect(x+1,y+1,64,64);c.strokeStyle=`rgba(${Math.round(180*sh)},${Math.round(150*sh)},${Math.round(40*sh)},0.20)`;c.lineWidth=0.7;c.beginPath();c.moveTo(x+Math.random()*66,y+Math.random()*66);c.bezierCurveTo(x+Math.random()*66,y+Math.random()*66,x+Math.random()*66,y+Math.random()*66,x+Math.random()*66,y+Math.random()*66);c.stroke();}}
+  c.strokeStyle='rgba(200,168,50,0.40)';c.lineWidth=1.5;for(let x=0;x<=W;x+=66){c.beginPath();c.moveTo(x,0);c.lineTo(x,H);c.stroke();}for(let y=0;y<=H;y+=66){c.beginPath();c.moveTo(0,y);c.lineTo(W,y);c.stroke();}
+  c.strokeStyle='rgba(200,168,40,0.15)';c.lineWidth=1;for(let y=-H;y<H*2;y+=132){c.beginPath();c.moveTo(0,y);c.lineTo(W,y+W*0.6);c.stroke();}
+  _noise(c,0,0,W,H,10,100,80,0);
+  const ex=W*0.5,ey=H*0.22;const eHalo=c.createRadialGradient(ex,ey,20,ex,ey,80);eHalo.addColorStop(0,'rgba(220,180,60,0.22)');eHalo.addColorStop(1,'rgba(220,180,60,0)');c.fillStyle=eHalo;c.beginPath();c.arc(ex,ey,80,0,Math.PI*2);c.fill();
+  const embGrad=c.createLinearGradient(ex-50,ey-50,ex+50,ey+50);embGrad.addColorStop(0,'#8a6820');embGrad.addColorStop(0.5,'#f0c860');embGrad.addColorStop(1,'#8a6820');c.strokeStyle=embGrad;c.lineWidth=4;c.beginPath();c.arc(ex,ey,50,0,Math.PI*2);c.stroke();c.strokeStyle='rgba(200,160,50,0.45)';c.lineWidth=1.5;c.beginPath();c.arc(ex,ey,44,0,Math.PI*2);c.stroke();
+  c.strokeStyle=embGrad;c.lineWidth=2.5;for(let i=0;i<6;i++){const a1=i/6*Math.PI*2-Math.PI/6,a2=(i+2)/6*Math.PI*2-Math.PI/6;c.beginPath();c.moveTo(ex+Math.cos(a1)*38,ey+Math.sin(a1)*38);c.lineTo(ex+Math.cos(a2)*38,ey+Math.sin(a2)*38);c.stroke();}
+  const coreGrad=c.createRadialGradient(ex-5,ey-5,3,ex,ey,16);coreGrad.addColorStop(0,'rgba(255,230,120,0.9)');coreGrad.addColorStop(1,'rgba(180,130,30,0.5)');c.fillStyle=coreGrad;c.beginPath();c.arc(ex,ey,14,0,Math.PI*2);c.fill();
+  for(let i=0;i<12;i++){const a=i/12*Math.PI*2;const dg=c.createRadialGradient(ex+Math.cos(a)*48,ey+Math.sin(a)*48,0,ex+Math.cos(a)*48,ey+Math.sin(a)*48,4);dg.addColorStop(0,'#f0c860');dg.addColorStop(1,'#8a6820');c.fillStyle=dg;c.beginPath();c.arc(ex+Math.cos(a)*48,ey+Math.sin(a)*48,3.5,0,Math.PI*2);c.fill();}
+  [[W*0.08,H*0.30],[W*0.92,H*0.30],[W*0.08,H*0.72],[W*0.92,H*0.72]].forEach(([ppx,ppy])=>{const pilGrad=c.createLinearGradient(ppx,ppy-110,ppx,ppy);pilGrad.addColorStop(0,'rgba(220,180,60,0)');pilGrad.addColorStop(0.3,'rgba(240,200,80,0.50)');pilGrad.addColorStop(0.7,'rgba(220,180,60,0.45)');pilGrad.addColorStop(1,'rgba(200,160,50,0.15)');c.fillStyle=pilGrad;c.fillRect(ppx-7,ppy-110,14,110);const baseGrad=c.createLinearGradient(ppx-12,ppy,ppx+12,ppy);baseGrad.addColorStop(0,'#604818');baseGrad.addColorStop(0.5,'#c09040');baseGrad.addColorStop(1,'#604818');c.fillStyle=baseGrad;c.fillRect(ppx-12,ppy,24,12);const gemGrad=c.createRadialGradient(ppx-3,ppy-5,2,ppx,ppy,10);gemGrad.addColorStop(0,'rgba(255,230,120,0.95)');gemGrad.addColorStop(0.5,'rgba(220,180,60,0.8)');gemGrad.addColorStop(1,'rgba(150,110,20,0.4)');c.fillStyle=gemGrad;c.beginPath();c.arc(ppx,ppy,10,0,Math.PI*2);c.fill();});
+  const shrX=W*0.5,shrY=H*0.84;c.strokeStyle='rgba(190,150,40,0.55)';c.lineWidth=2;c.strokeRect(shrX-W*0.08,shrY,W*0.16,H*0.14);c.beginPath();c.moveTo(shrX-W*0.08,shrY);c.lineTo(shrX,shrY-H*0.06);c.lineTo(shrX+W*0.08,shrY);c.stroke();c.fillStyle='rgba(180,140,30,0.12)';c.fillRect(shrX-W*0.08,shrY,W*0.16,H*0.14);
+  _radialVignette(c,'rgba(0,0,0,0)','rgba(0,0,0,0.62)');
+}
+// ── 第9关：vlog基地 ──
+function _b9(c){
+  const bg=c.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#05001a');bg.addColorStop(0.5,'#020010');bg.addColorStop(1,'#080020');c.fillStyle=bg;c.fillRect(0,0,W,H);
+  for(let y=H*0.45;y<H;y+=40){for(let x=0;x<W;x+=40){const alpha=0.08+(y-H*0.45)/(H*0.55)*0.22,ev=(Math.floor(x/40)+Math.floor(y/40))%2;c.fillStyle=`rgba(${ev?40:20},${ev?0:0},${ev?80:60},${alpha})`;c.fillRect(x+1,y+1,38,38);}}
+  const vpX=W*0.5,vpY=H*0.40;c.strokeStyle='rgba(40,200,240,0.28)';c.lineWidth=1.5;for(let x=-W*0.5;x<W*1.5;x+=50){c.beginPath();c.moveTo(x,H);c.lineTo(vpX+(x-vpX)*0.08,vpY);c.stroke();}
+  for(let frac=0;frac<1;frac+=0.10){const y=vpY+(H-vpY)*frac;c.strokeStyle=`rgba(160,50,200,${0.06+frac*0.22})`;c.lineWidth=1+frac*2;c.beginPath();c.moveTo(0,y);c.lineTo(W,y);c.stroke();}
+  _noise(c,0,0,W,H,14,10,0,60);
+  c.font='bold 18px monospace';c.textAlign='center';c.fillStyle='rgba(60,220,255,0.20)';c.shadowBlur=12;c.shadowColor='#40ccff';c.fillText('LIVE',W*0.5,H*0.15);c.shadowBlur=0;
+  [[W*0.18,H*0.26],[W*0.50,H*0.18],[W*0.82,H*0.30]].forEach(([cx,cy],i)=>{c.save();const cHalo=c.createRadialGradient(cx,cy,4,cx,cy,45);cHalo.addColorStop(0,'rgba(60,200,240,0.20)');cHalo.addColorStop(1,'rgba(60,200,240,0)');c.fillStyle=cHalo;c.beginPath();c.arc(cx,cy,45,0,Math.PI*2);c.fill();for(let r=10,a=0.55;r<=38;r+=7,a-=0.12){c.strokeStyle=`rgba(60,210,245,${a})`;c.lineWidth=1.5;c.beginPath();c.arc(cx,cy,r,0,Math.PI*2);c.stroke();}c.strokeStyle='rgba(60,220,255,0.70)';c.lineWidth=1.5;c.beginPath();c.moveTo(cx-6,cy);c.lineTo(cx+6,cy);c.moveTo(cx,cy-6);c.lineTo(cx,cy+6);c.stroke();const recX=cx+32,recY=cy-24;const recG=c.createRadialGradient(recX,recY,1,recX,recY,6);recG.addColorStop(0,'#ff8888');recG.addColorStop(0.5,'#ff2222');recG.addColorStop(1,'rgba(200,0,0,0.3)');c.fillStyle=recG;c.beginPath();c.arc(recX,recY,5,0,Math.PI*2);c.fill();c.restore();});
+  const refGrad=c.createLinearGradient(0,H*0.7,0,H);refGrad.addColorStop(0,'rgba(30,0,80,0)');refGrad.addColorStop(1,'rgba(30,0,80,0.35)');c.fillStyle=refGrad;c.fillRect(0,H*0.7,W,H*0.3);
+  _radialVignette(c,'rgba(0,0,0,0)','rgba(0,0,0,0.72)');
+}
+// ── 第10关：八角擂台 ──
+function _b10(c){
+  const bg=c.createRadialGradient(W*0.5,H*0.5,60,W*0.5,H*0.5,H);bg.addColorStop(0,'#1a1010');bg.addColorStop(0.5,'#0e0808');bg.addColorStop(1,'#060404');c.fillStyle=bg;c.fillRect(0,0,W,H);
+  const cx=W*0.5,cy=H*0.5,pR=Math.min(W,H)*0.43;
+  const outerFog=c.createRadialGradient(cx,cy,pR*0.7,cx,cy,pR*1.8);outerFog.addColorStop(0,'rgba(0,0,0,0)');outerFog.addColorStop(0.6,'rgba(180,160,200,0.08)');outerFog.addColorStop(1,'rgba(150,130,180,0.18)');c.fillStyle=outerFog;c.fillRect(0,0,W,H);
+  c.save();c.beginPath();for(let i=0;i<8;i++){const a=i/8*Math.PI*2-Math.PI/8;i===0?c.moveTo(cx+Math.cos(a)*pR,cy+Math.sin(a)*pR):c.lineTo(cx+Math.cos(a)*pR,cy+Math.sin(a)*pR);}c.closePath();c.clip();
+  for(let y=cy-pR;y<cy+pR;y+=60){for(let x=cx-pR;x<cx+pR;x+=60){const sh=0.6+Math.random()*0.5;c.fillStyle=`rgba(${Math.round(80*sh)},${Math.round(30*sh)},${Math.round(25*sh)},0.90)`;c.fillRect(x,y,60,60);}}
+  c.strokeStyle='rgba(180,140,50,0.12)';c.lineWidth=1;for(let i=0;i<16;i++){const a=i/16*Math.PI*2;c.beginPath();c.moveTo(cx,cy);c.lineTo(cx+Math.cos(a)*pR,cy+Math.sin(a)*pR);c.stroke();}
+  for(let r=pR*0.25;r<pR;r+=pR*0.25){c.strokeStyle=`rgba(180,140,50,${0.08+r/pR*0.10})`;c.lineWidth=1;c.beginPath();c.arc(cx,cy,r,0,Math.PI*2);c.stroke();}
+  _noise(c,Math.round(cx-pR),Math.round(cy-pR),Math.round(pR*2),Math.round(pR*2),18,80,30,20);c.restore();
+  for(let[lw,alpha]of[[8,0.25],[4,0.65],[1.5,0.90]]){const edgeGrad=c.createLinearGradient(cx-pR,cy-pR,cx+pR,cy+pR);edgeGrad.addColorStop(0,'#7a5820');edgeGrad.addColorStop(0.5,'#f0c860');edgeGrad.addColorStop(1,'#7a5820');c.strokeStyle=edgeGrad;c.lineWidth=lw;c.globalAlpha=alpha;c.beginPath();for(let i=0;i<8;i++){const a=i/8*Math.PI*2-Math.PI/8;i===0?c.moveTo(cx+Math.cos(a)*pR,cy+Math.sin(a)*pR):c.lineTo(cx+Math.cos(a)*pR,cy+Math.sin(a)*pR);}c.closePath();c.stroke();}c.globalAlpha=1;
+  c.strokeStyle='rgba(200,160,50,0.35)';c.lineWidth=1.5;c.setLineDash([8,10]);c.beginPath();for(let i=0;i<8;i++){const a=i/8*Math.PI*2-Math.PI/8;i===0?c.moveTo(cx+Math.cos(a)*pR*0.55,cy+Math.sin(a)*pR*0.55):c.lineTo(cx+Math.cos(a)*pR*0.55,cy+Math.sin(a)*pR*0.55);}c.closePath();c.stroke();c.setLineDash([]);
+  c.strokeStyle='rgba(220,180,60,0.45)';c.lineWidth=2.5;c.beginPath();for(let i=0;i<8;i++){const a=i/8*Math.PI*2-Math.PI/8;i===0?c.moveTo(cx+Math.cos(a)*32,cy+Math.sin(a)*32):c.lineTo(cx+Math.cos(a)*32,cy+Math.sin(a)*32);}c.closePath();c.stroke();
+  for(let i=0;i<8;i++){const a=i/8*Math.PI*2-Math.PI/8,ppx=cx+Math.cos(a)*pR,ppy=cy+Math.sin(a)*pR;const pilGrad=c.createLinearGradient(ppx,ppy-100,ppx,ppy);pilGrad.addColorStop(0,'rgba(255,220,80,0)');pilGrad.addColorStop(0.3,'rgba(255,200,60,0.55)');pilGrad.addColorStop(0.7,'rgba(240,180,50,0.50)');pilGrad.addColorStop(1,'rgba(200,150,30,0.20)');c.fillStyle=pilGrad;c.fillRect(ppx-6,ppy-100,12,100);const gemG=c.createRadialGradient(ppx-3,ppy-5,2,ppx,ppy,10);gemG.addColorStop(0,'rgba(255,240,150,0.98)');gemG.addColorStop(0.4,'rgba(240,200,60,0.85)');gemG.addColorStop(1,'rgba(180,130,20,0.3)');c.fillStyle=gemG;c.shadowBlur=20;c.shadowColor='rgba(255,200,60,0.6)';c.beginPath();c.arc(ppx,ppy,9,0,Math.PI*2);c.fill();c.shadowBlur=0;const baseG=c.createLinearGradient(ppx-14,ppy,ppx+14,ppy);baseG.addColorStop(0,'#503810');baseG.addColorStop(0.5,'#b08030');baseG.addColorStop(1,'#503810');c.fillStyle=baseG;c.fillRect(ppx-14,ppy,28,10);}
+  for(let i=0;i<32;i++){const ca=i/32*Math.PI*2,cr=pR+25+Math.sin(i*0.9)*20,ccx=cx+Math.cos(ca)*cr,ccy=cy+Math.sin(ca)*cr;const cloudGrad=c.createRadialGradient(ccx,ccy,2,ccx,ccy,22+Math.sin(i*1.5)*8);cloudGrad.addColorStop(0,'rgba(220,215,235,0.20)');cloudGrad.addColorStop(1,'rgba(200,195,220,0)');c.fillStyle=cloudGrad;c.beginPath();c.arc(ccx,ccy,22+Math.sin(i*1.5)*8,0,Math.PI*2);c.fill();}
+  _radialVignette(c,'rgba(0,0,0,0)','rgba(0,0,0,0.70)');
+}
 
-  // 固定随机偏移（存入G，避免每帧重算抖动）
-  if(!G._mapSeed){
-    G._mapSeed=true;
-    G._cracks=[[W*0.15,H*0.1,W*0.45,H*0.55],[W*0.55,H*0.2,W*0.75,H*0.7],[W*0.3,H*0.65,W*0.6,H*0.85],[W*0.7,H*0.15,W*0.4,H*0.5]];
-    G._crackOff=G._cracks.map(()=>[(Math.random()-.5)*35,(Math.random()-.5)*35]);
-    G._stoneBreaks=Array.from({length:6},()=>[Math.floor(Math.random()*12)*55,Math.floor(Math.random()*8)*55]);
-    G._mossPos=Array.from({length:8},()=>[Math.random()*W,Math.random()*H,8+Math.random()*14,3+Math.random()*5,Math.random()*Math.PI]);
-    G._wallCracks=Array.from({length:12},()=>[Math.floor(Math.random()*(W/60))*60+(Math.random()*20),Math.sin(Math.random()*10)*8,6+Math.random()*18]);
-  }
+// ══════ 动态叠加层 ══════
+function drawSceneAnimated(ctx,G,id){
+  const t=G.elapsed;ctx.save();
+  if(id===1){const fx=W*0.70,fy=H*0.28,pulse=0.18+Math.sin(t*0.08)*0.10;const fg=ctx.createRadialGradient(fx,fy-38,4,fx,fy-38,40);fg.addColorStop(0,`rgba(255,80,10,${pulse})`);fg.addColorStop(1,'rgba(255,60,0,0)');ctx.fillStyle=fg;ctx.beginPath();ctx.arc(fx,fy-38,40,0,Math.PI*2);ctx.fill();}
+  if(id===2){ctx.globalAlpha=0.10+Math.sin(t*0.045)*0.06;const wg=ctx.createRadialGradient(W*0.5,H*0.92,10,W*0.5,H*0.92,W*0.4);wg.addColorStop(0,'rgba(40,80,180,0.35)');wg.addColorStop(1,'rgba(40,80,180,0)');ctx.fillStyle=wg;ctx.fillRect(0,H*0.80,W,H*0.20);}
+  if(id===4){[{x:W*0.15,y:H*0.32,c:'rgba(40,180,220,'},{x:W*0.38,y:H*0.28,c:'rgba(150,70,255,'},{x:W*0.62,y:H*0.46,c:'rgba(40,210,100,'},{x:W*0.85,y:H*0.64,c:'rgba(240,220,40,'}].forEach(({x,y,c},i)=>{const p=0.12+Math.sin(t*0.04+i*1.5)*0.08;const g=ctx.createRadialGradient(x,y,4,x,y,30);g.addColorStop(0,c+p+')');g.addColorStop(1,c+'0)');ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,30,0,Math.PI*2);ctx.fill();});}
+  if(id===5){[W*0.18,W*0.38,W*0.50,W*0.62,W*0.82].forEach((lx,i)=>{const p=0.06+Math.sin(t*0.025+i*1.2)*0.03;const lg=ctx.createRadialGradient(lx,80,8,lx,80,90);lg.addColorStop(0,`rgba(255,130,30,${p})`);lg.addColorStop(1,'rgba(255,130,30,0)');ctx.fillStyle=lg;ctx.beginPath();ctx.arc(lx,80,90,0,Math.PI*2);ctx.fill();});}
+  if(id===6){const px=W*0.78,py=H*0.62,p=0.10+Math.sin(t*0.06)*0.05;const sg=ctx.createRadialGradient(px,py-45,5,px,py-45,55);sg.addColorStop(0,`rgba(200,200,215,${p})`);sg.addColorStop(1,'rgba(200,200,215,0)');ctx.fillStyle=sg;ctx.beginPath();ctx.arc(px,py-45,55,0,Math.PI*2);ctx.fill();}
+  if(id===7){const p=0.06+Math.sin(t*0.02)*0.03;const fg=ctx.createRadialGradient(W*0.5,H*0.4,40,W*0.5,H*0.5,H*0.6);fg.addColorStop(0,`rgba(255,140,190,${p})`);fg.addColorStop(1,'rgba(255,140,190,0)');ctx.fillStyle=fg;ctx.fillRect(0,0,W,H);}
+  if(id===8){const ex=W*0.5,ey=H*0.22,p=0.10+Math.sin(t*0.022)*0.05;const eg=ctx.createRadialGradient(ex,ey,15,ex,ey,75);eg.addColorStop(0,`rgba(220,180,50,${p})`);eg.addColorStop(1,'rgba(220,180,50,0)');ctx.fillStyle=eg;ctx.beginPath();ctx.arc(ex,ey,75,0,Math.PI*2);ctx.fill();[[W*0.08,H*0.30],[W*0.92,H*0.30],[W*0.08,H*0.72],[W*0.92,H*0.72]].forEach(([ppx,ppy],i)=>{const pp=0.22+Math.sin(t*0.03+i*0.8)*0.10;const pg=ctx.createLinearGradient(ppx,ppy-110,ppx,ppy);pg.addColorStop(0,`rgba(240,200,80,0)`);pg.addColorStop(0.4,`rgba(240,200,80,${pp})`);pg.addColorStop(1,'rgba(200,160,50,0.10)');ctx.fillStyle=pg;ctx.fillRect(ppx-6,ppy-110,12,110);});}
+  if(id===9){const scanY=((t*2)%H);ctx.globalAlpha=0.14;ctx.strokeStyle='rgba(60,240,200,0.5)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,scanY);ctx.lineTo(W,scanY);ctx.stroke();ctx.globalAlpha=0.06;ctx.lineWidth=10;ctx.beginPath();ctx.moveTo(0,scanY);ctx.lineTo(W,scanY);ctx.stroke();[[W*0.18+32,H*0.26-24],[W*0.50+32,H*0.18-24],[W*0.82+32,H*0.30-24]].forEach(([rx,ry],i)=>{const blink=Math.sin(t*0.10+i*2.5)>0;ctx.globalAlpha=blink?0.90:0.20;ctx.fillStyle='#ff2222';ctx.shadowBlur=blink?12:0;ctx.shadowColor='#ff0000';ctx.beginPath();ctx.arc(rx,ry,5,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;});}
+  if(id===10){const cx=W*0.5,cy=H*0.5,pR=Math.min(W,H)*0.43;for(let i=0;i<8;i++){const a=i/8*Math.PI*2-Math.PI/8,ppx=cx+Math.cos(a)*pR,ppy=cy+Math.sin(a)*pR,pp=0.22+Math.sin(t*0.04+i*0.8)*0.12;ctx.globalAlpha=pp;ctx.shadowBlur=25;ctx.shadowColor='rgba(255,200,60,0.8)';ctx.fillStyle='rgba(255,230,100,0.70)';ctx.beginPath();ctx.arc(ppx,ppy,9,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;}ctx.globalAlpha=1;ctx.globalAlpha=0.06+Math.sin(t*0.015)*0.03;const ag=ctx.createRadialGradient(cx,cy,20,cx,cy,pR*0.52);ag.addColorStop(0,'rgba(220,80,30,0.25)');ag.addColorStop(0.7,'rgba(200,60,20,0.08)');ag.addColorStop(1,'rgba(200,60,20,0)');ctx.fillStyle=ag;ctx.beginPath();ctx.arc(cx,cy,pR*0.52,0,Math.PI*2);ctx.fill();}
+  ctx.globalAlpha=1;ctx.restore();
+}
 
-  // 环境粒子系统
+// ══════ 环境粒子系统 ══════
+function updateAndDrawEnvParticles(ctx,G,id){
   if(!G.envParticles)G.envParticles=[];
-  G.envParticles.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.life--;});
+  G.envParticles.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.life--;if(p.vx)p.vx*=0.99;});
   G.envParticles=G.envParticles.filter(p=>p.life>0);
-
-  function _esp(x,y,vx,vy,life,color,size,scene){
-    if(G.envParticles.length>=40)return;
-    G.envParticles.push({x,y,vx,vy,life,maxLife:life,color,size,_scene:scene});
+  function _esp(x,y,vx,vy,life,color,size){if(G.envParticles.length>=50)return;G.envParticles.push({x,y,vx,vy,life,maxLife:life,color,size});}
+  function _maybeSpawn(maxN,prob,fn){if(G.envParticles.length<maxN&&Math.random()<prob)fn();}
+  if(id===1){
+    _maybeSpawn(18,0.055,()=>_esp(Math.random()*W,H*0.6+Math.random()*H*0.35,(Math.random()-.5)*0.5,-0.35-Math.random()*0.65,180+Math.random()*200,['rgba(80,255,120,0.80)','rgba(120,255,160,0.70)','rgba(60,200,90,0.75)'][Math.floor(Math.random()*3)],1.5+Math.random()*3.0));
+    const fx=W*0.70,fy=H*0.28;_maybeSpawn(22,0.08,()=>_esp(fx+(Math.random()-.5)*20,fy-44,(Math.random()-.5)*1.5,-1.5-Math.random()*2.5,40+Math.random()*60,['rgba(255,200,50,0.90)','rgba(255,140,20,0.85)','rgba(255,80,10,0.80)'][Math.floor(Math.random()*3)],1+Math.random()*2));
   }
-  function _spawn(scene,maxN,fn){
-    if(G.envParticles.filter(p=>p._scene===scene).length<maxN&&Math.random()<0.04)fn();
+  if(id===2){_maybeSpawn(14,0.04,()=>_esp(Math.random()*W,Math.random()*H,(Math.random()-.5)*0.8,(Math.random()-.5)*0.8,120+Math.random()*160,'rgba(80,140,255,0.65)',1+Math.random()*2));_maybeSpawn(10,0.03,()=>_esp(Math.random()*W,H*0.82,0,0.4+Math.random()*0.8,60+Math.random()*100,'rgba(60,100,200,0.55)',1+Math.random()*1.5));}
+  if(id===3){_maybeSpawn(16,0.04,()=>_esp(Math.random()*W,-5,(Math.random()-.5)*0.6,0.4+Math.random()*0.8,200+Math.random()*250,['rgba(100,75,20,0.70)','rgba(120,80,18,0.65)','rgba(80,55,12,0.60)'][Math.floor(Math.random()*3)],2+Math.random()*4));_maybeSpawn(10,0.025,()=>_esp(Math.random()*W,H*0.7+Math.random()*H*0.3,(Math.random()-.5)*0.4,-0.2-Math.random()*0.4,80+Math.random()*120,'rgba(160,140,100,0.30)',1+Math.random()*2));}
+  if(id===4){_maybeSpawn(16,0.04,()=>_esp(Math.random()*W,Math.random()*H,(Math.random()-.5)*0.3,(Math.random()-.5)*0.3,100+Math.random()*150,['rgba(80,140,220,0.70)','rgba(100,180,255,0.60)','rgba(60,100,200,0.65)'][Math.floor(Math.random()*3)],1+Math.random()*2));}
+  if(id===5){_maybeSpawn(14,0.04,()=>_esp(Math.random()*W,Math.random()*H,(Math.random()-.5)*0.4,(Math.random()-.5)*0.3,120+Math.random()*180,'rgba(220,180,50,0.50)',1+Math.random()*2));}
+  if(id===6){
+    const px=W*0.78,py=H*0.62;
+    _maybeSpawn(24,0.10,()=>_esp(px+(Math.random()-.5)*30,py-38,(Math.random()-.5)*0.7,-0.5-Math.random()*1.0,120+Math.random()*160,'rgba(210,210,220,0.55)',3+Math.random()*5.5));
+    _maybeSpawn(28,0.05,()=>_esp(W*0.22+(Math.random()-.5)*20,H*0.72-16,(Math.random()-.5)*0.4,-0.3-Math.random()*0.7,90+Math.random()*120,'rgba(200,200,215,0.45)',2+Math.random()*3.5));
+    _maybeSpawn(32,0.03,()=>_esp(Math.random()*W,Math.random()*H,(Math.random()-.5)*0.3,-0.2-Math.random()*0.3,120+Math.random()*140,['rgba(220,170,55,0.60)','rgba(190,110,40,0.55)','rgba(150,200,55,0.55)'][Math.floor(Math.random()*3)],1.5+Math.random()*2.5));
   }
-  function _drawP(scene){
-    ctx.save();
-    G.envParticles.forEach(p=>{
-      if(p._scene!==scene)return;
-      const a=Math.min(1,p.life/p.maxLife*1.5)*0.75;
-      ctx.globalAlpha=a;ctx.fillStyle=p.color;
-      ctx.beginPath();ctx.arc(p.x,p.y,p.size*(0.4+0.6*p.life/p.maxLife),0,Math.PI*2);ctx.fill();
-    });
-    ctx.restore();
+  if(id===7){_maybeSpawn(28,0.07,()=>_esp(Math.random()*W,-8,(Math.random()-.5)*0.8,0.35+Math.random()*0.90,200+Math.random()*280,['rgba(255,120,165,0.80)','rgba(255,180,205,0.72)','rgba(255,150,185,0.75)','rgba(245,100,155,0.68)'][Math.floor(Math.random()*4)],2.5+Math.random()*4.0));}
+  if(id===8){_maybeSpawn(16,0.04,()=>_esp(Math.random()*W,Math.random()*H,(Math.random()-.5)*0.4,(Math.random()-.5)*0.3,140+Math.random()*200,'rgba(220,185,50,0.55)',1+Math.random()*2));}
+  if(id===9){_maybeSpawn(22,0.06,()=>_esp(Math.random()*W,H*0.4+Math.random()*H*0.6,(Math.random()-.5)*0.4,-0.25-Math.random()*0.5,80+Math.random()*130,['rgba(255,50,50,0.85)','rgba(50,255,80,0.85)','rgba(50,80,255,0.85)','rgba(255,220,30,0.80)'][Math.floor(Math.random()*4)],2+Math.random()*3));}
+  if(id===10){
+    _maybeSpawn(20,0.04,()=>{const cx=W*0.5,cy=H*0.5,pR=Math.min(W,H)*0.43,a=Math.random()*Math.PI*2,r=pR+10+Math.random()*40;_esp(cx+Math.cos(a)*r,cy+Math.sin(a)*r,(Math.random()-.5)*0.3,(Math.random()-.5)*0.3,200+Math.random()*250,'rgba(210,205,230,0.35)',4+Math.random()*7);});
+    _maybeSpawn(30,0.05,()=>{const cx=W*0.5,cy=H*0.5,pR=Math.min(W,H)*0.43,a=Math.random()*Math.PI*2,r=Math.random()*pR*0.9;_esp(cx+Math.cos(a)*r,cy+Math.sin(a)*r,(Math.random()-.5)*0.3,-0.2-Math.random()*0.4,100+Math.random()*160,'rgba(255,210,60,0.60)',1+Math.random()*2);});
   }
-
-  // ── 第1关：废弃丹室 ── 错缝砖墙+破损炼丹炉+灵石粒子
-  function _s1(){
-    ctx.save();
-    // 错缝砖墙（竖缝）
-    ctx.strokeStyle='rgba(200,140,70,0.32)';ctx.lineWidth=1;
-    for(let x=0;x<W;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
-    // 横缝（错缝）
-    ctx.strokeStyle='rgba(200,140,70,0.28)';
-    for(let y=0;y<H;y+=28){
-      ctx.beginPath();ctx.moveTo(y%56===0?20:0,y);ctx.lineTo(W,y);ctx.stroke();
-    }
-    // 砖缝阴影（偶数列加深）
-    ctx.strokeStyle='rgba(80,40,10,0.12)';ctx.lineWidth=2;
-    for(let x=0;x<W;x+=80){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
-
-    // 破损炼丹炉（右上，明显大）
-    const fx=W*0.72,fy=H*0.24;
-    ctx.globalAlpha=0.45;ctx.strokeStyle='#9B8060';ctx.lineWidth=3;
-    // 炉身上半
-    ctx.beginPath();ctx.arc(fx,fy,36,Math.PI,0);ctx.stroke();
-    // 炉腿
-    ctx.beginPath();ctx.moveTo(fx-36,fy);ctx.lineTo(fx-40,fy+44);ctx.stroke();
-    ctx.beginPath();ctx.moveTo(fx+36,fy);ctx.lineTo(fx+40,fy+44);ctx.stroke();
-    // 炉底
-    ctx.beginPath();ctx.arc(fx,fy+44,40,0,Math.PI);ctx.stroke();
-    // 炉口环
-    ctx.globalAlpha=0.3;ctx.strokeStyle='#7a6040';ctx.lineWidth=1.5;
-    ctx.beginPath();ctx.ellipse(fx,fy,36,10,0,Math.PI,0);ctx.stroke();
-    // 破损裂缝
-    ctx.globalAlpha=0.35;ctx.strokeStyle='#604020';ctx.lineWidth=2;
-    ctx.beginPath();ctx.moveTo(fx-10,fy-20);ctx.lineTo(fx+14,fy+6);ctx.stroke();
-    ctx.beginPath();ctx.moveTo(fx+6,fy-26);ctx.lineTo(fx-8,fy+2);ctx.stroke();
-    // 炉底阴影填充
-    ctx.globalAlpha=0.12;ctx.fillStyle='#3a2010';
-    ctx.beginPath();ctx.arc(fx,fy+44,38,0,Math.PI);ctx.fill();
-
-    // 左侧小丹炉残骸
-    const fx2=W*0.18,fy2=H*0.62;
-    ctx.globalAlpha=0.28;ctx.strokeStyle='#8a7050';ctx.lineWidth=2;
-    ctx.beginPath();ctx.arc(fx2,fy2,18,Math.PI,0);ctx.stroke();
-    ctx.beginPath();ctx.moveTo(fx2-18,fy2);ctx.lineTo(fx2-20,fy2+22);ctx.stroke();
-    ctx.beginPath();ctx.moveTo(fx2+18,fy2);ctx.lineTo(fx2+20,fy2+22);ctx.stroke();
-
-    // 地面焦痕
-    ctx.globalAlpha=0.10;ctx.fillStyle='#201008';
-    ctx.beginPath();ctx.ellipse(fx,fy+60,50,14,0,0,Math.PI*2);ctx.fill();
-
-    // 灵石粒子（数量翻倍，更亮）
-    _spawn(1,12,()=>_esp(
-      Math.random()*W,Math.random()*H,
-      (Math.random()-.5)*0.4,-0.25-Math.random()*0.55,
-      160+Math.random()*200,
-      ['rgba(100,255,140,0.75)','rgba(140,255,180,0.65)','rgba(80,220,120,0.70)'][Math.floor(Math.random()*3)],
-      1.5+Math.random()*2.8,1
-    ));
-    _drawP(1);
-    ctx.restore();
-  }
-
-  // ── 第2关：龟裂洞府 ── 大裂缝+结界残片+蓝光渗出
-  function _s2(){
-    ctx.save();
-
-    // 裂缝（固定偏移，不抖动）
-    ctx.strokeStyle='rgba(140,120,100,0.45)';ctx.lineWidth=2.5;
-    G._cracks.forEach(([x1,y1,x2,y2],i)=>{
-      const [ox,oy]=G._crackOff[i];
-      ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo((x1+x2)/2+ox,(y1+y2)/2+oy);ctx.lineTo(x2,y2);ctx.stroke();
-      // 分支
-      ctx.strokeStyle='rgba(120,100,80,0.30)';ctx.lineWidth=1.2;
-      ctx.beginPath();ctx.moveTo((x1+x2)/2+ox,(y1+y2)/2+oy);ctx.lineTo((x1+x2)/2+ox+G._crackOff[(i+1)%4][0]*0.5,(y1+y2)/2+oy+G._crackOff[(i+1)%4][1]*0.5);ctx.stroke();
-      ctx.strokeStyle='rgba(140,120,100,0.45)';ctx.lineWidth=2.5;
-    });
-
-    // 裂缝内蓝光渗出
-    ctx.globalAlpha=0.12+Math.sin(t*0.04)*0.06;
-    G._cracks.forEach(([x1,y1,x2,y2],i)=>{
-      const [ox,oy]=G._crackOff[i];
-      const grd=ctx.createLinearGradient(x1,y1,x2,y2);
-      grd.addColorStop(0,'rgba(80,140,255,0)');grd.addColorStop(0.5,'rgba(100,160,255,0.4)');grd.addColorStop(1,'rgba(80,140,255,0)');
-      ctx.strokeStyle=grd;ctx.lineWidth=4;
-      ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo((x1+x2)/2+ox,(y1+y2)/2+oy);ctx.lineTo(x2,y2);ctx.stroke();
-    });
-
-    // 墙壁裂纹（顶部，固定）
-    ctx.globalAlpha=0.28;ctx.strokeStyle='#706860';ctx.lineWidth=1;
-    G._wallCracks.forEach(([x,bx,h])=>{
-      ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x+bx,h);ctx.stroke();
-    });
-
-    // 结界残片（三处，明亮闪烁）
-    const shards=[[W*0.2,H*0.15],[W*0.55,H*0.3],[W*0.78,H*0.62]];
-    shards.forEach(([dx,dy],i)=>{
-      ctx.globalAlpha=0.30+Math.sin(t*0.05+i*1.5)*0.18;
-      ctx.strokeStyle='rgba(120,170,255,0.9)';ctx.lineWidth=1.5;
-      // 菱形残片
-      ctx.beginPath();ctx.moveTo(dx,dy-10);ctx.lineTo(dx+7,dy);ctx.lineTo(dx,dy+10);ctx.lineTo(dx-7,dy);ctx.closePath();ctx.stroke();
-      // 内光
-      ctx.globalAlpha=0.15+Math.sin(t*0.05+i*1.5)*0.10;
-      ctx.fillStyle='rgba(100,160,255,0.5)';ctx.fill();
-      // 光晕
-      ctx.globalAlpha=0.08+Math.sin(t*0.05+i*1.5)*0.05;
-      ctx.beginPath();ctx.arc(dx,dy,20,0,Math.PI*2);
-      const grd=ctx.createRadialGradient(dx,dy,2,dx,dy,20);
-      grd.addColorStop(0,'rgba(80,140,255,0.25)');grd.addColorStop(1,'rgba(80,140,255,0)');
-      ctx.fillStyle=grd;ctx.fill();
-    });
-
-    _drawP(2);ctx.restore();
-  }
-
-  // ── 第3关：残破宗门广场 ── 大石板+青苔+断旗+柱子
-  function _s3(){
-    ctx.save();
-    const gs=58;
-    // 大块石板格
-    ctx.strokeStyle='rgba(160,148,128,0.35)';ctx.lineWidth=1.5;
-    for(let x=0;x<W;x+=gs){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
-    for(let y=0;y<H;y+=gs){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
-    // 石板凹陷（固定位置）
-    ctx.globalAlpha=0.18;ctx.fillStyle='rgba(40,34,24,0.6)';
-    G._stoneBreaks.forEach(([rx,ry])=>ctx.fillRect(rx+5,ry+5,gs-10,gs-10));
-    // 石板缝深色
-    ctx.globalAlpha=0.12;ctx.strokeStyle='rgba(20,16,10,0.8)';ctx.lineWidth=2;
-    for(let x=0;x<W;x+=gs*2){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
-
-    // 青苔（固定位置，明显椭圆）
-    ctx.globalAlpha=0.30;ctx.fillStyle='#3a7a38';
-    G._mossPos.forEach(([mx,my,rw,rh,ang])=>{
-      ctx.beginPath();ctx.ellipse(mx,my,rw,rh,ang,0,Math.PI*2);ctx.fill();
-    });
-    // 青苔高光
-    ctx.globalAlpha=0.12;ctx.fillStyle='#5aaa50';
-    G._mossPos.forEach(([mx,my,rw,rh,ang])=>{
-      ctx.beginPath();ctx.ellipse(mx-rw*0.2,my-rh*0.3,rw*0.5,rh*0.4,ang,0,Math.PI*2);ctx.fill();
-    });
-
-    // 断裂旗帜（左侧，明显）
-    const fp=W*0.15;
-    ctx.globalAlpha=0.55;ctx.strokeStyle='#999';ctx.lineWidth=3;
-    ctx.beginPath();ctx.moveTo(fp,H*0.08);ctx.lineTo(fp,H*0.52);ctx.stroke();
-    // 旗帜布料
-    ctx.globalAlpha=0.38;ctx.fillStyle='#cc5533';
-    ctx.beginPath();ctx.moveTo(fp,H*0.10);ctx.lineTo(fp+46,H*0.15);ctx.lineTo(fp+40,H*0.30);ctx.lineTo(fp,H*0.28);ctx.closePath();ctx.fill();
-    ctx.strokeStyle='#aa3311';ctx.lineWidth=1;ctx.stroke();
-    // 撕裂碎片
-    ctx.globalAlpha=0.25;ctx.fillStyle='#cc5533';
-    ctx.beginPath();ctx.moveTo(fp,H*0.13);ctx.lineTo(fp-16,H*0.17);ctx.lineTo(fp-12,H*0.24);ctx.lineTo(fp,H*0.22);ctx.closePath();ctx.fill();
-    // 旗帜纹样
-    ctx.globalAlpha=0.15;ctx.strokeStyle='#ffaa44';ctx.lineWidth=1;
-    ctx.beginPath();ctx.moveTo(fp+8,H*0.14);ctx.lineTo(fp+36,H*0.17);ctx.moveTo(fp+6,H*0.20);ctx.lineTo(fp+34,H*0.23);ctx.stroke();
-
-    // 右侧残破石柱
-    const col1x=W*0.82;
-    ctx.globalAlpha=0.22;ctx.fillStyle='#7a7060';
-    ctx.fillRect(col1x-14,H*0.15,28,H*0.7);
-    ctx.globalAlpha=0.10;ctx.fillStyle='#aaa090';
-    ctx.fillRect(col1x-12,H*0.15,12,H*0.7); // 高光边
-    ctx.globalAlpha=0.18;ctx.strokeStyle='#5a5040';ctx.lineWidth=1;
-    for(let cy2=H*0.2;cy2<H*0.8;cy2+=22){ctx.beginPath();ctx.moveTo(col1x-14,cy2);ctx.lineTo(col1x+14,cy2);ctx.stroke();}
-    // 柱顶破损
-    ctx.globalAlpha=0.20;ctx.fillStyle='#6a6050';
-    ctx.beginPath();ctx.moveTo(col1x-14,H*0.15);ctx.lineTo(col1x-20,H*0.08);ctx.lineTo(col1x+8,H*0.12);ctx.lineTo(col1x+14,H*0.15);ctx.closePath();ctx.fill();
-
-    _drawP(3);ctx.restore();
-  }
-
-  // ── 第4关：法宝仓库 ── 符文地板+明亮货架+发光法器
-  function _s4(){
-    ctx.save();
-    // 符文地板网格
-    ctx.strokeStyle='rgba(120,160,210,0.28)';ctx.lineWidth=1;
-    for(let y=0;y<H;y+=50){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
-    for(let x=0;x<W;x+=50){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
-    // 符文十字（每格中心）
-    ctx.strokeStyle='rgba(100,150,200,0.22)';ctx.lineWidth=1;
-    for(let y=25;y<H;y+=50){
-      for(let x=25;x<W;x+=50){
-        ctx.beginPath();ctx.moveTo(x-6,y);ctx.lineTo(x+6,y);ctx.moveTo(x,y-6);ctx.lineTo(x,y+6);ctx.stroke();
-        // 小圆
-        ctx.beginPath();ctx.arc(x,y,3,0,Math.PI*2);ctx.stroke();
-      }
-    }
-    // 格子对角线符文
-    ctx.globalAlpha=0.10;ctx.strokeStyle='rgba(80,130,180,0.5)';ctx.lineWidth=0.5;
-    for(let y=0;y<H;y+=50){
-      for(let x=0;x<W;x+=50){
-        ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+50,y+50);ctx.stroke();
-      }
-    }
-
-    // 货架（双列，更粗更亮）
-    ctx.globalAlpha=0.45;ctx.strokeStyle='rgba(180,148,100,0.75)';ctx.lineWidth=3;
-    const shelfYs=[H*0.22,H*0.40,H*0.58,H*0.76];
-    shelfYs.forEach(sy=>{
-      // 左列
-      ctx.beginPath();ctx.moveTo(W*0.06,sy);ctx.lineTo(W*0.44,sy);ctx.stroke();
-      ctx.beginPath();ctx.moveTo(W*0.06,sy);ctx.lineTo(W*0.06,sy+H*0.16);ctx.stroke();
-      ctx.beginPath();ctx.moveTo(W*0.44,sy);ctx.lineTo(W*0.44,sy+H*0.16);ctx.stroke();
-      // 右列
-      ctx.beginPath();ctx.moveTo(W*0.56,sy);ctx.lineTo(W*0.94,sy);ctx.stroke();
-      ctx.beginPath();ctx.moveTo(W*0.56,sy);ctx.lineTo(W*0.56,sy+H*0.16);ctx.stroke();
-      ctx.beginPath();ctx.moveTo(W*0.94,sy);ctx.lineTo(W*0.94,sy+H*0.16);ctx.stroke();
-    });
-    // 货架木纹
-    ctx.globalAlpha=0.15;ctx.strokeStyle='rgba(120,88,44,0.5)';ctx.lineWidth=1;
-    shelfYs.forEach(sy=>{
-      for(let gx=W*0.1;gx<W*0.44;gx+=W*0.08){ctx.beginPath();ctx.moveTo(gx,sy);ctx.lineTo(gx,sy+H*0.16);ctx.stroke();}
-      for(let gx=W*0.62;gx<W*0.94;gx+=W*0.08){ctx.beginPath();ctx.moveTo(gx,sy);ctx.lineTo(gx,sy+H*0.16);ctx.stroke();}
-    });
-
-    // 发光法器（更大更亮，有晕圈）
-    const artifacts=[
-      {x:W*0.15,y:H*0.32,col:'#44ccee',col2:'rgba(40,180,220,'},
-      {x:W*0.30,y:H*0.50,col:'#ee9944',col2:'rgba(220,140,40,'},
-      {x:W*0.68,y:H*0.28,col:'#aa66ff',col2:'rgba(150,80,255,'},
-      {x:W*0.82,y:H*0.65,col:'#44ee88',col2:'rgba(40,210,100,'},
-    ];
-    artifacts.forEach((a,i)=>{
-      const pulse=0.55+Math.sin(t*0.035+i*1.2)*0.25;
-      // 光晕
-      ctx.globalAlpha=pulse*0.22;
-      const grd=ctx.createRadialGradient(a.x,a.y,2,a.x,a.y,22);
-      grd.addColorStop(0,a.col2+'0.5)');grd.addColorStop(1,a.col2+'0)');
-      ctx.fillStyle=grd;ctx.beginPath();ctx.arc(a.x,a.y,22,0,Math.PI*2);ctx.fill();
-      // 核心
-      ctx.globalAlpha=pulse*0.85;
-      ctx.fillStyle=a.col;ctx.shadowBlur=14;ctx.shadowColor=a.col;
-      ctx.beginPath();ctx.arc(a.x,a.y,6,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
-      // 十字光芒
-      ctx.globalAlpha=pulse*0.40;ctx.strokeStyle=a.col;ctx.lineWidth=1;
-      ctx.beginPath();ctx.moveTo(a.x-14,a.y);ctx.lineTo(a.x+14,a.y);ctx.moveTo(a.x,a.y-14);ctx.lineTo(a.x,a.y+14);ctx.stroke();
-    });
-
-    _drawP(4);ctx.restore();
-  }
-
-  // ── 第5关：豪华厅堂 ── 红毯+大灯笼+屏风+菱形花纹
-  function _s5(){
-    ctx.save();
-    const carpetL=W*0.28,carpetR=W*0.72;
-    // 红毯主体（更深更亮）
-    ctx.globalAlpha=0.32;ctx.fillStyle='#7a1010';
-    ctx.fillRect(carpetL,0,carpetR-carpetL,H);
-    // 红毯渐变叠加（中央更亮）
-    ctx.globalAlpha=0.12;
-    const cg=ctx.createLinearGradient(carpetL,0,carpetR,0);
-    cg.addColorStop(0,'rgba(0,0,0,0)');cg.addColorStop(0.5,'rgba(180,20,20,0.3)');cg.addColorStop(1,'rgba(0,0,0,0)');
-    ctx.fillStyle=cg;ctx.fillRect(carpetL,0,carpetR-carpetL,H);
-
-    // 地毯金边线（粗）
-    ctx.globalAlpha=0.55;ctx.strokeStyle='#D9B060';ctx.lineWidth=3;
-    ctx.beginPath();ctx.moveTo(carpetL,0);ctx.lineTo(carpetL,H);ctx.stroke();
-    ctx.beginPath();ctx.moveTo(carpetR,0);ctx.lineTo(carpetR,H);ctx.stroke();
-    // 内侧细金线
-    ctx.globalAlpha=0.25;ctx.strokeStyle='#C9A050';ctx.lineWidth=1;
-    ctx.beginPath();ctx.moveTo(carpetL+8,0);ctx.lineTo(carpetL+8,H);ctx.stroke();
-    ctx.beginPath();ctx.moveTo(carpetR-8,0);ctx.lineTo(carpetR-8,H);ctx.stroke();
-
-    // 菱形花纹（大而清晰）
-    ctx.globalAlpha=0.22;ctx.strokeStyle='#C9A050';ctx.lineWidth=1.5;
-    for(let y=-40;y<H+40;y+=80){
-      ctx.beginPath();ctx.moveTo(W*0.5,y-40);ctx.lineTo(carpetR-6,y);ctx.lineTo(W*0.5,y+40);ctx.lineTo(carpetL+6,y);ctx.closePath();ctx.stroke();
-    }
-    // 菱形内小点
-    ctx.globalAlpha=0.12;ctx.fillStyle='#D9B060';
-    for(let y=0;y<H;y+=80){ctx.beginPath();ctx.arc(W*0.5,y,3,0,Math.PI*2);ctx.fill();}
-
-    // 屏风（更明显）
-    const screenX=W*0.06;
-    ctx.globalAlpha=0.35;ctx.strokeStyle='#7aaa7a';ctx.lineWidth=2;
-    for(let py=H*0.10;py<H*0.80;py+=H*0.23){
-      ctx.strokeRect(screenX,py,44,65);
-      // 横档
-      ctx.beginPath();ctx.moveTo(screenX,py+22);ctx.lineTo(screenX+44,py+22);ctx.stroke();
-      ctx.beginPath();ctx.moveTo(screenX,py+44);ctx.lineTo(screenX+44,py+44);ctx.stroke();
-      // 腿
-      ctx.beginPath();ctx.moveTo(screenX+22,py+65);ctx.lineTo(screenX+22,py+80);ctx.stroke();
-      // 竹节纹
-      ctx.globalAlpha=0.15;ctx.strokeStyle='#5a8a5a';ctx.lineWidth=1;
-      for(let bx=screenX+10;bx<screenX+44;bx+=10){ctx.beginPath();ctx.moveTo(bx,py);ctx.lineTo(bx,py+65);ctx.stroke();}
-      ctx.globalAlpha=0.35;ctx.strokeStyle='#7aaa7a';ctx.lineWidth=2;
-    }
-
-    // 灯笼（顶部，大而亮）
-    const lanternY=26;
-    for(let lx=W*0.18;lx<W*0.92;lx+=W*0.22){
-      // 挂绳
-      ctx.globalAlpha=0.40;ctx.strokeStyle='#886644';ctx.lineWidth=1;
-      ctx.beginPath();ctx.moveTo(lx,0);ctx.lineTo(lx,lanternY-14);ctx.stroke();
-      // 灯笼主体
-      const lpulse=0.55+Math.sin(t*0.025+lx)*0.20;
-      ctx.globalAlpha=lpulse*0.70;ctx.fillStyle='#CC3311';
-      ctx.beginPath();ctx.ellipse(lx,lanternY,13,16,0,0,Math.PI*2);ctx.fill();
-      // 灯笼高光
-      ctx.globalAlpha=lpulse*0.25;ctx.fillStyle='#FF8855';
-      ctx.beginPath();ctx.ellipse(lx-3,lanternY-4,5,7,0,0,Math.PI*2);ctx.fill();
-      // 灯笼边框线
-      ctx.globalAlpha=lpulse*0.50;ctx.strokeStyle='#882200';ctx.lineWidth=1;
-      ctx.beginPath();ctx.ellipse(lx,lanternY,13,16,0,0,Math.PI*2);ctx.stroke();
-      // 横筋
-      ctx.globalAlpha=lpulse*0.35;ctx.strokeStyle='#AA4422';ctx.lineWidth=1;
-      for(let k=-1;k<=1;k++){ctx.beginPath();ctx.moveTo(lx-13,lanternY+k*5);ctx.lineTo(lx+13,lanternY+k*5);ctx.stroke();}
-      // 流苏
-      ctx.globalAlpha=lpulse*0.45;ctx.strokeStyle='#DD8833';ctx.lineWidth=1;
-      ctx.beginPath();ctx.moveTo(lx,lanternY+16);ctx.lineTo(lx,lanternY+28);ctx.stroke();
-      // 光晕
-      ctx.globalAlpha=lpulse*0.08;
-      const lg=ctx.createRadialGradient(lx,lanternY,4,lx,lanternY,30);
-      lg.addColorStop(0,'rgba(255,120,40,0.3)');lg.addColorStop(1,'rgba(255,120,40,0)');
-      ctx.fillStyle=lg;ctx.beginPath();ctx.arc(lx,lanternY,30,0,Math.PI*2);ctx.fill();
-    }
-
-    _drawP(5);ctx.restore();
-  }
-
-  // ── 第6关：修仙食堂 ── 棋盘方砖+大锅炉+蒸汽柱
-  function _s6(){
-    ctx.save();
-    const ts=44;
-    // 方砖竖线
-    ctx.strokeStyle='rgba(180,158,110,0.30)';ctx.lineWidth=1;
-    for(let x=0;x<W;x+=ts){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
-    // 横线
-    ctx.strokeStyle='rgba(180,158,110,0.25)';
-    for(let y=0;y<H;y+=ts){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
-    // 棋盘暗格
-    ctx.globalAlpha=0.12;ctx.fillStyle='rgba(80,60,20,0.5)';
-    for(let y=0;y<H;y+=ts*2){for(let x=0;x<W;x+=ts*2){ctx.fillRect(x,y,ts,ts);ctx.fillRect(x+ts,y+ts,ts,ts);}}
-
-    // 大锅炉（右侧，主角级）
-    const potX=W*0.80,potY=H*0.62;
-    // 炉体阴影
-    ctx.globalAlpha=0.18;ctx.fillStyle='#000';
-    ctx.beginPath();ctx.ellipse(potX,potY+42,40,12,0,0,Math.PI*2);ctx.fill();
-    // 炉腿
-    ctx.globalAlpha=0.50;ctx.strokeStyle='#666';ctx.lineWidth=4;
-    ctx.beginPath();ctx.moveTo(potX-22,potY+26);ctx.lineTo(potX-26,potY+52);ctx.stroke();
-    ctx.beginPath();ctx.moveTo(potX+22,potY+26);ctx.lineTo(potX+26,potY+52);ctx.stroke();
-    // 炉身
-    ctx.globalAlpha=0.55;ctx.strokeStyle='#555';ctx.lineWidth=3;
-    ctx.beginPath();ctx.arc(potX,potY,32,0,Math.PI*2);ctx.stroke();
-    ctx.globalAlpha=0.20;ctx.fillStyle='#333';
-    ctx.beginPath();ctx.arc(potX,potY,30,0,Math.PI*2);ctx.fill();
-    // 锅沿
-    ctx.globalAlpha=0.45;ctx.strokeStyle='#666';ctx.lineWidth=5;
-    ctx.beginPath();ctx.ellipse(potX,potY,32,8,0,Math.PI*1.1,Math.PI*1.9);ctx.stroke();
-    // 锅内液面
-    ctx.globalAlpha=0.22;ctx.fillStyle='#88aa44';
-    ctx.beginPath();ctx.ellipse(potX,potY,26,7,0,0,Math.PI*2);ctx.fill();
-    // 铆钉
-    ctx.globalAlpha=0.35;ctx.fillStyle='#888';
-    for(let k=0;k<8;k++){const ka=k/8*Math.PI*2;ctx.beginPath();ctx.arc(potX+Math.cos(ka)*30,potY+Math.sin(ka)*30,2.5,0,Math.PI*2);ctx.fill();}
-
-    // 第二个小锅（左侧）
-    const pot2X=W*0.22,pot2Y=H*0.72;
-    ctx.globalAlpha=0.35;ctx.strokeStyle='#555';ctx.lineWidth=2;
-    ctx.beginPath();ctx.arc(pot2X,pot2Y,18,0,Math.PI*2);ctx.stroke();
-    ctx.globalAlpha=0.12;ctx.fillStyle='#333';ctx.beginPath();ctx.arc(pot2X,pot2Y,16,0,Math.PI*2);ctx.fill();
-
-    // 蒸汽（大量，从两个锅出发）
-    _spawn(6,16,()=>{
-      const fromMain=Math.random()<0.7;
-      const bx=fromMain?potX:pot2X,by=fromMain?potY-32:pot2Y-18;
-      _esp(bx+(Math.random()-.5)*24,by,(Math.random()-.5)*0.5,-0.45-Math.random()*0.85,140+Math.random()*180,'rgba(210,210,220,0.50)',3+Math.random()*5,6);
-    });
-    // 食材碎屑
-    _spawn(6,6,()=>_esp(Math.random()*W,Math.random()*H,(Math.random()-.5)*0.25,-0.15-Math.random()*0.25,140+Math.random()*140,['rgba(220,170,60,0.55)','rgba(190,110,40,0.55)','rgba(150,200,60,0.55)'][Math.floor(Math.random()*3)],1.5+Math.random()*2.5,6));
-
-    _drawP(6);ctx.restore();
-  }
-
-  // ── 第7关：美容修炼室 ── 浓粉雾气+大花瓣+镜子+地纹
-  function _s7(){
-    ctx.save();
-    // 整体粉色底色晕染
-    ctx.globalAlpha=0.18+Math.sin(t*0.012)*0.06;
-    const fog=ctx.createRadialGradient(W*0.4,H*0.35,40,W*0.5,H*0.5,H*0.85);
-    fog.addColorStop(0,'rgba(255,160,190,0.45)');fog.addColorStop(0.6,'rgba(200,100,150,0.12)');fog.addColorStop(1,'rgba(0,0,0,0)');
-    ctx.fillStyle=fog;ctx.fillRect(0,0,W,H);
-
-    // 地面斜向光纹
-    ctx.globalAlpha=0.18;ctx.strokeStyle='rgba(240,180,200,0.4)';ctx.lineWidth=1;
-    for(let x=-W;x<W*2;x+=55){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x+25,H);ctx.stroke();}
-
-    // 大镜子（左侧，椭圆框）
-    const mirX=W*0.14,mirY=H*0.45;
-    ctx.globalAlpha=0.35;ctx.strokeStyle='#ddbbcc';ctx.lineWidth=3;
-    ctx.beginPath();ctx.ellipse(mirX,mirY,22,34,0,0,Math.PI*2);ctx.stroke();
-    // 镜面反光线
-    ctx.globalAlpha=0.20+Math.sin(t*0.03)*0.08;ctx.strokeStyle='rgba(255,240,248,0.6)';ctx.lineWidth=2;
-    ctx.beginPath();ctx.moveTo(mirX-12,mirY-18);ctx.lineTo(mirX+12,mirY-18);ctx.stroke();
-    ctx.globalAlpha=0.12;ctx.lineWidth=1;
-    ctx.beginPath();ctx.moveTo(mirX-10,mirY-10);ctx.lineTo(mirX+10,mirY-10);ctx.stroke();
-    // 镜子支架
-    ctx.globalAlpha=0.28;ctx.strokeStyle='#ccaaaa';ctx.lineWidth=2;
-    ctx.beginPath();ctx.moveTo(mirX,mirY+34);ctx.lineTo(mirX,mirY+54);ctx.stroke();
-    ctx.beginPath();ctx.moveTo(mirX-16,mirY+54);ctx.lineTo(mirX+16,mirY+54);ctx.stroke();
-
-    // 梳妆台（右侧）
-    ctx.globalAlpha=0.22;ctx.strokeStyle='#ccaaaa';ctx.lineWidth=2;
-    ctx.strokeRect(W*0.78,H*0.55,W*0.16,H*0.3);
-    ctx.beginPath();ctx.moveTo(W*0.78,H*0.62);ctx.lineTo(W*0.94,H*0.62);ctx.stroke();
-    // 台面小物件
-    ctx.globalAlpha=0.18;ctx.fillStyle='#dd99bb';
-    ctx.beginPath();ctx.arc(W*0.82,H*0.58,4,0,Math.PI*2);ctx.fill();
-    ctx.beginPath();ctx.arc(W*0.89,H*0.59,3,0,Math.PI*2);ctx.fill();
-
-    // 大量花瓣飘落
-    _spawn(7,20,()=>{
-      const sx=Math.random()*W,sy=-8;
-      const colors=['rgba(255,130,170,0.72)','rgba(255,190,210,0.65)','rgba(255,160,190,0.68)','rgba(240,120,160,0.60)'];
-      _esp(sx,sy,(Math.random()-.5)*0.6,0.3+Math.random()*0.7,220+Math.random()*260,colors[Math.floor(Math.random()*colors.length)],2.5+Math.random()*3.5,7);
-    });
-
-    _drawP(7);ctx.restore();
-  }
-
-  // ── 第8关：紫府祠堂 ── 金纹地板+大族徽+光柱+神龛
-  function _s8(){
-    ctx.save();
-    // 金色网格（60px）
-    ctx.strokeStyle='rgba(200,168,88,0.28)';ctx.lineWidth=1;
-    for(let x=0;x<W;x+=60){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
-    for(let y=0;y<H;y+=60){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
-    // 对角金纹
-    ctx.strokeStyle='rgba(200,168,80,0.14)';ctx.lineWidth=1;
-    for(let y=-H;y<H*2;y+=120){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y+W*0.5);ctx.stroke();}
-
-    // 族徽（中央上方，大而亮）
-    const ex=W*0.5,ey=H*0.20;
-    // 外圆
-    ctx.globalAlpha=0.40+Math.sin(t*0.018)*0.12;
-    ctx.strokeStyle='#D9A840';ctx.lineWidth=2.5;
-    ctx.beginPath();ctx.arc(ex,ey,38,0,Math.PI*2);ctx.stroke();
-    ctx.globalAlpha=0.20+Math.sin(t*0.018)*0.06;
-    ctx.beginPath();ctx.arc(ex,ey,32,0,Math.PI*2);ctx.stroke();
-    // 六芒星
-    ctx.globalAlpha=0.38+Math.sin(t*0.018)*0.10;ctx.strokeStyle='#D9A840';ctx.lineWidth=2;
-    for(let i=0;i<6;i++){
-      const a1=i/6*Math.PI*2-Math.PI/6,a2=(i+2)/6*Math.PI*2-Math.PI/6;
-      ctx.beginPath();ctx.moveTo(ex+Math.cos(a1)*28,ey+Math.sin(a1)*28);ctx.lineTo(ex+Math.cos(a2)*28,ey+Math.sin(a2)*28);ctx.stroke();
-    }
-    // 中心圆
-    ctx.globalAlpha=0.30;ctx.beginPath();ctx.arc(ex,ey,10,0,Math.PI*2);ctx.stroke();
-    ctx.globalAlpha=0.15;ctx.fillStyle='#D9A840';ctx.beginPath();ctx.arc(ex,ey,8,0,Math.PI*2);ctx.fill();
-    // 外围装饰点
-    ctx.globalAlpha=0.28;ctx.fillStyle='#C9A050';
-    for(let i=0;i<12;i++){const a=i/12*Math.PI*2;ctx.beginPath();ctx.arc(ex+Math.cos(a)*36,ey+Math.sin(a)*36,2,0,Math.PI*2);ctx.fill();}
-
-    // 四角护盾光柱（更粗更亮）
-    const pillars=[[W*0.08,H*0.28],[W*0.92,H*0.28],[W*0.08,H*0.72],[W*0.92,H*0.72]];
-    pillars.forEach(([px,py],i)=>{
-      const pp=0.30+Math.sin(t*0.03+i*0.8)*0.12;
-      ctx.globalAlpha=pp;
-      const grad=ctx.createLinearGradient(px,py-100,px,py+100);
-      grad.addColorStop(0,'rgba(200,160,60,0)');grad.addColorStop(0.5,'rgba(220,180,80,0.55)');grad.addColorStop(1,'rgba(200,160,60,0)');
-      ctx.fillStyle=grad;ctx.fillRect(px-6,py-100,12,200);
-      // 光柱顶圆
-      ctx.globalAlpha=pp*0.8;ctx.fillStyle='#ffdd88';ctx.shadowBlur=18;ctx.shadowColor='#ffaa44';
-      ctx.beginPath();ctx.arc(px,py,7,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
-      // 底座
-      ctx.globalAlpha=pp*0.5;ctx.strokeStyle='#C9A050';ctx.lineWidth=2;
-      ctx.strokeRect(px-10,py-5,20,10);
-    });
-
-    // 中央神龛轮廓（底部中央）
-    ctx.globalAlpha=0.25;ctx.strokeStyle='#B09040';ctx.lineWidth=2;
-    ctx.strokeRect(W*0.42,H*0.78,W*0.16,H*0.18);
-    ctx.beginPath();ctx.moveTo(W*0.42,H*0.78);ctx.lineTo(W*0.50,H*0.72);ctx.lineTo(W*0.58,H*0.78);ctx.stroke(); // 三角顶
-
-    _drawP(8);ctx.restore();
-  }
-
-  // ── 第9关：vlog直播基地 ── 霓虹透视+大光圈+扫描线+RGB粒子
-  function _s9(){
-    ctx.save();
-    // 霓虹地面透视线（消失点中央）
-    const vpX=W*0.5,vpY=H*0.38;
-    ctx.strokeStyle='rgba(60,220,240,0.28)';ctx.lineWidth=1.5;
-    for(let x=-W*0.5;x<W*1.5;x+=55){
-      ctx.beginPath();ctx.moveTo(x,H);ctx.lineTo(vpX+(x-vpX)*0.12,vpY);ctx.stroke();
-    }
-    // 透视横线（远近感）
-    for(let frac=0;frac<1;frac+=0.12){
-      const y=vpY+(H-vpY)*frac;
-      const alpha=0.08+frac*0.18;
-      ctx.strokeStyle=`rgba(180,60,220,${alpha})`;ctx.lineWidth=1+frac*1.5;
-      ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();
-    }
-    // 地面格子（近处）
-    ctx.strokeStyle='rgba(40,180,220,0.15)';ctx.lineWidth=1;
-    for(let y=H*0.6;y<H;y+=36){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
-
-    // 扫描线（从上往下循环）
-    const scanY=((t*2)%H);
-    ctx.globalAlpha=0.12;ctx.strokeStyle='rgba(100,255,200,0.5)';ctx.lineWidth=2;
-    ctx.beginPath();ctx.moveTo(0,scanY);ctx.lineTo(W,scanY);ctx.stroke();
-    ctx.globalAlpha=0.05;ctx.strokeStyle='rgba(100,255,200,0.3)';ctx.lineWidth=8;
-    ctx.beginPath();ctx.moveTo(0,scanY);ctx.lineTo(W,scanY);ctx.stroke();
-
-    // 大摄像光圈（3个，清晰）
-    const rings=[{x:W*0.18,y:H*0.28},{x:W*0.5,y:H*0.20},{x:W*0.82,y:H*0.32}];
-    rings.forEach((r,i)=>{
-      const rp=0.28+Math.sin(t*0.04+i*1.8)*0.14;
-      ctx.globalAlpha=rp;
-      // 多环光圈
-      for(let rr=10;rr<=36;rr+=8){
-        ctx.strokeStyle=`rgba(80,210,240,${0.6-rr/60})`;ctx.lineWidth=1.5;
-        ctx.beginPath();ctx.arc(r.x,r.y,rr,0,Math.PI*2);ctx.stroke();
-      }
-      // 十字准星
-      ctx.strokeStyle='rgba(80,210,240,0.7)';ctx.lineWidth=1.5;
-      ctx.beginPath();ctx.moveTo(r.x-6,r.y);ctx.lineTo(r.x+6,r.y);ctx.moveTo(r.x,r.y-6);ctx.lineTo(r.x,r.y+6);ctx.stroke();
-      // REC指示灯
-      ctx.globalAlpha=0.6+Math.sin(t*0.08+i)*0.4;
-      ctx.fillStyle='#ff4444';ctx.shadowBlur=8;ctx.shadowColor='#ff0000';
-      ctx.beginPath();ctx.arc(r.x+30,r.y-22,4,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
-    });
-
-    // RGB粒子（大量，鲜艳）
-    _spawn(9,18,()=>_esp(
-      Math.random()*W,Math.random()*H*0.7+H*0.3,
-      (Math.random()-.5)*0.35,-0.15,
-      90+Math.random()*130,
-      ['rgba(255,60,60,0.80)','rgba(60,255,80,0.80)','rgba(60,80,255,0.80)','rgba(255,220,40,0.70)'][Math.floor(Math.random()*4)],
-      2+Math.random()*3,9
-    ));
-
-    _drawP(9);ctx.restore();
-  }
-
-  // ── 第10关：八角擂台 ── 大地板+金边+光柱+云雾+中心纹
-  function _s10(){
-    ctx.save();
-    const cx=W*0.5,cy=H*0.5,pR=Math.min(W,H)*0.42;
-
-    // 擂台外的云雾底色
-    ctx.globalAlpha=0.10;
-    const outerFog=ctx.createRadialGradient(cx,cy,pR*0.8,cx,cy,pR*1.6);
-    outerFog.addColorStop(0,'rgba(0,0,0,0)');outerFog.addColorStop(1,'rgba(180,160,220,0.15)');
-    ctx.fillStyle=outerFog;ctx.fillRect(0,0,W,H);
-
-    // 八角形地板主体（明显填充）
-    ctx.globalAlpha=0.22;
-    ctx.fillStyle='#2c2416';
-    ctx.beginPath();
-    for(let i=0;i<8;i++){const a=i/8*Math.PI*2-Math.PI/8;i===0?ctx.moveTo(cx+Math.cos(a)*pR,cy+Math.sin(a)*pR):ctx.lineTo(cx+Math.cos(a)*pR,cy+Math.sin(a)*pR);}
-    ctx.closePath();ctx.fill();
-
-    // 地板内放射纹（从中心到顶点）
-    ctx.globalAlpha=0.10;ctx.strokeStyle='rgba(180,150,80,0.4)';ctx.lineWidth=1;
-    for(let i=0;i<8;i++){const a=i/8*Math.PI*2-Math.PI/8;ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(a)*pR,cy+Math.sin(a)*pR);ctx.stroke();}
-
-    // 八角形边缘金线（粗亮）
-    ctx.globalAlpha=0.55;ctx.strokeStyle='#D9B050';ctx.lineWidth=3;
-    ctx.beginPath();
-    for(let i=0;i<8;i++){const a=i/8*Math.PI*2-Math.PI/8;i===0?ctx.moveTo(cx+Math.cos(a)*pR,cy+Math.sin(a)*pR):ctx.lineTo(cx+Math.cos(a)*pR,cy+Math.sin(a)*pR);}
-    ctx.closePath();ctx.stroke();
-
-    // 内圈虚线
-    ctx.globalAlpha=0.28;ctx.strokeStyle='#B09040';ctx.lineWidth=1.5;ctx.setLineDash([8,10]);
-    ctx.beginPath();ctx.arc(cx,cy,pR*0.55,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
-
-    // 中心八角纹（小）
-    ctx.globalAlpha=0.20;ctx.strokeStyle='#C9A050';ctx.lineWidth=2;
-    ctx.beginPath();
-    for(let i=0;i<8;i++){const a=i/8*Math.PI*2-Math.PI/8;i===0?ctx.moveTo(cx+Math.cos(a)*28,cy+Math.sin(a)*28):ctx.lineTo(cx+Math.cos(a)*28,cy+Math.sin(a)*28);}
-    ctx.closePath();ctx.stroke();
-    // 中心圆
-    ctx.globalAlpha=0.15;ctx.beginPath();ctx.arc(cx,cy,16,0,Math.PI*2);ctx.stroke();
-
-    // 8个顶角光柱（高亮）
-    for(let i=0;i<8;i++){
-      const a=i/8*Math.PI*2-Math.PI/8;
-      const px=cx+Math.cos(a)*pR,py=cy+Math.sin(a)*pR;
-      const pp=0.35+Math.sin(t*0.04+i*0.8)*0.15;
-      // 光柱
-      ctx.globalAlpha=pp;
-      const grad=ctx.createLinearGradient(px,py-80,px,py);
-      grad.addColorStop(0,'rgba(255,220,80,0)');grad.addColorStop(0.4,'rgba(255,200,60,0.55)');grad.addColorStop(1,'rgba(255,180,40,0.15)');
-      ctx.fillStyle=grad;ctx.fillRect(px-5,py-80,10,80);
-      // 顶点宝珠
-      ctx.globalAlpha=pp*0.90;ctx.fillStyle='#ffe888';ctx.shadowBlur=20;ctx.shadowColor='#ffcc44';
-      ctx.beginPath();ctx.arc(px,py,6,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
-      // 底座方台
-      ctx.globalAlpha=pp*0.55;ctx.strokeStyle='#D9B050';ctx.lineWidth=1.5;
-      ctx.strokeRect(px-8,py-4,16,8);
-    }
-
-    // 云雾环绕（更多更大）
-    for(let i=0;i<24;i++){
-      const ca=i/24*Math.PI*2;
-      const cr=pR+22+Math.sin(t*0.013+i*0.7)*16;
-      const clx=cx+Math.cos(ca)*cr,cly=cy+Math.sin(ca)*cr;
-      const cp=0.14+Math.sin(t*0.018+i)*0.06;
-      ctx.globalAlpha=cp;ctx.fillStyle='rgba(210,205,225,0.45)';
-      ctx.beginPath();ctx.arc(clx,cly,12+Math.sin(i*1.8)*5,0,Math.PI*2);ctx.fill();
-    }
-
-    _drawP(10);ctx.restore();
-  }
-
-  // 执行当前关卡场景
-  const scenes={1:_s1,2:_s2,3:_s3,4:_s4,5:_s5,6:_s6,7:_s7,8:_s8,9:_s9,10:_s10};
-  if(scenes[id])scenes[id]();
+  ctx.save();
+  G.envParticles.forEach(p=>{const r=p.life/p.maxLife;ctx.globalAlpha=Math.min(1,r*2)*0.85;ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,Math.max(0.5,p.size*r*0.6+p.size*0.4),0,Math.PI*2);ctx.fill();});
+  ctx.globalAlpha=1;ctx.restore();
 }
 
 // ══════ 绘制 ══════
@@ -995,11 +593,7 @@ function draw(){
   ctx.clearRect(0,0,W,H);
 
   // ── 背景 ──
-  const BG_COLORS={1:'#100a06',2:'#070c14',3:'#080d07',4:'#07080f',5:'#120806',6:'#0d0a04',7:'#110610',8:'#0c0900',9:'#05001a',10:'#0a0808'};
-  ctx.fillStyle=BG_COLORS[G&&G.stageId||1]||'#050a05';ctx.fillRect(0,0,W,H);
-
-  // ── 场景环境 ──
-  drawMapEnvironment(ctx,G);
+  drawSceneBackground(ctx,G);
 
   // ── 视角边界可视 ──
   if(G.viewMode==='vertical'){
@@ -1403,7 +997,7 @@ function draw(){
 }
 
 // ── 主循环 ──
-function loop(){update();draw();G._raf=requestAnimationFrame(loop);}
+function loop(){if(!G._sceneBuilt){buildSceneCache(G.stageId||1);G._sceneBuilt=true;}update();draw();G._raf=requestAnimationFrame(loop);}
 
 // ── 输入 ──
 window.addEventListener('keydown',e=>{
