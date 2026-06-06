@@ -146,6 +146,7 @@ function applyPlayerDamage(G,amount){
     amount-=G.shieldHp;G.shieldHp=0;
   }
   G.mhp-=amount;
+  G._hurtFrames=3; // 玩家绘制抖动触发器
   // 受伤时：延长余怒窗口到6秒（不清零combo，激怒效果）
   if(G.comboTimer>0){
     G.comboTimer=Math.max(G.comboTimer, RAGE_WINDOW_HIT);
