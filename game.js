@@ -344,335 +344,656 @@ function _update(){
 }
 
 // ══════ 场景环境绘制 ══════
-// 每关三层叠加：底色(由draw负责) + 地面纹理 + 环境粒子/装饰，全部纯Canvas
 function drawMapEnvironment(ctx,G){
   const id=G.stageId||1;const t=G.elapsed;
-  // 更新环境粒子
+
+  // 固定随机偏移（存入G，避免每帧重算抖动）
+  if(!G._mapSeed){
+    G._mapSeed=true;
+    G._cracks=[[W*0.15,H*0.1,W*0.45,H*0.55],[W*0.55,H*0.2,W*0.75,H*0.7],[W*0.3,H*0.65,W*0.6,H*0.85],[W*0.7,H*0.15,W*0.4,H*0.5]];
+    G._crackOff=G._cracks.map(()=>[(Math.random()-.5)*35,(Math.random()-.5)*35]);
+    G._stoneBreaks=Array.from({length:6},()=>[Math.floor(Math.random()*12)*55,Math.floor(Math.random()*8)*55]);
+    G._mossPos=Array.from({length:8},()=>[Math.random()*W,Math.random()*H,8+Math.random()*14,3+Math.random()*5,Math.random()*Math.PI]);
+    G._wallCracks=Array.from({length:12},()=>[Math.floor(Math.random()*(W/60))*60+(Math.random()*20),Math.sin(Math.random()*10)*8,6+Math.random()*18]);
+  }
+
+  // 环境粒子系统
   if(!G.envParticles)G.envParticles=[];
   G.envParticles.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.life--;});
   G.envParticles=G.envParticles.filter(p=>p.life>0);
 
-  // 辅助：限频生成粒子(max 30全局上限)
   function _esp(x,y,vx,vy,life,color,size,scene){
-    if(G.envParticles.length>=30)return;
+    if(G.envParticles.length>=40)return;
     G.envParticles.push({x,y,vx,vy,life,maxLife:life,color,size,_scene:scene});
   }
   function _spawn(scene,maxN,fn){
-    if(G.envParticles.filter(p=>p._scene===scene).length<maxN&&Math.random()<0.025)fn();
+    if(G.envParticles.filter(p=>p._scene===scene).length<maxN&&Math.random()<0.04)fn();
   }
-  // 绘制指定场景粒子
   function _drawP(scene){
     ctx.save();
     G.envParticles.forEach(p=>{
       if(p._scene!==scene)return;
-      const a=Math.min(1,p.life/p.maxLife*1.4)*0.55;
+      const a=Math.min(1,p.life/p.maxLife*1.5)*0.75;
       ctx.globalAlpha=a;ctx.fillStyle=p.color;
       ctx.beginPath();ctx.arc(p.x,p.y,p.size*(0.4+0.6*p.life/p.maxLife),0,Math.PI*2);ctx.fill();
     });
     ctx.restore();
   }
 
-  // ══════ 10关场景 ══════
-
-  // ── 第1关：废弃丹室 ── 砖缝+破损炼丹炉+灵石粒子
+  // ── 第1关：废弃丹室 ── 错缝砖墙+破损炼丹炉+灵石粒子
   function _s1(){
     ctx.save();
-    // 砖缝(错缝)
-    ctx.strokeStyle='rgba(180,120,60,0.07)';ctx.lineWidth=1;
+    // 错缝砖墙（竖缝）
+    ctx.strokeStyle='rgba(200,140,70,0.32)';ctx.lineWidth=1;
     for(let x=0;x<W;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+    // 横缝（错缝）
+    ctx.strokeStyle='rgba(200,140,70,0.28)';
     for(let y=0;y<H;y+=28){
       ctx.beginPath();ctx.moveTo(y%56===0?20:0,y);ctx.lineTo(W,y);ctx.stroke();
     }
-    // 破损炼丹炉（右上区域）
-    const fx=W*0.68,fy=H*0.22;
-    ctx.globalAlpha=0.09;ctx.strokeStyle='#8B7355';ctx.lineWidth=2;
-    ctx.beginPath();ctx.arc(fx,fy,30,Math.PI,0);ctx.stroke();
-    ctx.beginPath();ctx.moveTo(fx-30,fy);ctx.lineTo(fx-34,fy+36);ctx.stroke();
-    ctx.beginPath();ctx.moveTo(fx+30,fy);ctx.lineTo(fx+34,fy+36);ctx.stroke();
-    ctx.beginPath();ctx.arc(fx,fy+36,34,0,Math.PI);ctx.stroke();
-    ctx.globalAlpha=0.05;ctx.beginPath();ctx.moveTo(fx-8,fy-18);ctx.lineTo(fx+12,fy+4);ctx.stroke();
-    ctx.beginPath();ctx.moveTo(fx+4,fy-22);ctx.lineTo(fx-6,fy);ctx.stroke();
-    // 灵石粒子
-    _spawn(1,6,()=>_esp(Math.random()*W,Math.random()*H,(Math.random()-0.5)*0.25,-0.15-Math.random()*0.35,180+Math.random()*180,'rgba(130,230,160,0.45)',1.2+Math.random()*2.2,1));
-    _drawP(1);ctx.restore();
+    // 砖缝阴影（偶数列加深）
+    ctx.strokeStyle='rgba(80,40,10,0.12)';ctx.lineWidth=2;
+    for(let x=0;x<W;x+=80){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+
+    // 破损炼丹炉（右上，明显大）
+    const fx=W*0.72,fy=H*0.24;
+    ctx.globalAlpha=0.45;ctx.strokeStyle='#9B8060';ctx.lineWidth=3;
+    // 炉身上半
+    ctx.beginPath();ctx.arc(fx,fy,36,Math.PI,0);ctx.stroke();
+    // 炉腿
+    ctx.beginPath();ctx.moveTo(fx-36,fy);ctx.lineTo(fx-40,fy+44);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(fx+36,fy);ctx.lineTo(fx+40,fy+44);ctx.stroke();
+    // 炉底
+    ctx.beginPath();ctx.arc(fx,fy+44,40,0,Math.PI);ctx.stroke();
+    // 炉口环
+    ctx.globalAlpha=0.3;ctx.strokeStyle='#7a6040';ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.ellipse(fx,fy,36,10,0,Math.PI,0);ctx.stroke();
+    // 破损裂缝
+    ctx.globalAlpha=0.35;ctx.strokeStyle='#604020';ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(fx-10,fy-20);ctx.lineTo(fx+14,fy+6);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(fx+6,fy-26);ctx.lineTo(fx-8,fy+2);ctx.stroke();
+    // 炉底阴影填充
+    ctx.globalAlpha=0.12;ctx.fillStyle='#3a2010';
+    ctx.beginPath();ctx.arc(fx,fy+44,38,0,Math.PI);ctx.fill();
+
+    // 左侧小丹炉残骸
+    const fx2=W*0.18,fy2=H*0.62;
+    ctx.globalAlpha=0.28;ctx.strokeStyle='#8a7050';ctx.lineWidth=2;
+    ctx.beginPath();ctx.arc(fx2,fy2,18,Math.PI,0);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(fx2-18,fy2);ctx.lineTo(fx2-20,fy2+22);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(fx2+18,fy2);ctx.lineTo(fx2+20,fy2+22);ctx.stroke();
+
+    // 地面焦痕
+    ctx.globalAlpha=0.10;ctx.fillStyle='#201008';
+    ctx.beginPath();ctx.ellipse(fx,fy+60,50,14,0,0,Math.PI*2);ctx.fill();
+
+    // 灵石粒子（数量翻倍，更亮）
+    _spawn(1,12,()=>_esp(
+      Math.random()*W,Math.random()*H,
+      (Math.random()-.5)*0.4,-0.25-Math.random()*0.55,
+      160+Math.random()*200,
+      ['rgba(100,255,140,0.75)','rgba(140,255,180,0.65)','rgba(80,220,120,0.70)'][Math.floor(Math.random()*3)],
+      1.5+Math.random()*2.8,1
+    ));
+    _drawP(1);
+    ctx.restore();
   }
 
-  // ── 第2关：龟裂洞府 ── 龟裂地面+墙壁裂纹+结界残片
+  // ── 第2关：龟裂洞府 ── 大裂缝+结界残片+蓝光渗出
   function _s2(){
     ctx.save();
-    ctx.strokeStyle='rgba(100,90,80,0.08)';ctx.lineWidth=1;
-    // 龟裂地面（几道大裂缝）
-    const cracks=[[W*0.15,H*0.1,W*0.45,H*0.55],[W*0.55,H*0.2,W*0.75,H*0.7],[W*0.3,H*0.65,W*0.6,H*0.85],[W*0.7,H*0.15,W*0.4,H*0.5]];
-    cracks.forEach(([x1,y1,x2,y2])=>{
-      ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x1+(x2-x1)*0.3+Math.sin(t*0.01+x1)*5,y1+(y2-y1)*0.3+Math.cos(t*0.01+y1)*3);
-      ctx.lineTo(x2,y2);ctx.stroke();
-      // 细小分支
-      const mx=(x1+x2)/2,my=(y1+y2)/2;
-      ctx.beginPath();ctx.moveTo(mx,my);ctx.lineTo(mx+(Math.random()-0.5)*40,my+(Math.random()-0.5)*40);ctx.stroke();
+
+    // 裂缝（固定位置，不抖动）
+    ctx.strokeStyle='rgba(140,120,100,0.45)';ctx.lineWidth=2;
+    G._cracks.forEach(([x1,y1,x2,y2],[off])=>{
+      const [ox,oy]=G._crackOff[G._cracks.indexOf([x1,y1,x2,y2])]||[0,0];
+      ctx.beginPath();
+      ctx.moveTo(x1,y1);
+      ctx.lineTo((x1+x2)/2+ox,(y1+y2)/2+oy);
+      ctx.lineTo(x2,y2);
+      ctx.stroke();
     });
-    // 墙壁裂纹(顶部和两侧)
-    ctx.globalAlpha=0.06;ctx.strokeStyle='#706860';
-    for(let x=0;x<W;x+=60+Math.random()*30){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x+Math.sin(x)*8,8+Math.random()*16);ctx.stroke();}
-    // 结界残片闪烁
-    ctx.globalAlpha=0.05+Math.sin(t*0.04)*0.03;
-    for(let i=0;i<3;i++){
-      const dx=W*0.2+i*W*0.25,dy=H*0.15+i*H*0.12;
-      ctx.strokeStyle='rgba(120,160,220,0.5)';ctx.lineWidth=1;
-      ctx.beginPath();ctx.moveTo(dx-6,dy-3);ctx.lineTo(dx,dy-8);ctx.lineTo(dx+6,dy-3);ctx.lineTo(dx,dy+2);ctx.closePath();ctx.stroke();
-    }
-    ctx.restore();
-    _drawP(2);
+    // 直接用固定偏移绘制
+    ctx.strokeStyle='rgba(140,120,100,0.45)';ctx.lineWidth=2.5;
+    G._cracks.forEach(([x1,y1,x2,y2],i)=>{
+      const [ox,oy]=G._crackOff[i];
+      ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo((x1+x2)/2+ox,(y1+y2)/2+oy);ctx.lineTo(x2,y2);ctx.stroke();
+      // 分支
+      ctx.strokeStyle='rgba(120,100,80,0.30)';ctx.lineWidth=1.2;
+      ctx.beginPath();ctx.moveTo((x1+x2)/2+ox,(y1+y2)/2+oy);ctx.lineTo((x1+x2)/2+ox+G._crackOff[(i+1)%4][0]*0.5,(y1+y2)/2+oy+G._crackOff[(i+1)%4][1]*0.5);ctx.stroke();
+      ctx.strokeStyle='rgba(140,120,100,0.45)';ctx.lineWidth=2.5;
+    });
+
+    // 裂缝内蓝光渗出
+    ctx.globalAlpha=0.12+Math.sin(t*0.04)*0.06;
+    G._cracks.forEach(([x1,y1,x2,y2],i)=>{
+      const [ox,oy]=G._crackOff[i];
+      const grd=ctx.createLinearGradient(x1,y1,x2,y2);
+      grd.addColorStop(0,'rgba(80,140,255,0)');grd.addColorStop(0.5,'rgba(100,160,255,0.4)');grd.addColorStop(1,'rgba(80,140,255,0)');
+      ctx.strokeStyle=grd;ctx.lineWidth=4;
+      ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo((x1+x2)/2+ox,(y1+y2)/2+oy);ctx.lineTo(x2,y2);ctx.stroke();
+    });
+
+    // 墙壁裂纹（顶部，固定）
+    ctx.globalAlpha=0.28;ctx.strokeStyle='#706860';ctx.lineWidth=1;
+    G._wallCracks.forEach(([x,bx,h])=>{
+      ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x+bx,h);ctx.stroke();
+    });
+
+    // 结界残片（三处，明亮闪烁）
+    const shards=[[W*0.2,H*0.15],[W*0.55,H*0.3],[W*0.78,H*0.62]];
+    shards.forEach(([dx,dy],i)=>{
+      ctx.globalAlpha=0.30+Math.sin(t*0.05+i*1.5)*0.18;
+      ctx.strokeStyle='rgba(120,170,255,0.9)';ctx.lineWidth=1.5;
+      // 菱形残片
+      ctx.beginPath();ctx.moveTo(dx,dy-10);ctx.lineTo(dx+7,dy);ctx.lineTo(dx,dy+10);ctx.lineTo(dx-7,dy);ctx.closePath();ctx.stroke();
+      // 内光
+      ctx.globalAlpha=0.15+Math.sin(t*0.05+i*1.5)*0.10;
+      ctx.fillStyle='rgba(100,160,255,0.5)';ctx.fill();
+      // 光晕
+      ctx.globalAlpha=0.08+Math.sin(t*0.05+i*1.5)*0.05;
+      ctx.beginPath();ctx.arc(dx,dy,20,0,Math.PI*2);
+      const grd=ctx.createRadialGradient(dx,dy,2,dx,dy,20);
+      grd.addColorStop(0,'rgba(80,140,255,0.25)');grd.addColorStop(1,'rgba(80,140,255,0)');
+      ctx.fillStyle=grd;ctx.fill();
+    });
+
+    _drawP(2);ctx.restore();
   }
 
-  // ── 第3关：残破宗门广场 ── 石板地+青苔+断裂旗帜
+  // ── 第3关：残破宗门广场 ── 大石板+青苔+断旗+柱子
   function _s3(){
     ctx.save();
-    // 大块石板
-    ctx.strokeStyle='rgba(140,130,110,0.07)';ctx.lineWidth=1.5;
-    const gs=55;
+    const gs=58;
+    // 大块石板格
+    ctx.strokeStyle='rgba(160,148,128,0.35)';ctx.lineWidth=1.5;
     for(let x=0;x<W;x+=gs){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
     for(let y=0;y<H;y+=gs){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
-    // 随机石板破损
-    ctx.globalAlpha=0.04;ctx.fillStyle='rgba(80,70,50,0.5)';
-    for(let i=0;i<6;i++){const rx=Math.floor(Math.random()*W/gs)*gs,ry=Math.floor(Math.random()*H/gs)*gs;ctx.fillRect(rx+4,ry+4,gs-8,gs-8);}
-    // 青苔
-    ctx.globalAlpha=0.06;ctx.fillStyle='#3a6a3a';
-    for(let i=0;i<8;i++){const mx=Math.random()*W,my=Math.random()*H;ctx.beginPath();ctx.ellipse(mx,my,8+Math.random()*12,3+Math.random()*4,Math.random()*Math.PI,0,Math.PI*2);ctx.fill();}
-    // 断裂旗帜（左侧）
-    const fp=W*0.18;
-    ctx.globalAlpha=0.1;ctx.strokeStyle='#888';ctx.lineWidth=2;
-    ctx.beginPath();ctx.moveTo(fp,H*0.1);ctx.lineTo(fp,H*0.55);ctx.stroke(); // 旗杆
-    ctx.globalAlpha=0.06;ctx.fillStyle='#aa6644';
-    ctx.beginPath();ctx.moveTo(fp,H*0.12);ctx.lineTo(fp+35,H*0.16);ctx.lineTo(fp+30,H*0.28);ctx.lineTo(fp,H*0.26);ctx.closePath();ctx.fill();
-    ctx.beginPath();ctx.moveTo(fp,H*0.14);ctx.lineTo(fp-12,H*0.17);ctx.lineTo(fp-9,H*0.23);ctx.lineTo(fp,H*0.22);ctx.closePath();ctx.fill(); // 撕裂
-    ctx.restore();
-    _drawP(3);
+    // 石板凹陷（固定位置）
+    ctx.globalAlpha=0.18;ctx.fillStyle='rgba(40,34,24,0.6)';
+    G._stoneBreaks.forEach(([rx,ry])=>ctx.fillRect(rx+5,ry+5,gs-10,gs-10));
+    // 石板缝深色
+    ctx.globalAlpha=0.12;ctx.strokeStyle='rgba(20,16,10,0.8)';ctx.lineWidth=2;
+    for(let x=0;x<W;x+=gs*2){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+
+    // 青苔（固定位置，明显椭圆）
+    ctx.globalAlpha=0.30;ctx.fillStyle='#3a7a38';
+    G._mossPos.forEach(([mx,my,rw,rh,ang])=>{
+      ctx.beginPath();ctx.ellipse(mx,my,rw,rh,ang,0,Math.PI*2);ctx.fill();
+    });
+    // 青苔高光
+    ctx.globalAlpha=0.12;ctx.fillStyle='#5aaa50';
+    G._mossPos.forEach(([mx,my,rw,rh,ang])=>{
+      ctx.beginPath();ctx.ellipse(mx-rw*0.2,my-rh*0.3,rw*0.5,rh*0.4,ang,0,Math.PI*2);ctx.fill();
+    });
+
+    // 断裂旗帜（左侧，明显）
+    const fp=W*0.15;
+    ctx.globalAlpha=0.55;ctx.strokeStyle='#999';ctx.lineWidth=3;
+    ctx.beginPath();ctx.moveTo(fp,H*0.08);ctx.lineTo(fp,H*0.52);ctx.stroke();
+    // 旗帜布料
+    ctx.globalAlpha=0.38;ctx.fillStyle='#cc5533';
+    ctx.beginPath();ctx.moveTo(fp,H*0.10);ctx.lineTo(fp+46,H*0.15);ctx.lineTo(fp+40,H*0.30);ctx.lineTo(fp,H*0.28);ctx.closePath();ctx.fill();
+    ctx.strokeStyle='#aa3311';ctx.lineWidth=1;ctx.stroke();
+    // 撕裂碎片
+    ctx.globalAlpha=0.25;ctx.fillStyle='#cc5533';
+    ctx.beginPath();ctx.moveTo(fp,H*0.13);ctx.lineTo(fp-16,H*0.17);ctx.lineTo(fp-12,H*0.24);ctx.lineTo(fp,H*0.22);ctx.closePath();ctx.fill();
+    // 旗帜纹样
+    ctx.globalAlpha=0.15;ctx.strokeStyle='#ffaa44';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(fp+8,H*0.14);ctx.lineTo(fp+36,H*0.17);ctx.moveTo(fp+6,H*0.20);ctx.lineTo(fp+34,H*0.23);ctx.stroke();
+
+    // 右侧残破石柱
+    const col1x=W*0.82,col1y=H*0.5;
+    ctx.globalAlpha=0.22;ctx.fillStyle='#7a7060';
+    ctx.fillRect(col1x-14,H*0.15,28,H*0.7);
+    ctx.globalAlpha=0.10;ctx.fillStyle='#aaa090';
+    ctx.fillRect(col1x-12,H*0.15,12,H*0.7); // 高光边
+    ctx.globalAlpha=0.18;ctx.strokeStyle='#5a5040';ctx.lineWidth=1;
+    for(let cy2=H*0.2;cy2<H*0.8;cy2+=22){ctx.beginPath();ctx.moveTo(col1x-14,cy2);ctx.lineTo(col1x+14,cy2);ctx.stroke();}
+    // 柱顶破损
+    ctx.globalAlpha=0.20;ctx.fillStyle='#6a6050';
+    ctx.beginPath();ctx.moveTo(col1x-14,H*0.15);ctx.lineTo(col1x-20,H*0.08);ctx.lineTo(col1x+8,H*0.12);ctx.lineTo(col1x+14,H*0.15);ctx.closePath();ctx.fill();
+
+    _drawP(3);ctx.restore();
   }
 
-  // ── 第4关：法宝仓库·储物间 ── 货架轮廓+发光法器+符文地板
+  // ── 第4关：法宝仓库 ── 符文地板+明亮货架+发光法器
   function _s4(){
     ctx.save();
-    // 符文地板
-    ctx.strokeStyle='rgba(100,140,180,0.06)';ctx.lineWidth=1;
-    for(let y=0;y<H;y+=50){
-      ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();
-      // 符文标记(简化为小十字)
-      ctx.globalAlpha=0.04;
+    // 符文地板网格
+    ctx.strokeStyle='rgba(120,160,210,0.28)';ctx.lineWidth=1;
+    for(let y=0;y<H;y+=50){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+    for(let x=0;x<W;x+=50){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+    // 符文十字（每格中心）
+    ctx.strokeStyle='rgba(100,150,200,0.22)';ctx.lineWidth=1;
+    for(let y=25;y<H;y+=50){
       for(let x=25;x<W;x+=50){
-        ctx.beginPath();ctx.moveTo(x-4,y-25);ctx.lineTo(x+4,y-25);ctx.moveTo(x,y-29);ctx.lineTo(x,y-21);ctx.stroke();
+        ctx.beginPath();ctx.moveTo(x-6,y);ctx.lineTo(x+6,y);ctx.moveTo(x,y-6);ctx.lineTo(x,y+6);ctx.stroke();
+        // 小圆
+        ctx.beginPath();ctx.arc(x,y,3,0,Math.PI*2);ctx.stroke();
       }
-      ctx.globalAlpha=1;
     }
-    // 货架(水平线条组)
-    ctx.strokeStyle='rgba(160,130,90,0.09)';ctx.lineWidth=2;
-    for(let y=H*0.2;y<H*0.75;y+=H*0.17){
-      ctx.beginPath();ctx.moveTo(W*0.08,y);ctx.lineTo(W*0.45,y);ctx.stroke();
-      ctx.beginPath();ctx.moveTo(W*0.55,y);ctx.lineTo(W*0.92,y);ctx.stroke();
+    // 格子对角线符文
+    ctx.globalAlpha=0.10;ctx.strokeStyle='rgba(80,130,180,0.5)';ctx.lineWidth=0.5;
+    for(let y=0;y<H;y+=50){
+      for(let x=0;x<W;x+=50){
+        ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+50,y+50);ctx.stroke();
+      }
     }
-    // 发光法器
-    const artifacts=[{x:W*0.2,y:H*0.28},{x:W*0.38,y:H*0.45},{x:W*0.65,y:H*0.32},{x:W*0.78,y:H*0.6}];
-    artifacts.forEach((a,i)=>{
-      const glow=0.07+Math.sin(t*0.03+i)*0.03;
-      ctx.globalAlpha=glow;ctx.fillStyle=i%2===0?'#44aacc':'#dd8844';
-      ctx.shadowBlur=8;ctx.shadowColor=i%2===0?'#44aacc':'#dd8844';
-      ctx.beginPath();ctx.arc(a.x,a.y,3+i%2*1.5,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
+
+    // 货架（双列，更粗更亮）
+    ctx.globalAlpha=0.45;ctx.strokeStyle='rgba(180,148,100,0.75)';ctx.lineWidth=3;
+    const shelfYs=[H*0.22,H*0.40,H*0.58,H*0.76];
+    shelfYs.forEach(sy=>{
+      // 左列
+      ctx.beginPath();ctx.moveTo(W*0.06,sy);ctx.lineTo(W*0.44,sy);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(W*0.06,sy);ctx.lineTo(W*0.06,sy+H*0.16);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(W*0.44,sy);ctx.lineTo(W*0.44,sy+H*0.16);ctx.stroke();
+      // 右列
+      ctx.beginPath();ctx.moveTo(W*0.56,sy);ctx.lineTo(W*0.94,sy);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(W*0.56,sy);ctx.lineTo(W*0.56,sy+H*0.16);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(W*0.94,sy);ctx.lineTo(W*0.94,sy+H*0.16);ctx.stroke();
     });
-    ctx.restore();
-    _drawP(4);
+    // 货架木纹
+    ctx.globalAlpha=0.15;ctx.strokeStyle='rgba(120,88,44,0.5)';ctx.lineWidth=1;
+    shelfYs.forEach(sy=>{
+      for(let gx=W*0.1;gx<W*0.44;gx+=W*0.08){ctx.beginPath();ctx.moveTo(gx,sy);ctx.lineTo(gx,sy+H*0.16);ctx.stroke();}
+      for(let gx=W*0.62;gx<W*0.94;gx+=W*0.08){ctx.beginPath();ctx.moveTo(gx,sy);ctx.lineTo(gx,sy+H*0.16);ctx.stroke();}
+    });
+
+    // 发光法器（更大更亮，有晕圈）
+    const artifacts=[
+      {x:W*0.15,y:H*0.32,col:'#44ccee',col2:'rgba(40,180,220,'},
+      {x:W*0.30,y:H*0.50,col:'#ee9944',col2:'rgba(220,140,40,'},
+      {x:W*0.68,y:H*0.28,col:'#aa66ff',col2:'rgba(150,80,255,'},
+      {x:W*0.82,y:H*0.65,col:'#44ee88',col2:'rgba(40,210,100,'},
+    ];
+    artifacts.forEach((a,i)=>{
+      const pulse=0.55+Math.sin(t*0.035+i*1.2)*0.25;
+      // 光晕
+      ctx.globalAlpha=pulse*0.22;
+      const grd=ctx.createRadialGradient(a.x,a.y,2,a.x,a.y,22);
+      grd.addColorStop(0,a.col2+'0.5)');grd.addColorStop(1,a.col2+'0)');
+      ctx.fillStyle=grd;ctx.beginPath();ctx.arc(a.x,a.y,22,0,Math.PI*2);ctx.fill();
+      // 核心
+      ctx.globalAlpha=pulse*0.85;
+      ctx.fillStyle=a.col;ctx.shadowBlur=14;ctx.shadowColor=a.col;
+      ctx.beginPath();ctx.arc(a.x,a.y,6,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
+      // 十字光芒
+      ctx.globalAlpha=pulse*0.40;ctx.strokeStyle=a.col;ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(a.x-14,a.y);ctx.lineTo(a.x+14,a.y);ctx.moveTo(a.x,a.y-14);ctx.lineTo(a.x,a.y+14);ctx.stroke();
+    });
+
+    _drawP(4);ctx.restore();
   }
 
-  // ── 第5关：豪华厅堂 ── 红毯纹理+屏风轮廓+灯笼
+  // ── 第5关：豪华厅堂 ── 红毯+大灯笼+屏风+菱形花纹
   function _s5(){
     ctx.save();
-    // 红毯（中央竖向宽带）
     const carpetL=W*0.28,carpetR=W*0.72;
-    ctx.globalAlpha=0.07;ctx.fillStyle='#8B1A1A';
+    // 红毯主体（更深更亮）
+    ctx.globalAlpha=0.32;ctx.fillStyle='#7a1010';
     ctx.fillRect(carpetL,0,carpetR-carpetL,H);
-    // 地毯边线
-    ctx.globalAlpha=0.1;ctx.strokeStyle='#C9A050';ctx.lineWidth=2;
-    ctx.beginPath();ctx.moveTo(carpetL-2,0);ctx.lineTo(carpetL-2,H);ctx.stroke();
-    ctx.beginPath();ctx.moveTo(carpetR+2,0);ctx.lineTo(carpetR+2,H);ctx.stroke();
-    // 地毯菱形花纹
-    ctx.globalAlpha=0.04;ctx.strokeStyle='#C9A050';ctx.lineWidth=1;
-    for(let y=0;y<H;y+=80){
-      ctx.beginPath();ctx.moveTo(W*0.5,y-40);ctx.lineTo(carpetR-4,y);ctx.lineTo(W*0.5,y+40);ctx.lineTo(carpetL+4,y);ctx.closePath();ctx.stroke();
+    // 红毯渐变叠加（中央更亮）
+    ctx.globalAlpha=0.12;
+    const cg=ctx.createLinearGradient(carpetL,0,carpetR,0);
+    cg.addColorStop(0,'rgba(0,0,0,0)');cg.addColorStop(0.5,'rgba(180,20,20,0.3)');cg.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=cg;ctx.fillRect(carpetL,0,carpetR-carpetL,H);
+
+    // 地毯金边线（粗）
+    ctx.globalAlpha=0.55;ctx.strokeStyle='#D9B060';ctx.lineWidth=3;
+    ctx.beginPath();ctx.moveTo(carpetL,0);ctx.lineTo(carpetL,H);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(carpetR,0);ctx.lineTo(carpetR,H);ctx.stroke();
+    // 内侧细金线
+    ctx.globalAlpha=0.25;ctx.strokeStyle='#C9A050';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(carpetL+8,0);ctx.lineTo(carpetL+8,H);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(carpetR-8,0);ctx.lineTo(carpetR-8,H);ctx.stroke();
+
+    // 菱形花纹（大而清晰）
+    ctx.globalAlpha=0.22;ctx.strokeStyle='#C9A050';ctx.lineWidth=1.5;
+    for(let y=-40;y<H+40;y+=80){
+      ctx.beginPath();ctx.moveTo(W*0.5,y-40);ctx.lineTo(carpetR-6,y);ctx.lineTo(W*0.5,y+40);ctx.lineTo(carpetL+6,y);ctx.closePath();ctx.stroke();
     }
-    // 屏风轮廓(两侧)
-    ctx.globalAlpha=0.06;ctx.strokeStyle='#6B8B6B';ctx.lineWidth=2;
-    for(let py=H*0.12;py<H*0.82;py+=H*0.22){
-      const px=W*0.08;ctx.strokeRect(px,py,38,60);
-      ctx.beginPath();ctx.moveTo(px+19,py+60);ctx.lineTo(px+19,py+74);ctx.stroke();
+    // 菱形内小点
+    ctx.globalAlpha=0.12;ctx.fillStyle='#D9B060';
+    for(let y=0;y<H;y+=80){ctx.beginPath();ctx.arc(W*0.5,y,3,0,Math.PI*2);ctx.fill();}
+
+    // 屏风（更明显）
+    const screenX=W*0.06;
+    ctx.globalAlpha=0.35;ctx.strokeStyle='#7aaa7a';ctx.lineWidth=2;
+    for(let py=H*0.10;py<H*0.80;py+=H*0.23){
+      ctx.strokeRect(screenX,py,44,65);
+      // 横档
+      ctx.beginPath();ctx.moveTo(screenX,py+22);ctx.lineTo(screenX+44,py+22);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(screenX,py+44);ctx.lineTo(screenX+44,py+44);ctx.stroke();
+      // 腿
+      ctx.beginPath();ctx.moveTo(screenX+22,py+65);ctx.lineTo(screenX+22,py+80);ctx.stroke();
+      // 竹节纹
+      ctx.globalAlpha=0.15;ctx.strokeStyle='#5a8a5a';ctx.lineWidth=1;
+      for(let bx=screenX+10;bx<screenX+44;bx+=10){ctx.beginPath();ctx.moveTo(bx,py);ctx.lineTo(bx,py+65);ctx.stroke();}
+      ctx.globalAlpha=0.35;ctx.strokeStyle='#7aaa7a';ctx.lineWidth=2;
     }
-    // 灯笼(顶部悬挂)
-    ctx.globalAlpha=0.08+Math.sin(t*0.02)*0.03;ctx.fillStyle='#DD5533';
-    for(let lx=W*0.2;lx<W;lx+=W*0.25){
-      ctx.fillStyle='#DD5533';ctx.beginPath();ctx.arc(lx,18,10,0,Math.PI*2);ctx.fill();
-      ctx.strokeStyle='#AA3300';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(lx,0);ctx.lineTo(lx,8);ctx.stroke();
+
+    // 灯笼（顶部，大而亮）
+    const lanternY=26;
+    for(let lx=W*0.18;lx<W*0.92;lx+=W*0.22){
+      // 挂绳
+      ctx.globalAlpha=0.40;ctx.strokeStyle='#886644';ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(lx,0);ctx.lineTo(lx,lanternY-14);ctx.stroke();
+      // 灯笼主体
+      const lpulse=0.55+Math.sin(t*0.025+lx)*0.20;
+      ctx.globalAlpha=lpulse*0.70;ctx.fillStyle='#CC3311';
+      ctx.beginPath();ctx.ellipse(lx,lanternY,13,16,0,0,Math.PI*2);ctx.fill();
+      // 灯笼高光
+      ctx.globalAlpha=lpulse*0.25;ctx.fillStyle='#FF8855';
+      ctx.beginPath();ctx.ellipse(lx-3,lanternY-4,5,7,0,0,Math.PI*2);ctx.fill();
+      // 灯笼边框线
+      ctx.globalAlpha=lpulse*0.50;ctx.strokeStyle='#882200';ctx.lineWidth=1;
+      ctx.beginPath();ctx.ellipse(lx,lanternY,13,16,0,0,Math.PI*2);ctx.stroke();
+      // 横筋
+      ctx.globalAlpha=lpulse*0.35;ctx.strokeStyle='#AA4422';ctx.lineWidth=1;
+      for(let k=-1;k<=1;k++){ctx.beginPath();ctx.moveTo(lx-13,lanternY+k*5);ctx.lineTo(lx+13,lanternY+k*5);ctx.stroke();}
+      // 流苏
+      ctx.globalAlpha=lpulse*0.45;ctx.strokeStyle='#DD8833';ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(lx,lanternY+16);ctx.lineTo(lx,lanternY+28);ctx.stroke();
+      // 光晕
+      ctx.globalAlpha=lpulse*0.08;
+      const lg=ctx.createRadialGradient(lx,lanternY,4,lx,lanternY,30);
+      lg.addColorStop(0,'rgba(255,120,40,0.3)');lg.addColorStop(1,'rgba(255,120,40,0)');
+      ctx.fillStyle=lg;ctx.beginPath();ctx.arc(lx,lanternY,30,0,Math.PI*2);ctx.fill();
     }
-    ctx.restore();
-    _drawP(5);
+
+    _drawP(5);ctx.restore();
   }
 
-  // ── 第6关：修仙食堂·灵厨房 ── 方砖地+锅炉蒸汽+食材粒子
+  // ── 第6关：修仙食堂 ── 棋盘方砖+大锅炉+蒸汽柱
   function _s6(){
     ctx.save();
-    // 方砖地
-    ctx.strokeStyle='rgba(160,140,100,0.07)';ctx.lineWidth=1;
-    const ts=42;
+    const ts=44;
+    // 方砖竖线
+    ctx.strokeStyle='rgba(180,158,110,0.30)';ctx.lineWidth=1;
     for(let x=0;x<W;x+=ts){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+    // 横线
+    ctx.strokeStyle='rgba(180,158,110,0.25)';
     for(let y=0;y<H;y+=ts){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
-    // 棋盘格暗纹
-    ctx.globalAlpha=0.03;ctx.fillStyle='rgba(100,80,40,0.5)';
+    // 棋盘暗格
+    ctx.globalAlpha=0.12;ctx.fillStyle='rgba(80,60,20,0.5)';
     for(let y=0;y<H;y+=ts*2){for(let x=0;x<W;x+=ts*2){ctx.fillRect(x,y,ts,ts);ctx.fillRect(x+ts,y+ts,ts,ts);}}
-    // 大锅炉(右下)
-    const potX=W*0.78,potY=H*0.68;
-    ctx.globalAlpha=0.08;ctx.strokeStyle='#555';ctx.lineWidth=2.5;
-    ctx.beginPath();ctx.arc(potX,potY,28,0,Math.PI*2);ctx.stroke();
-    ctx.beginPath();ctx.arc(potX,potY,32,Math.PI*0.8,Math.PI*0.2);ctx.stroke(); // 锅沿
-    ctx.globalAlpha=0.05;ctx.fillStyle='#444';ctx.beginPath();ctx.arc(potX,potY,24,0,Math.PI*2);ctx.fill();
-    // 蒸汽粒子
-    _spawn(6,8,()=>_esp(potX+(Math.random()-0.5)*28,potY-16-Math.random()*10,(Math.random()-0.5)*0.3,-0.3-Math.random()*0.6,100+Math.random()*160,'rgba(200,200,210,0.35)',2+Math.random()*4,6));
+
+    // 大锅炉（右侧，主角级）
+    const potX=W*0.80,potY=H*0.62;
+    // 炉体阴影
+    ctx.globalAlpha=0.18;ctx.fillStyle='#000';
+    ctx.beginPath();ctx.ellipse(potX,potY+42,40,12,0,0,Math.PI*2);ctx.fill();
+    // 炉腿
+    ctx.globalAlpha=0.50;ctx.strokeStyle='#666';ctx.lineWidth=4;
+    ctx.beginPath();ctx.moveTo(potX-22,potY+26);ctx.lineTo(potX-26,potY+52);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(potX+22,potY+26);ctx.lineTo(potX+26,potY+52);ctx.stroke();
+    // 炉身
+    ctx.globalAlpha=0.55;ctx.strokeStyle='#555';ctx.lineWidth=3;
+    ctx.beginPath();ctx.arc(potX,potY,32,0,Math.PI*2);ctx.stroke();
+    ctx.globalAlpha=0.20;ctx.fillStyle='#333';
+    ctx.beginPath();ctx.arc(potX,potY,30,0,Math.PI*2);ctx.fill();
+    // 锅沿
+    ctx.globalAlpha=0.45;ctx.strokeStyle='#666';ctx.lineWidth=5;
+    ctx.beginPath();ctx.ellipse(potX,potY,32,8,0,Math.PI*1.1,Math.PI*1.9);ctx.stroke();
+    // 锅内液面
+    ctx.globalAlpha=0.22;ctx.fillStyle='#88aa44';
+    ctx.beginPath();ctx.ellipse(potX,potY,26,7,0,0,Math.PI*2);ctx.fill();
+    // 铆钉
+    ctx.globalAlpha=0.35;ctx.fillStyle='#888';
+    for(let k=0;k<8;k++){const ka=k/8*Math.PI*2;ctx.beginPath();ctx.arc(potX+Math.cos(ka)*30,potY+Math.sin(ka)*30,2.5,0,Math.PI*2);ctx.fill();}
+
+    // 第二个小锅（左侧）
+    const pot2X=W*0.22,pot2Y=H*0.72;
+    ctx.globalAlpha=0.35;ctx.strokeStyle='#555';ctx.lineWidth=2;
+    ctx.beginPath();ctx.arc(pot2X,pot2Y,18,0,Math.PI*2);ctx.stroke();
+    ctx.globalAlpha=0.12;ctx.fillStyle='#333';ctx.beginPath();ctx.arc(pot2X,pot2Y,16,0,Math.PI*2);ctx.fill();
+
+    // 蒸汽（大量，从两个锅出发）
+    _spawn(6,16,()=>{
+      const fromMain=Math.random()<0.7;
+      const bx=fromMain?potX:pot2X,by=fromMain?potY-32:pot2Y-18;
+      _esp(bx+(Math.random()-.5)*24,by,(Math.random()-.5)*0.5,-0.45-Math.random()*0.85,140+Math.random()*180,'rgba(210,210,220,0.50)',3+Math.random()*5,6);
+    });
     // 食材碎屑
-    _spawn(6,4,()=>_esp(Math.random()*W,Math.random()*H,(Math.random()-0.5)*0.2,-0.1-Math.random()*0.2,120+Math.random()*150,['rgba(200,160,60,0.4)','rgba(180,100,40,0.4)','rgba(140,180,60,0.4)'][Math.floor(Math.random()*3)],1+Math.random()*2,6));
+    _spawn(6,6,()=>_esp(Math.random()*W,Math.random()*H,(Math.random()-.5)*0.25,-0.15-Math.random()*0.25,140+Math.random()*140,['rgba(220,170,60,0.55)','rgba(190,110,40,0.55)','rgba(150,200,60,0.55)'][Math.floor(Math.random()*3)],1.5+Math.random()*2.5,6));
+
     _drawP(6);ctx.restore();
   }
 
-  // ── 第7关：美容修炼室·奢华内室 ── 粉色雾气+飘花瓣+镜子反光
+  // ── 第7关：美容修炼室 ── 浓粉雾气+大花瓣+镜子+地纹
   function _s7(){
     ctx.save();
-    // 粉色雾气(柔光底色)
-    ctx.globalAlpha=0.03+Math.sin(t*0.015)*0.012;
-    const fog=ctx.createRadialGradient(W*0.4,H*0.3,60,W*0.5,H*0.5,H*0.8);
-    fog.addColorStop(0,'rgba(255,180,200,0.15)');fog.addColorStop(1,'rgba(0,0,0,0)');
+    // 整体粉色底色晕染
+    ctx.globalAlpha=0.18+Math.sin(t*0.012)*0.06;
+    const fog=ctx.createRadialGradient(W*0.4,H*0.35,40,W*0.5,H*0.5,H*0.85);
+    fog.addColorStop(0,'rgba(255,160,190,0.45)');fog.addColorStop(0.6,'rgba(200,100,150,0.12)');fog.addColorStop(1,'rgba(0,0,0,0)');
     ctx.fillStyle=fog;ctx.fillRect(0,0,W,H);
-    // 地面柔光纹
-    ctx.globalAlpha=0.05;ctx.strokeStyle='rgba(220,180,190,0.3)';ctx.lineWidth=1;
-    for(let x=0;x<W;x+=55){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x+15,H);ctx.stroke();}
-    // 镜子反光（对角线闪光）
-    ctx.globalAlpha=0.04+Math.sin(t*0.025)*0.02;
-    for(let i=0;i<3;i++){
-      const mx=W*0.15+i*W*0.3,my=H*0.1+i*0.1;
-      ctx.strokeStyle='rgba(200,220,240,0.6)';ctx.lineWidth=2;
-      ctx.beginPath();ctx.moveTo(mx-20,my);ctx.lineTo(mx+20,my);ctx.stroke();
-      ctx.strokeStyle='rgba(240,240,255,0.4)';ctx.lineWidth=0.5;
-      ctx.beginPath();ctx.moveTo(mx-20,my-2);ctx.lineTo(mx+20,my-2);ctx.stroke();
-    }
-    // 花瓣粒子
-    _spawn(7,10,()=>{
-      const sx=Math.random()*W,sy=-5;
-      _esp(sx,sy,(Math.random()-0.5)*0.4,0.2+Math.random()*0.5,200+Math.random()*250,['rgba(255,150,180,0.5)','rgba(255,200,210,0.5)','rgba(255,180,200,0.5)'][Math.floor(Math.random()*3)],2+Math.random()*3,7);
+
+    // 地面斜向光纹
+    ctx.globalAlpha=0.18;ctx.strokeStyle='rgba(240,180,200,0.4)';ctx.lineWidth=1;
+    for(let x=-W;x<W*2;x+=55){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x+25,H);ctx.stroke();}
+
+    // 大镜子（左侧，椭圆框）
+    const mirX=W*0.14,mirY=H*0.45;
+    ctx.globalAlpha=0.35;ctx.strokeStyle='#ddbbcc';ctx.lineWidth=3;
+    ctx.beginPath();ctx.ellipse(mirX,mirY,22,34,0,0,Math.PI*2);ctx.stroke();
+    // 镜面反光线
+    ctx.globalAlpha=0.20+Math.sin(t*0.03)*0.08;ctx.strokeStyle='rgba(255,240,248,0.6)';ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(mirX-12,mirY-18);ctx.lineTo(mirX+12,mirY-18);ctx.stroke();
+    ctx.globalAlpha=0.12;ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(mirX-10,mirY-10);ctx.lineTo(mirX+10,mirY-10);ctx.stroke();
+    // 镜子支架
+    ctx.globalAlpha=0.28;ctx.strokeStyle='#ccaaaa';ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(mirX,mirY+34);ctx.lineTo(mirX,mirY+54);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(mirX-16,mirY+54);ctx.lineTo(mirX+16,mirY+54);ctx.stroke();
+
+    // 梳妆台（右侧）
+    ctx.globalAlpha=0.22;ctx.strokeStyle='#ccaaaa';ctx.lineWidth=2;
+    ctx.strokeRect(W*0.78,H*0.55,W*0.16,H*0.3);
+    ctx.beginPath();ctx.moveTo(W*0.78,H*0.62);ctx.lineTo(W*0.94,H*0.62);ctx.stroke();
+    // 台面小物件
+    ctx.globalAlpha=0.18;ctx.fillStyle='#dd99bb';
+    ctx.beginPath();ctx.arc(W*0.82,H*0.58,4,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(W*0.89,H*0.59,3,0,Math.PI*2);ctx.fill();
+
+    // 大量花瓣飘落
+    _spawn(7,20,()=>{
+      const sx=Math.random()*W,sy=-8;
+      const colors=['rgba(255,130,170,0.72)','rgba(255,190,210,0.65)','rgba(255,160,190,0.68)','rgba(240,120,160,0.60)'];
+      _esp(sx,sy,(Math.random()-.5)*0.6,0.3+Math.random()*0.7,220+Math.random()*260,colors[Math.floor(Math.random()*colors.length)],2.5+Math.random()*3.5,7);
     });
+
     _drawP(7);ctx.restore();
   }
 
-  // ── 第8关：紫府家族祠堂·权贵厅 ── 金纹地板+族徽+护盾光柱
+  // ── 第8关：紫府祠堂 ── 金纹地板+大族徽+光柱+神龛
   function _s8(){
     ctx.save();
-    // 金纹地板
-    ctx.strokeStyle='rgba(180,150,80,0.06)';ctx.lineWidth=1;
+    // 金色网格（60px）
+    ctx.strokeStyle='rgba(200,168,88,0.28)';ctx.lineWidth=1;
     for(let x=0;x<W;x+=60){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
     for(let y=0;y<H;y+=60){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
     // 对角金纹
-    ctx.globalAlpha=0.03;ctx.strokeStyle='rgba(200,170,80,0.4)';ctx.lineWidth=1;
-    for(let y=0;y<H;y+=120){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y+60);ctx.stroke();}
-    // 族徽(中央上方)
-    const ex=W*0.5,ey=H*0.18;
-    ctx.globalAlpha=0.08+Math.sin(t*0.02)*0.02;
-    ctx.strokeStyle='#C9A050';ctx.lineWidth=2;
-    // 六芒星徽章
-    for(let i=0;i<6;i++){const a1=i/6*Math.PI*2,a2=(i+2)/6*Math.PI*2;ctx.beginPath();ctx.moveTo(ex+Math.cos(a1)*24,ey+Math.sin(a1)*24);ctx.lineTo(ex+Math.cos(a2)*24,ey+Math.sin(a2)*24);ctx.stroke();}
-    ctx.beginPath();ctx.arc(ex,ey,18,0,Math.PI*2);ctx.stroke();
-    // 护盾光柱(四角)
-    ctx.globalAlpha=0.05+Math.sin(t*0.03)*0.025;
-    const pillars=[[W*0.1,H*0.25],[W*0.9,H*0.25],[W*0.1,H*0.7],[W*0.9,H*0.7]];
-    pillars.forEach(([px,py])=>{
-      const grad=ctx.createLinearGradient(px,py-80,px,py+80);
-      grad.addColorStop(0,'rgba(180,140,60,0)');grad.addColorStop(0.5,'rgba(200,160,80,0.25)');grad.addColorStop(1,'rgba(180,140,60,0)');
-      ctx.fillStyle=grad;ctx.fillRect(px-4,py-80,8,160);
-      ctx.strokeStyle='rgba(200,160,80,0.3)';ctx.lineWidth=1;ctx.beginPath();ctx.arc(px,py,6,0,Math.PI*2);ctx.stroke();
+    ctx.strokeStyle='rgba(200,168,80,0.14)';ctx.lineWidth=1;
+    for(let y=-H;y<H*2;y+=120){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y+W*0.5);ctx.stroke();}
+
+    // 族徽（中央上方，大而亮）
+    const ex=W*0.5,ey=H*0.20;
+    // 外圆
+    ctx.globalAlpha=0.40+Math.sin(t*0.018)*0.12;
+    ctx.strokeStyle='#D9A840';ctx.lineWidth=2.5;
+    ctx.beginPath();ctx.arc(ex,ey,38,0,Math.PI*2);ctx.stroke();
+    ctx.globalAlpha=0.20+Math.sin(t*0.018)*0.06;
+    ctx.beginPath();ctx.arc(ex,ey,32,0,Math.PI*2);ctx.stroke();
+    // 六芒星
+    ctx.globalAlpha=0.38+Math.sin(t*0.018)*0.10;ctx.strokeStyle='#D9A840';ctx.lineWidth=2;
+    for(let i=0;i<6;i++){
+      const a1=i/6*Math.PI*2-Math.PI/6,a2=(i+2)/6*Math.PI*2-Math.PI/6;
+      ctx.beginPath();ctx.moveTo(ex+Math.cos(a1)*28,ey+Math.sin(a1)*28);ctx.lineTo(ex+Math.cos(a2)*28,ey+Math.sin(a2)*28);ctx.stroke();
+    }
+    // 中心圆
+    ctx.globalAlpha=0.30;ctx.beginPath();ctx.arc(ex,ey,10,0,Math.PI*2);ctx.stroke();
+    ctx.globalAlpha=0.15;ctx.fillStyle='#D9A840';ctx.beginPath();ctx.arc(ex,ey,8,0,Math.PI*2);ctx.fill();
+    // 外围装饰点
+    ctx.globalAlpha=0.28;ctx.fillStyle='#C9A050';
+    for(let i=0;i<12;i++){const a=i/12*Math.PI*2;ctx.beginPath();ctx.arc(ex+Math.cos(a)*36,ey+Math.sin(a)*36,2,0,Math.PI*2);ctx.fill();}
+
+    // 四角护盾光柱（更粗更亮）
+    const pillars=[[W*0.08,H*0.28],[W*0.92,H*0.28],[W*0.08,H*0.72],[W*0.92,H*0.72]];
+    pillars.forEach(([px,py],i)=>{
+      const pp=0.30+Math.sin(t*0.03+i*0.8)*0.12;
+      ctx.globalAlpha=pp;
+      const grad=ctx.createLinearGradient(px,py-100,px,py+100);
+      grad.addColorStop(0,'rgba(200,160,60,0)');grad.addColorStop(0.5,'rgba(220,180,80,0.55)');grad.addColorStop(1,'rgba(200,160,60,0)');
+      ctx.fillStyle=grad;ctx.fillRect(px-6,py-100,12,200);
+      // 光柱顶圆
+      ctx.globalAlpha=pp*0.8;ctx.fillStyle='#ffdd88';ctx.shadowBlur=18;ctx.shadowColor='#ffaa44';
+      ctx.beginPath();ctx.arc(px,py,7,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
+      // 底座
+      ctx.globalAlpha=pp*0.5;ctx.strokeStyle='#C9A050';ctx.lineWidth=2;
+      ctx.strokeRect(px-10,py-5,20,10);
     });
-    ctx.restore();
-    _drawP(8);
+
+    // 中央神龛轮廓（底部中央）
+    ctx.globalAlpha=0.25;ctx.strokeStyle='#B09040';ctx.lineWidth=2;
+    ctx.strokeRect(W*0.42,H*0.78,W*0.16,H*0.18);
+    ctx.beginPath();ctx.moveTo(W*0.42,H*0.78);ctx.lineTo(W*0.50,H*0.72);ctx.lineTo(W*0.58,H*0.78);ctx.stroke(); // 三角顶
+
+    _drawP(8);ctx.restore();
   }
 
-  // ── 第9关：vlog直播基地 ── 霓虹格子地+光圈+收录机粒子
+  // ── 第9关：vlog直播基地 ── 霓虹透视+大光圈+扫描线+RGB粒子
   function _s9(){
     ctx.save();
-    // 霓虹透视线(消失点在中央上方)
-    const vpX=W*0.5,vpY=H*0.35;
-    ctx.strokeStyle='rgba(80,200,220,0.07)';ctx.lineWidth=1;
-    for(let x=-W;x<W*2;x+=70){ctx.beginPath();ctx.moveTo(x,H);ctx.lineTo(vpX+(x-vpX)*0.15,vpY);ctx.stroke();}
-    // 横向霓虹线
-    for(let y=H*0.4;y<H;y+=45){
-      ctx.strokeStyle='rgba(200,80,220,0.05)';ctx.lineWidth=1.5;
+    // 霓虹地面透视线（消失点中央）
+    const vpX=W*0.5,vpY=H*0.38;
+    ctx.strokeStyle='rgba(60,220,240,0.28)';ctx.lineWidth=1.5;
+    for(let x=-W*0.5;x<W*1.5;x+=55){
+      ctx.beginPath();ctx.moveTo(x,H);ctx.lineTo(vpX+(x-vpX)*0.12,vpY);ctx.stroke();
+    }
+    // 透视横线（远近感）
+    for(let frac=0;frac<1;frac+=0.12){
+      const y=vpY+(H-vpY)*frac;
+      const alpha=0.08+frac*0.18;
+      ctx.strokeStyle=`rgba(180,60,220,${alpha})`;ctx.lineWidth=1+frac*1.5;
       ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();
     }
-    // 光圈（摄像机光圈效果）
-    ctx.globalAlpha=0.04+Math.sin(t*0.035)*0.02;
-    for(let i=0;i<3;i++){
-      const ax=W*0.2+i*W*0.3,ay=H*0.25+i*H*0.12;
-      ctx.strokeStyle='rgba(100,200,240,0.5)';ctx.lineWidth=1;
-      for(let r=8;r<=28;r+=6){ctx.beginPath();ctx.arc(ax,ay,r,0,Math.PI*2);ctx.stroke();}
+    // 地面格子（近处）
+    ctx.strokeStyle='rgba(40,180,220,0.15)';ctx.lineWidth=1;
+    for(let y=H*0.6;y<H;y+=36){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+
+    // 扫描线（从上往下循环）
+    const scanY=((t*2)%H);
+    ctx.globalAlpha=0.12;ctx.strokeStyle='rgba(100,255,200,0.5)';ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(0,scanY);ctx.lineTo(W,scanY);ctx.stroke();
+    ctx.globalAlpha=0.05;ctx.strokeStyle='rgba(100,255,200,0.3)';ctx.lineWidth=8;
+    ctx.beginPath();ctx.moveTo(0,scanY);ctx.lineTo(W,scanY);ctx.stroke();
+
+    // 大摄像光圈（3个，清晰）
+    const rings=[{x:W*0.18,y:H*0.28},{x:W*0.5,y:H*0.20},{x:W*0.82,y:H*0.32}];
+    rings.forEach((r,i)=>{
+      const rp=0.28+Math.sin(t*0.04+i*1.8)*0.14;
+      ctx.globalAlpha=rp;
+      // 多环光圈
+      for(let rr=10;rr<=36;rr+=8){
+        ctx.strokeStyle=`rgba(80,210,240,${0.6-rr/60})`;ctx.lineWidth=1.5;
+        ctx.beginPath();ctx.arc(r.x,r.y,rr,0,Math.PI*2);ctx.stroke();
+      }
       // 十字准星
-      ctx.beginPath();ctx.moveTo(ax-4,ay);ctx.lineTo(ax+4,ay);ctx.moveTo(ax,ay-4);ctx.lineTo(ax,ay+4);ctx.stroke();
-    }
-    // 收录机粒子(闪烁小点)
-    _spawn(9,8,()=>_esp(Math.random()*W,Math.random()*H*0.6+H*0.4,(Math.random()-0.5)*0.2,-0.1,80+Math.random()*120,['rgba(255,80,80,0.6)','rgba(80,255,80,0.6)','rgba(80,80,255,0.6)'][Math.floor(Math.random()*3)],1+Math.random()*2,9));
+      ctx.strokeStyle='rgba(80,210,240,0.7)';ctx.lineWidth=1.5;
+      ctx.beginPath();ctx.moveTo(r.x-6,r.y);ctx.lineTo(r.x+6,r.y);ctx.moveTo(r.x,r.y-6);ctx.lineTo(r.x,r.y+6);ctx.stroke();
+      // REC指示灯
+      ctx.globalAlpha=0.6+Math.sin(t*0.08+i)*0.4;
+      ctx.fillStyle='#ff4444';ctx.shadowBlur=8;ctx.shadowColor='#ff0000';
+      ctx.beginPath();ctx.arc(r.x+30,r.y-22,4,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
+    });
+
+    // RGB粒子（大量，鲜艳）
+    _spawn(9,18,()=>_esp(
+      Math.random()*W,Math.random()*H*0.7+H*0.3,
+      (Math.random()-.5)*0.35,-0.15,
+      90+Math.random()*130,
+      ['rgba(255,60,60,0.80)','rgba(60,255,80,0.80)','rgba(60,80,255,0.80)','rgba(255,220,40,0.70)'][Math.floor(Math.random()*4)],
+      2+Math.random()*3,9
+    ));
+
     _drawP(9);ctx.restore();
   }
 
-  // ── 第10关：擂台·八角擂台 ── 八角形平台+边界光柱+云雾
+  // ── 第10关：八角擂台 ── 大地板+金边+光柱+云雾+中心纹
   function _s10(){
     ctx.save();
-    const cx=W*0.5,cy=H*0.5,platformR=Math.min(W,H)*0.42;
-    // 八角形地板
-    ctx.globalAlpha=0.06;
-    ctx.fillStyle='#3a3020';ctx.beginPath();
-    for(let i=0;i<8;i++){
-      const a=i/8*Math.PI*2-Math.PI/8;
-      const nx=cx+Math.cos(a)*platformR,ny=cy+Math.sin(a)*platformR;
-      i===0?ctx.moveTo(nx,ny):ctx.lineTo(nx,ny);
-    }
-    ctx.closePath();ctx.fill();
-    // 八角形边缘线
-    ctx.globalAlpha=0.12;ctx.strokeStyle='#C9A050';ctx.lineWidth=2.5;
+    const cx=W*0.5,cy=H*0.5,pR=Math.min(W,H)*0.42;
+
+    // 擂台外的云雾底色
+    ctx.globalAlpha=0.10;
+    const outerFog=ctx.createRadialGradient(cx,cy,pR*0.8,cx,cy,pR*1.6);
+    outerFog.addColorStop(0,'rgba(0,0,0,0)');outerFog.addColorStop(1,'rgba(180,160,220,0.15)');
+    ctx.fillStyle=outerFog;ctx.fillRect(0,0,W,H);
+
+    // 八角形地板主体（明显填充）
+    ctx.globalAlpha=0.22;
+    ctx.fillStyle='#2c2416';
     ctx.beginPath();
-    for(let i=0;i<8;i++){
-      const a=i/8*Math.PI*2-Math.PI/8;
-      const nx=cx+Math.cos(a)*platformR,ny=cy+Math.sin(a)*platformR;
-      i===0?ctx.moveTo(nx,ny):ctx.lineTo(nx,ny);
-    }
+    for(let i=0;i<8;i++){const a=i/8*Math.PI*2-Math.PI/8;i===0?ctx.moveTo(cx+Math.cos(a)*pR,cy+Math.sin(a)*pR):ctx.lineTo(cx+Math.cos(a)*pR,cy+Math.sin(a)*pR);}
+    ctx.closePath();ctx.fill();
+
+    // 地板内放射纹（从中心到顶点）
+    ctx.globalAlpha=0.10;ctx.strokeStyle='rgba(180,150,80,0.4)';ctx.lineWidth=1;
+    for(let i=0;i<8;i++){const a=i/8*Math.PI*2-Math.PI/8;ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(a)*pR,cy+Math.sin(a)*pR);ctx.stroke();}
+
+    // 八角形边缘金线（粗亮）
+    ctx.globalAlpha=0.55;ctx.strokeStyle='#D9B050';ctx.lineWidth=3;
+    ctx.beginPath();
+    for(let i=0;i<8;i++){const a=i/8*Math.PI*2-Math.PI/8;i===0?ctx.moveTo(cx+Math.cos(a)*pR,cy+Math.sin(a)*pR):ctx.lineTo(cx+Math.cos(a)*pR,cy+Math.sin(a)*pR);}
     ctx.closePath();ctx.stroke();
-    // 内圈
-    ctx.globalAlpha=0.06;ctx.strokeStyle='#aa8840';ctx.lineWidth=1;ctx.setLineDash([6,8]);
-    ctx.beginPath();ctx.arc(cx,cy,platformR*0.55,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
-    // 对角线(八角顶点连线)
-    ctx.globalAlpha=0.04;ctx.strokeStyle='#887030';ctx.lineWidth=1;
-    for(let i=0;i<4;i++){const a=i/4*Math.PI;ctx.beginPath();ctx.moveTo(cx+Math.cos(a)*platformR,cy+Math.sin(a)*platformR);ctx.lineTo(cx+Math.cos(a+Math.PI)*platformR,cy+Math.sin(a+Math.PI)*platformR);ctx.stroke();}
-    // 边界光柱(8个顶点)
-    ctx.globalAlpha=0.07+Math.sin(t*0.04)*0.03;
+
+    // 内圈虚线
+    ctx.globalAlpha=0.28;ctx.strokeStyle='#B09040';ctx.lineWidth=1.5;ctx.setLineDash([8,10]);
+    ctx.beginPath();ctx.arc(cx,cy,pR*0.55,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
+
+    // 中心八角纹（小）
+    ctx.globalAlpha=0.20;ctx.strokeStyle='#C9A050';ctx.lineWidth=2;
+    ctx.beginPath();
+    for(let i=0;i<8;i++){const a=i/8*Math.PI*2-Math.PI/8;i===0?ctx.moveTo(cx+Math.cos(a)*28,cy+Math.sin(a)*28):ctx.lineTo(cx+Math.cos(a)*28,cy+Math.sin(a)*28);}
+    ctx.closePath();ctx.stroke();
+    // 中心圆
+    ctx.globalAlpha=0.15;ctx.beginPath();ctx.arc(cx,cy,16,0,Math.PI*2);ctx.stroke();
+
+    // 8个顶角光柱（高亮）
     for(let i=0;i<8;i++){
       const a=i/8*Math.PI*2-Math.PI/8;
-      const px=cx+Math.cos(a)*platformR,py=cy+Math.sin(a)*platformR;
-      const grad=ctx.createLinearGradient(px,py-60,px,py);
-      grad.addColorStop(0,'rgba(255,200,80,0)');grad.addColorStop(0.4,'rgba(255,180,60,0.35)');grad.addColorStop(1,'rgba(255,160,40,0)');
-      ctx.fillStyle=grad;ctx.fillRect(px-3,py-60,6,60);
-      ctx.fillStyle='rgba(255,200,100,0.5)';ctx.shadowBlur=12;ctx.shadowColor='#ffaa44';
-      ctx.beginPath();ctx.arc(px,py,4,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
+      const px=cx+Math.cos(a)*pR,py=cy+Math.sin(a)*pR;
+      const pp=0.35+Math.sin(t*0.04+i*0.8)*0.15;
+      // 光柱
+      ctx.globalAlpha=pp;
+      const grad=ctx.createLinearGradient(px,py-80,px,py);
+      grad.addColorStop(0,'rgba(255,220,80,0)');grad.addColorStop(0.4,'rgba(255,200,60,0.55)');grad.addColorStop(1,'rgba(255,180,40,0.15)');
+      ctx.fillStyle=grad;ctx.fillRect(px-5,py-80,10,80);
+      // 顶点宝珠
+      ctx.globalAlpha=pp*0.90;ctx.fillStyle='#ffe888';ctx.shadowBlur=20;ctx.shadowColor='#ffcc44';
+      ctx.beginPath();ctx.arc(px,py,6,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
+      // 底座方台
+      ctx.globalAlpha=pp*0.55;ctx.strokeStyle='#D9B050';ctx.lineWidth=1.5;
+      ctx.strokeRect(px-8,py-4,16,8);
     }
-    // 云雾环绕
-    ctx.globalAlpha=0.025+Math.sin(t*0.02)*0.01;
-    for(let i=0;i<16;i++){
-      const ca=i/16*Math.PI*2,cr=platformR+18+Math.sin(t*0.015+i)*12;
+
+    // 云雾环绕（更多更大）
+    for(let i=0;i<24;i++){
+      const ca=i/24*Math.PI*2;
+      const cr=pR+22+Math.sin(t*0.013+i*0.7)*16;
       const clx=cx+Math.cos(ca)*cr,cly=cy+Math.sin(ca)*cr;
-      ctx.fillStyle='rgba(200,200,210,0.4)';
-      ctx.beginPath();ctx.arc(clx,cly,8+Math.sin(i*2.5)*4,0,Math.PI*2);ctx.fill();
+      const cp=0.14+Math.sin(t*0.018+i)*0.06;
+      ctx.globalAlpha=cp;ctx.fillStyle='rgba(210,205,225,0.45)';
+      ctx.beginPath();ctx.arc(clx,cly,12+Math.sin(i*1.8)*5,0,Math.PI*2);ctx.fill();
     }
-    ctx.restore();
-    _drawP(10);
+
+    _drawP(10);ctx.restore();
   }
 
-  // 执行当前关卡的场景绘制
+  // 执行当前关卡场景
   const scenes={1:_s1,2:_s2,3:_s3,4:_s4,5:_s5,6:_s6,7:_s7,8:_s8,9:_s9,10:_s10};
   if(scenes[id])scenes[id]();
 }
@@ -684,7 +1005,8 @@ function draw(){
   ctx.clearRect(0,0,W,H);
 
   // ── 背景 ──
-  ctx.fillStyle='#050a05';ctx.fillRect(0,0,W,H);
+  const BG_COLORS={1:'#100a06',2:'#070c14',3:'#080d07',4:'#07080f',5:'#120806',6:'#0d0a04',7:'#110610',8:'#0c0900',9:'#05001a',10:'#0a0808'};
+  ctx.fillStyle=BG_COLORS[G&&G.stageId||1]||'#050a05';ctx.fillRect(0,0,W,H);
 
   // ── 场景环境 ──
   drawMapEnvironment(ctx,G);
