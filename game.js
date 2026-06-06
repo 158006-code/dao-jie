@@ -906,14 +906,17 @@ function draw(){
 
   // ── 逊der（初期·摇摆群体）──────────────────
   function drawEnemy_normal(ctx, e, G){
+    const ep = e.enemyPhase || 'early';
     const shake = e._hitShake>0 ? (Math.random()-0.5)*4 : 0;
     if(e._hitShake>0) e._hitShake--;
-    const phase = e.hp/e.maxhp > 0.66 ? 0 : e.hp/e.maxhp > 0.33 ? 1 : 2;
-    const headR = 9 + phase;
+    const col = ep==='late'?'#6a1010':ep==='mid'?'#922828':'#B04040';
+    const glow = ep==='late'?10:ep==='mid'?4:0;
+    const headR = ep==='late'?11:ep==='mid'?10:9;
     const lean = 0.18;
     drawMonsterBase(ctx, e.x, e.y, {
-      color: phase===2?'#882020':phase===1?'#aa3030':'#B04040',
-      headR, bodyW:5+phase, bodyH:7, expression:'angry', lean, shake
+      color:col, headR, bodyW:5+(ep==='late'?2:ep==='mid'?1:0),
+      bodyH:7, expression:'angry', lean, shake,
+      glow, glowColor:'#ff2200'
     });
     if(!e._hairPts) e._hairPts=[];
     if(G.elapsed%120===0) e._hairPts.push({x:e.x+(Math.random()-0.5)*6, y:e.y-headR-7, vy:-0.4, life:60});
@@ -925,7 +928,7 @@ function draw(){
       }
       return p.life>0;
     });
-    if(phase===2){
+    if(ep==='late'){
       ctx.save(); ctx.globalAlpha=0.25; ctx.strokeStyle='#ff4400'; ctx.lineWidth=1;
       ctx.beginPath(); ctx.arc(e.x, e.y, e.sz/2+4, 0, Math.PI*2); ctx.stroke(); ctx.restore();
     }
@@ -933,15 +936,20 @@ function draw(){
 
   // ── 躺der（初期·碰撞触发）──────────────────
   function drawEnemy_lied(ctx, e, G){
+    const ep = e.enemyPhase || 'early';
     const shake = e._hitShake>0 ? (Math.random()-0.5)*3 : 0;
     if(e._hitShake>0) e._hitShake--;
+    const bodyCol=ep==='late'?'#52301c':ep==='mid'?'#6e4026':'#8B5030';
+    const headCol=ep==='late'?'#6e3020':ep==='mid'?'#8a4a30':'#A06040';
+    const glow=ep==='late'?10:ep==='mid'?4:0;
     ctx.save();
+    if(glow>0){ctx.shadowBlur=glow;ctx.shadowColor='#ff2200';}
     ctx.translate(e.x + shake, e.y);
     ctx.rotate(Math.PI*0.5);
-    ctx.fillStyle='#8B5030';
+    ctx.fillStyle=bodyCol;
     ctx.beginPath(); ctx.ellipse(0, 0, 12, 7, 0, 0, Math.PI*2); ctx.fill();
-    ctx.fillStyle='#A06040';
-    ctx.beginPath(); ctx.arc(14, 0, 7, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle=headCol;
+    ctx.beginPath(); ctx.arc(14, 0, 7+(ep==='late'?2:ep==='mid'?1:0), 0, Math.PI*2); ctx.fill();
     ctx.fillStyle='#fff';
     ctx.beginPath(); ctx.arc(14, -2.5, 2, 0, Math.PI*2); ctx.fill();
     ctx.fillStyle='#111';
@@ -953,14 +961,18 @@ function draw(){
 
   // ── 苟der（初期·弧线保距）──────────────────
   function drawEnemy_sly(ctx, e, G){
+    const ep = e.enemyPhase || 'early';
     const shake = e._hitShake>0 ? (Math.random()-0.5)*3 : 0;
     if(e._hitShake>0) e._hitShake--;
+    const col=ep==='late'?'#423060':ep==='mid'?'#5a4a80':'#7060A0';
+    const glow=ep==='late'?10:ep==='mid'?4:0;
+    const headR=ep==='late'?10:ep==='mid'?9:8;
     drawMonsterBase(ctx, e.x, e.y, {
-      color:'#7060A0', headR:8, bodyW:4, bodyH:8,
-      expression:'smug', lean:0.1, shake
+      color:col, headR, bodyW:4+(ep==='late'?2:ep==='mid'?1:0), bodyH:8,
+      expression:'smug', lean:0.1, shake, glow, glowColor:'#ff2200'
     });
     ctx.save(); ctx.translate(e.x+shake, e.y);
-    ctx.strokeStyle='#7060A0'; ctx.lineWidth=1.5;
+    ctx.strokeStyle=col; ctx.lineWidth=1.5;
     ctx.beginPath(); ctx.arc(0, -4, 6, Math.PI*0.2, Math.PI*0.8); ctx.stroke();
     ctx.fillStyle='#ffeeaa'; ctx.strokeStyle='#aa8800'; ctx.lineWidth=1;
     ctx.fillRect(8, -16, 7, 9); ctx.strokeRect(8, -16, 7, 9);
@@ -971,13 +983,16 @@ function draw(){
 
   // ── 硬der（初期·冲刺停顿）──────────────────
   function drawEnemy_hard(ctx, e, G){
+    const ep = e.enemyPhase || 'early';
     const shake = e._hitShake>0 ? (Math.random()-0.5)*3 : 0;
     if(e._hitShake>0) e._hitShake--;
     const dashing = e._dashing>0;
+    const col=ep==='late'?'#354050':ep==='mid'?'#4a5870':(dashing?'#8090C0':'#607090');
+    const glow=ep==='late'?10:ep==='mid'?4:0;
+    const headR=ep==='late'?14:ep==='mid'?13:12;
     drawMonsterBase(ctx, e.x, e.y, {
-      color: dashing?'#8090C0':'#607090',
-      headR:12, bodyW:7, bodyH:8,
-      expression:'smug', lean: dashing?0.35:0.15, shake
+      color:col, headR, bodyW:7+(ep==='late'?2:ep==='mid'?1:0), bodyH:8,
+      expression:'smug', lean: dashing?0.35:0.15, shake, glow, glowColor:'#ff2200'
     });
     ctx.save(); ctx.translate(e.x+shake, e.y);
     ctx.fillStyle='#505870'; ctx.strokeStyle='#8090A0'; ctx.lineWidth=1.5;
@@ -991,13 +1006,17 @@ function draw(){
 
   // ── 萌der（初期·群体波形出生）──────────────────
   function drawEnemy_cute(ctx, e, G){
+    const ep = e.enemyPhase || 'early';
     const shake = e._hitShake>0 ? (Math.random()-0.5)*2 : 0;
     if(e._hitShake>0) e._hitShake--;
     if(e._seed===undefined) e._seed = Math.random()*999;
     const bounce = Math.sin(G.elapsed*0.2 + e._seed)*2;
+    const col=ep==='late'?'#903050':ep==='mid'?'#c05070':'#E06080';
+    const glow=ep==='late'?10:ep==='mid'?4:0;
+    const headR=ep==='late'?9:ep==='mid'?8:7;
     drawMonsterBase(ctx, e.x, e.y+bounce, {
-      color:'#E06080', headR:7, bodyW:3, bodyH:3,
-      expression:'blank', shake
+      color:col, headR, bodyW:3+(ep==='late'?2:ep==='mid'?1:0), bodyH:3,
+      expression:'blank', shake, glow, glowColor:'#ff2200'
     });
     if(e._hitShake>4){
       ctx.save(); ctx.translate(e.x, e.y+bounce);
@@ -1009,14 +1028,18 @@ function draw(){
 
   // ── 宅der（中期·靠近爆发）──────────────────
   function drawEnemy_hikikomori(ctx, e, G){
+    const ep = e.enemyPhase || 'early';
     const shake = e._hitShake>0 ? (Math.random()-0.5)*3 : 0;
     if(e._hitShake>0) e._hitShake--;
+    const col=ep==='late'?'#243040':ep==='mid'?'#324050':'#405060';
+    const glow=ep==='late'?10:ep==='mid'?4:0;
+    const headR=ep==='late'?12:ep==='mid'?11:10;
     drawMonsterBase(ctx, e.x, e.y, {
-      color:'#405060', headR:10, bodyW:6, bodyH:9,
-      expression:'blank', lean:0.05, shake
+      color:col, headR, bodyW:6+(ep==='late'?2:ep==='mid'?1:0), bodyH:9,
+      expression:'blank', lean:0.05, shake, glow, glowColor:'#ff2200'
     });
     ctx.save(); ctx.translate(e.x+shake, e.y);
-    ctx.strokeStyle='#405060'; ctx.lineWidth=2.5;
+    ctx.strokeStyle=col; ctx.lineWidth=2.5;
     ctx.beginPath(); ctx.moveTo(-8,-2); ctx.lineTo(8,4); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(8,-2); ctx.lineTo(-8,4); ctx.stroke();
     const d = Math.hypot(e.x-G.mx, e.y-G.my);
@@ -1030,11 +1053,15 @@ function draw(){
 
   // ── 娇der（中期·中心聚·粉色粒子）──────────────────
   function drawEnemy_dainty_e(ctx, e, G){
+    const ep = e.enemyPhase || 'early';
     const shake = e._hitShake>0 ? (Math.random()-0.5)*2 : 0;
     if(e._hitShake>0) e._hitShake--;
+    const col=ep==='late'?'#803060':ep==='mid'?'#b05088':'#D060A0';
+    const glow=ep==='late'?10:ep==='mid'?4:0;
+    const headR=ep==='late'?11:ep==='mid'?10:9;
     drawMonsterBase(ctx, e.x, e.y, {
-      color:'#D060A0', headR:9, bodyW:5, bodyH:7,
-      expression:'smug', lean:0.2, shake
+      color:col, headR, bodyW:5+(ep==='late'?2:ep==='mid'?1:0), bodyH:7,
+      expression:'smug', lean:0.2, shake, glow, glowColor:'#ff2200'
     });
     ctx.save(); ctx.translate(e.x+shake, e.y);
     ctx.strokeStyle='#40A040'; ctx.lineWidth=1.5;
@@ -1062,12 +1089,16 @@ function draw(){
 
   // ── 快der（中期·高速直线）──────────────────
   function drawEnemy_swift(ctx, e, G){
+    const ep = e.enemyPhase || 'early';
     if(e._hitShake>0) e._hitShake--;
     const spd = Math.hypot(e.vx||0, e.vy||0);
     const lean = Math.min(0.5, spd*0.15);
+    const col=ep==='late'?'#903018':ep==='mid'?'#c05028':'#E06030';
+    const glow=ep==='late'?10:ep==='mid'?4:0;
+    const headR=ep==='late'?9:ep==='mid'?8:7;
     drawMonsterBase(ctx, e.x, e.y, {
-      color:'#E06030', headR:7, bodyW:4, bodyH:7,
-      expression:'smug', lean, shake:0
+      color:col, headR, bodyW:4+(ep==='late'?2:ep==='mid'?1:0), bodyH:7,
+      expression:'smug', lean, shake:0, glow, glowColor:'#ff2200'
     });
     if(!e._trail) e._trail=[];
     e._trail.push({x:e.x,y:e.y});
@@ -1089,10 +1120,14 @@ function draw(){
 
   // ── 穷der（中期·随机抖）──────────────────
   function drawEnemy_poor(ctx, e, G){
+    const ep = e.enemyPhase || 'early';
     const shake = e._hitShake>0?(Math.random()-0.5)*4:Math.sin(G.elapsed*0.3+(e._seed||0))*1.5;
     if(e._hitShake>0) e._hitShake--;
-    ctx.save(); ctx.translate(e.x+shake, e.y);
-    ctx.fillStyle='#806050';
+    const col=ep==='late'?'#4c3028':ep==='mid'?'#664840':'#806050';
+    const glow=ep==='late'?10:ep==='mid'?4:0;
+    ctx.save(); if(glow>0){ctx.shadowBlur=glow;ctx.shadowColor='#ff2200';}
+    ctx.translate(e.x+shake, e.y);
+    ctx.fillStyle=col;
     ctx.beginPath();
     const pts=12, r=8;
     for(let i=0;i<pts;i++){
@@ -1116,15 +1151,19 @@ function draw(){
 
   // ── 傻der（中期·随机方向）──────────────────
   function drawEnemy_dumb(ctx, e, G){
+    const ep = e.enemyPhase || 'early';
     const shake = e._hitShake>0?(Math.random()-0.5)*4:0;
     if(e._hitShake>0) e._hitShake--;
+    const col=ep==='late'?'#545460':ep==='mid'?'#727280':'#9090A0';
+    const glow=ep==='late'?10:ep==='mid'?4:0;
+    const headR=ep==='late'?12:ep==='mid'?11:10;
     drawMonsterBase(ctx, e.x, e.y, {
-      color:'#9090A0', headR:10, bodyW:5, bodyH:7,
-      expression:'blank', shake
+      color:col, headR, bodyW:5+(ep==='late'?2:ep==='mid'?1:0), bodyH:7,
+      expression:'blank', shake, glow, glowColor:'#ff2200'
     });
     ctx.save(); ctx.translate(e.x+shake, e.y);
     // 遮盖drawMonsterBase默认眼
-    ctx.fillStyle='#9090A0';
+    ctx.fillStyle=col;
     ctx.fillRect(-6, -20, 5, 5); ctx.fillRect(1, -20, 5, 5);
     ctx.fillStyle='#fff';
     ctx.beginPath(); ctx.arc(-3,-17,2.5,0,Math.PI*2); ctx.fill();
@@ -1141,10 +1180,14 @@ function draw(){
 
   // ── 油der（中期·闪现）──────────────────
   function drawEnemy_slick(ctx, e, G){
+    const ep = e.enemyPhase || 'early';
     if(e._hitShake>0) e._hitShake--;
+    const col=ep==='late'?'#344028':ep==='mid'?'#4a5840':'#607050';
+    const glow=ep==='late'?10:ep==='mid'?4:0;
+    const headR=ep==='late'?11:ep==='mid'?10:9;
     drawMonsterBase(ctx, e.x, e.y, {
-      color:'#607050', headR:9, bodyW:5, bodyH:8,
-      expression:'smug', lean:0.05
+      color:col, headR, bodyW:5+(ep==='late'?2:ep==='mid'?1:0), bodyH:8,
+      expression:'smug', lean:0.05, glow, glowColor:'#ff2200'
     });
     ctx.save(); ctx.translate(e.x, e.y);
     ctx.fillStyle='#405030';
@@ -1163,32 +1206,40 @@ function draw(){
 
   // ── 装der（后期·仰头挺胸）──────────────────
   function drawEnemy_poser(ctx, e, G){
+    const ep = e.enemyPhase || 'early';
     const shake = e._hitShake>0?(Math.random()-0.5)*3:0;
     if(e._hitShake>0) e._hitShake--;
+    const col=ep==='late'?'#805000':ep==='mid'?'#a06800':'#C08000';
+    const glow=ep==='late'?10:ep==='mid'?4:0;
+    const headR=ep==='late'?12:ep==='mid'?11:10;
     drawMonsterBase(ctx, e.x, e.y, {
-      color:'#C08000', headR:10, bodyW:6, bodyH:8,
-      expression:'smug', lean:-0.15, shake
+      color:col, headR, bodyW:6+(ep==='late'?2:ep==='mid'?1:0), bodyH:8,
+      expression:'smug', lean:-0.15, shake, glow, glowColor:'#ff2200'
     });
     ctx.save(); ctx.translate(e.x+shake, e.y);
     ctx.strokeStyle='rgba(255,220,0,0.6)'; ctx.lineWidth=2;
     ctx.shadowBlur=8; ctx.shadowColor='#ffdd00';
     ctx.beginPath(); ctx.ellipse(0,-26,10,3,0,0,Math.PI*2); ctx.stroke();
     ctx.shadowBlur=0;
-    ctx.strokeStyle='#C08000'; ctx.lineWidth=1.5;
+    ctx.strokeStyle=col; ctx.lineWidth=1.5;
     ctx.beginPath(); ctx.ellipse(0,0,6,8,0,0,Math.PI*2); ctx.stroke();
     ctx.restore();
   }
 
   // ── 跑der（后期·低血逃跑）──────────────────
   function drawEnemy_runner(ctx, e, G){
+    const ep = e.enemyPhase || 'early';
     const shake = e._hitShake>0?(Math.random()-0.5)*3:0;
     if(e._hitShake>0) e._hitShake--;
     const fleeing = e.hp/e.maxhp < 0.3;
+    const colBase=ep==='late'?'#6a3020':ep==='mid'?'#8a4a30':'#AA6040';
+    const col=fleeing?'#dd4422':colBase;
+    const glow=ep==='late'?10:ep==='mid'?4:0;
+    const headR=ep==='late'?10:ep==='mid'?9:8;
     drawMonsterBase(ctx, e.x, e.y, {
-      color: fleeing?'#dd4422':'#AA6040',
-      headR:8, bodyW:4, bodyH:8,
+      color:col, headR, bodyW:4+(ep==='late'?2:ep==='mid'?1:0), bodyH:8,
       expression: fleeing?'scared':'angry',
-      lean: fleeing?0.4:0.1, shake
+      lean: fleeing?0.4:0.1, shake, glow, glowColor:'#ff2200'
     });
     ctx.save(); ctx.translate(e.x+shake, e.y);
     if(fleeing){
@@ -1196,7 +1247,7 @@ function draw(){
       ctx.beginPath(); ctx.arc(-6,-18,2,0,Math.PI*2); ctx.fill();
       ctx.fillStyle='#333';
       ctx.beginPath(); ctx.arc(-7,-18,1,0,Math.PI*2); ctx.fill();
-      ctx.strokeStyle='#AA6040'; ctx.lineWidth=2.5;
+      ctx.strokeStyle=colBase; ctx.lineWidth=2.5;
       const ls=Math.sin(G.elapsed*0.6)*14;
       ctx.beginPath(); ctx.moveTo(-3,8); ctx.lineTo(-3+ls,22); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(3,8); ctx.lineTo(3-ls,22); ctx.stroke();
@@ -1208,11 +1259,15 @@ function draw(){
 
   // ── 贪der（后期·慢移贪婪）──────────────────
   function drawEnemy_greedy(ctx, e, G){
+    const ep = e.enemyPhase || 'early';
     const shake = e._hitShake>0?(Math.random()-0.5)*3:0;
     if(e._hitShake>0) e._hitShake--;
+    const col=ep==='late'?'#4c3410':ep==='mid'?'#664a18':'#806020';
+    const glow=ep==='late'?10:ep==='mid'?4:0;
+    const headR=ep==='late'?12:ep==='mid'?11:10;
     drawMonsterBase(ctx, e.x, e.y, {
-      color:'#806020', headR:10, bodyW:7, bodyH:10,
-      expression:'smug', shake
+      color:col, headR, bodyW:7+(ep==='late'?2:ep==='mid'?1:0), bodyH:10,
+      expression:'smug', shake, glow, glowColor:'#ff2200'
     });
     ctx.save(); ctx.translate(e.x+shake, e.y);
     const coins=[[-8,-3],[8,-2],[-6,5],[7,6],[0,-8]];
@@ -1230,13 +1285,17 @@ function draw(){
 
   // ── 卷der精英（速×2.2·手持书）──────────────────
   function drawEnemy_roller(ctx, e, G){
+    const ep = e.enemyPhase || 'early';
     const shake = e._hitShake>0?(Math.random()-0.5)*5:0;
     if(e._hitShake>0) e._hitShake--;
+    const col=ep==='late'?'#804000':ep==='mid'?'#a85000':'#C86000';
+    const glowVal=ep==='late'?26:ep==='mid'?20:16;
+    const headR=ep==='late'?12:ep==='mid'?11:10;
     ctx.save();
     drawMonsterBase(ctx, e.x, e.y, {
-      color:'#C86000', headR:10, bodyW:5, bodyH:8,
+      color:col, headR, bodyW:5+(ep==='late'?2:ep==='mid'?1:0), bodyH:8,
       expression:'angry', lean:0.25, shake,
-      glow:16, glowColor:'#ff8800'
+      glow:glowVal, glowColor:'#ff8800'
     });
     ctx.translate(e.x+shake, e.y);
     ctx.strokeStyle='#ff8800'; ctx.lineWidth=2; ctx.globalAlpha=0.6;
@@ -1252,14 +1311,18 @@ function draw(){
 
   // ── 狂der精英（叠层数字·红色渐变）──────────────────
   function drawEnemy_berserker(ctx, e, G){
+    const ep = e.enemyPhase || 'early';
     const shake = e._hitShake>0?(Math.random()-0.5)*6:0;
     if(e._hitShake>0) e._hitShake--;
     const stacks = e._hitCount||0;
     const redness = Math.min(1, stacks/10);
-    const col = 'rgb('+Math.floor(160+redness*95)+','+Math.floor(40-redness*30)+','+Math.floor(40-redness*30)+')';
+    const colBase=ep==='late'?'#6a1010':ep==='mid'?'#8a1818':'#AA2020';
+    const col = 'rgb('+Math.floor(parseInt(colBase.slice(1,3),16)+redness*60)+','+Math.floor(parseInt(colBase.slice(3,5),16)-redness*20)+','+Math.floor(parseInt(colBase.slice(5,7),16)-redness*20)+')';
+    const glowVal=ep==='late'?(stacks*2+10):ep==='mid'?(stacks*2+4):stacks*2;
+    const headR=ep==='late'?13:ep==='mid'?12:11;
     drawMonsterBase(ctx, e.x, e.y, {
-      color: col, headR:11, bodyW:6, bodyH:9,
-      expression:'angry', shake, glow:stacks*2, glowColor:'#ff2200'
+      color: col, headR, bodyW:6+(ep==='late'?2:ep==='mid'?1:0), bodyH:9,
+      expression:'angry', shake, glow:glowVal, glowColor:'#ff2200'
     });
     ctx.save(); ctx.translate(e.x+shake, e.y);
     if(stacks>0){
@@ -1273,11 +1336,15 @@ function draw(){
 
   // ── 壕der精英（慢移·金盾）──────────────────
   function drawEnemy_rich(ctx, e, G){
+    const ep = e.enemyPhase || 'early';
     const shake = e._hitShake>0?(Math.random()-0.5)*4:0;
     if(e._hitShake>0) e._hitShake--;
+    const col=ep==='late'?'#806010':ep==='mid'?'#a07818':'#C09020';
+    const glowVal=ep==='late'?20:ep==='mid'?14:10;
+    const headR=ep==='late'?13:ep==='mid'?12:11;
     drawMonsterBase(ctx, e.x, e.y, {
-      color:'#C09020', headR:11, bodyW:6, bodyH:9,
-      expression:'smug', shake, glow:10, glowColor:'#FFD700'
+      color:col, headR, bodyW:6+(ep==='late'?2:ep==='mid'?1:0), bodyH:9,
+      expression:'smug', shake, glow:glowVal, glowColor:'#FFD700'
     });
     ctx.save(); ctx.translate(e.x+shake, e.y);
     ctx.strokeStyle='#FFD700'; ctx.lineWidth=2.5;
@@ -1299,17 +1366,22 @@ function draw(){
 
   // ── 废der精英（横躺·独特）──────────────────
   function drawEnemy_lazy(ctx, e, G){
+    const ep = e.enemyPhase || 'early';
     const shake = e._hitShake>0?(Math.random()-0.5)*4:0;
     if(e._hitShake>0) e._hitShake--;
+    const bodyCol=ep==='late'?'#521010':ep==='mid'?'#6e1818':'#8B2020';
+    const headCol=ep==='late'?'#6a1818':ep==='mid'?'#8a2525':'#AA3030';
+    const glowVal=ep==='late'?22:ep==='mid'?16:12;
+    const headR=ep==='late'?11:ep==='mid'?10:9;
     ctx.save();
     ctx.translate(e.x+shake, e.y);
     ctx.rotate(Math.PI*0.5);
-    ctx.fillStyle='#8B2020';
-    ctx.shadowBlur=12; ctx.shadowColor='#ff1111';
-    ctx.beginPath(); ctx.ellipse(0,0,14,8,0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle=bodyCol;
+    ctx.shadowBlur=glowVal; ctx.shadowColor='#ff1111';
+    ctx.beginPath(); ctx.ellipse(0,0,14+(ep==='late'?2:ep==='mid'?1:0),8,0,0,Math.PI*2); ctx.fill();
     ctx.shadowBlur=0;
-    ctx.fillStyle='#AA3030';
-    ctx.beginPath(); ctx.arc(17,0,9,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle=headCol;
+    ctx.beginPath(); ctx.arc(17,0,headR,0,Math.PI*2); ctx.fill();
     ctx.fillStyle='#fff';
     ctx.beginPath(); ctx.arc(17,-3,2.2,0,Math.PI*2); ctx.fill();
     ctx.fillStyle='#111';
@@ -1322,14 +1394,18 @@ function draw(){
 
   // ── 猛der精英（大体型·肌肉感）──────────────────
   function drawEnemy_brute(ctx, e, G){
+    const ep = e.enemyPhase || 'early';
     const shake = e._hitShake>0?(Math.random()-0.5)*6:0;
     if(e._hitShake>0) e._hitShake--;
+    const col=ep==='late'?'#401010':ep==='mid'?'#581818':'#702020';
+    const glowVal=ep==='late'?24:ep==='mid'?18:14;
+    const headR=ep==='late'?18:ep==='mid'?17:16;
     drawMonsterBase(ctx, e.x, e.y, {
-      color:'#702020', headR:16, bodyW:11, bodyH:13,
-      expression:'angry', shake, glow:14, glowColor:'#ff2200'
+      color:col, headR, bodyW:11+(ep==='late'?2:ep==='mid'?1:0), bodyH:13,
+      expression:'angry', shake, glow:glowVal, glowColor:'#ff2200'
     });
     ctx.save(); ctx.translate(e.x+shake, e.y);
-    ctx.fillStyle='#702020';
+    ctx.fillStyle=col;
     ctx.beginPath(); ctx.ellipse(-16,-4,7,5,Math.PI*0.3,0,Math.PI*2); ctx.fill();
     ctx.beginPath(); ctx.ellipse(16,-4,7,5,-Math.PI*0.3,0,Math.PI*2); ctx.fill();
     ctx.strokeStyle='#ff2200'; ctx.lineWidth=2.5; ctx.globalAlpha=0.6;

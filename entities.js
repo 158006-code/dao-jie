@@ -26,44 +26,105 @@ function getSpawnPos(G){
 
 // ── 敌人生成 ──
 function getAvailableTypes(sec){return ENEMY_TYPES.filter(t=>sec>=t.unlockSec);}
-function spawnEnemyAt(G,typeKey,x,y){
-  const def=ENEMY_TYPES.find(t=>t.key===typeKey)||ENEMY_TYPES[0];
-  const sec=Math.floor(G.elapsed/FPS);
-  const earlyMult=sec<60?0.8:sec<120?0.92:1;
-  const lateScale=sec>240?1+((sec-240)/100)*0.6:1;
-  const diff=1.3*earlyMult*lateScale;
+function spawnEnemyAt(G, typeKey, x, y, enemyPhase){
+  const def = ENEMY_TYPES.find(t => t.key === typeKey) || ENEMY_TYPES[0];
+  const sec = Math.floor(G.elapsed / FPS);
+  const earlyMult = sec<60 ? 0.8 : sec<120 ? 0.92 : 1;
+  const lateScale = sec>240 ? 1+((sec-240)/100)*0.6 : 1;
+  const diff = 1.3 * earlyMult * lateScale;
+
+  const ep = enemyPhase || 'early';
+  const phaseScale = ep==='late' ? 1.55 : ep==='mid' ? 1.22 : 1.0;
+  const phaseSpdScale = ep==='late' ? 1.18 : ep==='mid' ? 1.08 : 1.0;
+  const phaseSzAdd = ep==='late' ? 2 : ep==='mid' ? 1 : 0;
+
   G.enemies.push({
-    id:enId++,x,y,vx:0,vy:0,
-    hp:def.hpBase*(1+G.phase*0.6+G.lv*0.18)*diff,
-    maxhp:def.hpBase*(1+G.phase*0.6+G.lv*0.18)*diff,
-    spd:def.spdBase*(1+G.phase*0.07),
-    sz:def.sz,poison:0,kbCd:0,slowTimer:0,
-    hasKB:def.hasKB,atk:def.atk*diff,typeKey:def.key,col:def.col,
-    special:def.special,defMult:def.defMult||1,keepDist:def.keepDist||0,
-    explodeR:def.explodeR||0,explodeDmg:def.explodeDmg||0,
-    rangedTimer:0,rangedCd:90,spawnTimer:0,spawnInterval:def.spawnInterval||180,
-    regenRate:def.regenRate||0,magnetR:def.magnetR||0,
-    stealthAlpha:1,stealthTimer:0,
-    immuneDot:def.immuneDot||false,
-    shield:def.special==='shield'?1:0,shieldCd:0,
-    jumpTimer:0,jumpCd:80+Math.random()*40,jumping:false,jumpVx:0,jumpVy:0,
-    devourCount:0,enrageTimer:0,
-    overloadStacks:0,hivebuff:0,
+    id: enId++, x, y, vx:0, vy:0,
+    hp:     def.hpBase * (1 + G.phase*0.6 + G.lv*0.18) * diff * phaseScale,
+    maxhp:  def.hpBase * (1 + G.phase*0.6 + G.lv*0.18) * diff * phaseScale,
+    spd:    def.spdBase * (1 + G.phase*0.07) * phaseSpdScale,
+    sz:     def.sz + phaseSzAdd,
+    poison:0, kbCd:0, slowTimer:0,
+    hasKB: def.hasKB,
+    atk:   def.atk * diff * phaseScale,
+    typeKey: def.key,
+    key:     def.key,
+    enemyPhase: ep,
+    col:   def.col,
+    special:   def.special,
+    defMult:   def.defMult  || 1,
+    keepDist:  def.keepDist || 0,
+    explodeR:  def.explodeR || 0,
+    explodeDmg:def.explodeDmg || 0,
+    rangedTimer:0, rangedCd:90,
+    spawnTimer:0,  spawnInterval: def.spawnInterval || 180,
+    regenRate: def.regenRate || 0,
+    magnetR:   def.magnetR   || 0,
+    stealthAlpha:1, stealthTimer:0,
+    immuneDot: def.immuneDot || false,
+    shield:    def.special==='shield' ? 1 : 0,
+    shieldCd:  0,
+    jumpTimer:0, jumpCd: 80+Math.random()*40,
+    jumping:false, jumpVx:0, jumpVy:0,
+    devourCount:0, enrageTimer:0,
+    overloadStacks:0, hivebuff:0,
+    _hitShake:0, _hitCount:0,
   });
 }
 function spawnEnemy(G){
-  const pos=getSpawnPos(G);let x=pos.x,y=pos.y;
-  const sec=Math.floor(G.elapsed/FPS);
-  const avail=getAvailableTypes(sec);
-  const base={normal:35,swift:20,armored:12,ranged:10,bomber:8,elite:6,queen:3,stealth:5,regen:5,magnetic:4,void:4,
-    shield:8,jumper:10,devourer:4,suicidal:3,reflector:5,hivemind:3,corruptor:4};
-  if(G.activeBuild==='spore'){base.corruptor=(base.corruptor||4)*1.3;}
-  if(G.activeBuild==='swarm'){base.queen=(base.queen||3)*1.5;}
-  const weights=avail.map(t=>base[t.key]||5);
-  const total=weights.reduce((a,b)=>a+b,0);
-  let r=Math.random()*total,chosen=avail[0];
-  for(let i=0;i<avail.length;i++){r-=weights[i];if(r<=0){chosen=avail[i];break;}}
-  spawnEnemyAt(G,chosen.key,x,y);
+  const pos = getSpawnPos(G);
+  const stageKey = 's' + (G.stageId || 1);
+  const rule = STAGE_ENEMY_RULES[stageKey] || STAGE_ENEMY_RULES['s1'];
+
+  // 精英生成
+  if(rule.eliteKeys.length > 0 && Math.random() < rule.eliteChance){
+    const eKey = rule.eliteKeys[Math.floor(Math.random() * rule.eliteKeys.length)];
+    spawnEnemyAt(G, eKey, pos.x, pos.y, 'late');
+    const e = G.enemies[G.enemies.length-1];
+    e.hp    *= rule.hpMult;
+    e.maxhp *= rule.hpMult;
+    e.atk   *= rule.hpMult;
+    return;
+  }
+
+  // 按 typeLimit 截取可用怪池
+  const pool = rule.pool.slice(0, rule.typeLimit);
+
+  // 按 phaseWeights 决定 enemyPhase
+  const pw = rule.phaseWeights;
+  const totalW = pw.early + pw.mid + pw.late;
+  let rp = Math.random() * totalW;
+  let chosenPhase = 'early';
+  if(rp < pw.early){
+    chosenPhase = 'early';
+  } else if(rp < pw.early + pw.mid){
+    chosenPhase = 'mid';
+  } else {
+    chosenPhase = 'late';
+  }
+
+  // 在 pool 内按权重随机选取
+  const baseW = {
+    normal:35, lied:18, cute:25, hard:14,
+    hikikomori:10, dainty_e:12, swift:22, poor:15, dumb:15, sly:14,
+    slick:12, poser:10, runner:14, greedy:10,
+  };
+  const weights = pool.map(key => baseW[key] || 8);
+  const totalWt = weights.reduce((a,b)=>a+b, 0);
+  let r = Math.random() * totalWt;
+  let chosenKey = pool[0];
+  for(let i=0; i<pool.length; i++){
+    r -= weights[i];
+    if(r <= 0){ chosenKey = pool[i]; break; }
+  }
+
+  spawnEnemyAt(G, chosenKey, pos.x, pos.y, chosenPhase);
+
+  const e = G.enemies[G.enemies.length-1];
+  if(rule.hpMult !== 1.0){
+    e.hp    *= rule.hpMult;
+    e.maxhp *= rule.hpMult;
+  }
 }
 
 // ── 灵虫生成 ──
@@ -101,7 +162,7 @@ function updateLateGameRules(G,sec){
         const n=4+Math.floor(sec/90);
         for(let i=0;i<n;i++){
           const a=Math.random()*Math.PI*2,rr=20+Math.random()*60;
-          spawnEnemyAt(G,Math.random()<0.3?'elite':'normal',cx+Math.cos(a)*rr,cy+Math.sin(a)*rr);
+          spawnEnemyAt(G,Math.random()<0.3?'berserker':'normal',cx+Math.cos(a)*rr,cy+Math.sin(a)*rr,'late');
         }
         addExplosionWave(G,cx,cy,80,'#ff8800');addPt(G,cx,cy,'#E85D24',20,3);
         playSound('pulse');
@@ -147,7 +208,7 @@ function updateEnemyCooperation(G){
     q.spawnTimer=(q.spawnTimer||0)+1;
     if(q.spawnTimer>=q.spawnInterval){
       q.spawnTimer=0;
-      spawnEnemyAt(G,'normal',q.x+(Math.random()-0.5)*30,q.y+(Math.random()-0.5)*30);
+      spawnEnemyAt(G,'normal',q.x+(Math.random()-0.5)*30,q.y+(Math.random()-0.5)*30,'late');
       q.spawnInterval=Math.max(60,q.spawnInterval-5);
     }
   });
@@ -168,7 +229,7 @@ function updateEnemySpawning(G,sec){
     for(let i=0;i<baseSpawn;i++)spawnEnemy(G);
     if(G.phase>=2&&sec>120)spawnEnemy(G);
     if((G.phase>=4||G.combo>=300)&&sec>180){spawnEnemy(G);spawnEnemy(G);}
-    if(G.combo>=300&&Math.random()<0.3)spawnEnemyAt(G,'elite',Math.random()<0.5?-15:W+15,Math.random()*H);
+    if(G.combo>=300&&Math.random()<0.3)spawnEnemyAt(G,'berserker',Math.random()<0.5?-15:W+15,Math.random()*H,'late');
   }
 }
 
