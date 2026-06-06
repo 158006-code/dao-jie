@@ -1058,22 +1058,26 @@ function draw(){
     const rt=RAGE_TIERS[G.rageTier||0];
     const tc=rt.color;
     const tierLabel=G.rageTier>0?' 【'+rt.name+'】':'';
-    // 余怒倒计时视觉：timer/RAGE_WINDOW_NORMAL 比例决定字体抖动幅度
-    const timerRatio=(G.comboTimer||0)/RAGE_WINDOW_NORMAL;
-    const urgency=timerRatio<0.3?1.0:timerRatio<0.6?0.5:0; // 越快到期抖得越厉害
-    const scale=1+Math.sin(G.elapsed*0.2)*0.07*(1+G.rageTier*0.05)+urgency*Math.sin(G.elapsed*0.5)*0.04;
+    const timerRatio=Math.max(0,Math.min(1,(G.comboTimer||0)/RAGE_WINDOW_NORMAL));
+    // 快耗尽时字体抖动
+    const urgencyShake=timerRatio<0.3?(1-timerRatio/0.3)*Math.sin(G.elapsed*0.6)*2.5:0;
+    const scale=1+Math.sin(G.elapsed*0.2)*0.07*(1+G.rageTier*0.05);
+    // tier6-8 shadowBlur加大
+    const textBlur=G.rageTier>=6?(16+G.rageTier*8):16+G.rageTier*4;
+    const textShadow=G.rageTier>=6?'#ff2200':tc;
     ctx.save();
-    ctx.translate(W/2,78);ctx.scale(scale,scale);ctx.textAlign='center';
-    ctx.shadowColor=tc;ctx.shadowBlur=16+G.rageTier*5;ctx.fillStyle=tc;
+    ctx.translate(W/2+urgencyShake,78);ctx.scale(scale,scale);
+    ctx.textAlign='center';ctx.shadowColor=textShadow;ctx.shadowBlur=textBlur;ctx.fillStyle=tc;
     ctx.font='bold 26px Arial';
     ctx.fillText(G.combo+' 怒火连斩'+tierLabel,0,0);
-    // 余怒倒计时条（combo文字下方8px，宽80px）
-    if(G.comboTimer>0&&G.combo>=1){
-      const barW=80,barH=3;
-      const filled=barW*(G.comboTimer/RAGE_WINDOW_HIT);
-      const barColor=timerRatio<0.3?'#ff2200':timerRatio<0.6?'#ff8800':tc;
-      ctx.fillStyle='rgba(0,0,0,0.4)';ctx.fillRect(-barW/2,12,barW,barH);
-      ctx.fillStyle=barColor;ctx.fillRect(-barW/2,12,filled,barH);
+    // 余怒倒计时条
+    if(G.comboTimer>0){
+      const barW=90,barH=3;
+      const filled=barW*timerRatio;
+      const barColor=timerRatio<0.25?'#ff2200':timerRatio<0.55?'#ff8800':tc;
+      ctx.fillStyle='rgba(0,0,0,0.45)';ctx.fillRect(-barW/2,14,barW,barH);
+      ctx.fillStyle=barColor;ctx.shadowBlur=6;ctx.shadowColor=barColor;
+      ctx.fillRect(-barW/2,14,filled,barH);
     }
     ctx.restore();
   }
