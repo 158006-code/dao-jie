@@ -896,19 +896,25 @@ function draw(){
     ctx.restore();ctx.globalAlpha=1;
   });
 
-  // ── 玩家 ──
+  // ── 玩家（怒火境界视觉）──
   const hpPct=G.mhp/G.mmaxhp;
-  const tier=G.comboTier||0;
+  const tier=G.rageTier||0;
+  const rt=RAGE_TIERS[tier];
+  const tc=rt.color;
+  const pc=rt.particleColor;
 
+  // 低血警告环
   if(hpPct<0.4){
-    const dangerAlpha=0.18+Math.sin(G.elapsed*0.12)*0.1;const dangerR=20+Math.sin(G.elapsed*0.08)*1.5;
-    ctx.save();ctx.strokeStyle='#E24B4A';ctx.lineWidth=2.5;ctx.globalAlpha=dangerAlpha*2;ctx.shadowBlur=10;ctx.shadowColor='#E24B4A';
-    ctx.beginPath();ctx.arc(G.mx,G.my,dangerR,0,Math.PI*2);ctx.stroke();ctx.restore();
+    const dangerAlpha=0.18+Math.sin(G.elapsed*0.12)*0.1;
+    ctx.save();ctx.strokeStyle='#E24B4A';ctx.lineWidth=2.5;
+    ctx.globalAlpha=dangerAlpha*2;ctx.shadowBlur=10;ctx.shadowColor='#E24B4A';
+    ctx.beginPath();ctx.arc(G.mx,G.my,20+Math.sin(G.elapsed*0.08)*1.5,0,Math.PI*2);ctx.stroke();ctx.restore();
   }
+
+  // 静止警告
   if((G.stillTimer||0)>90){
     const sp=Math.min(1,(G.stillTimer-90)/90);
-    const maxRingR=Math.max(W,H)*0.72;
-    const minRingR=38;
+    const maxRingR=Math.max(W,H)*0.72,minRingR=38;
     const warnR=maxRingR-(maxRingR-minRingR)*sp;
     const warnAlpha=(0.25+Math.sin(G.elapsed*0.28)*0.15)*sp;
     ctx.save();ctx.strokeStyle='#ff8800';ctx.lineWidth=2.5;ctx.globalAlpha=warnAlpha;
@@ -919,48 +925,115 @@ function draw(){
     ctx.setLineDash([]);ctx.restore();
     if(G.stillTimer===90)showEcoAlert('⚠ 停留原地会被包围！');
   }
-  if(G.activeBuild==='berserk'&&tier>=4){
-    const distortR=20+tier*6;
-    ctx.save();ctx.globalAlpha=0.15+tier*0.04;
-    ctx.strokeStyle='#ff2200';ctx.lineWidth=2;
-    for(let i=0;i<3;i++){
-      const a=G.elapsed*0.03*(1+i*0.3)+i*Math.PI*0.7;
-      ctx.beginPath();ctx.arc(G.mx,G.my,distortR+i*8,a,a+Math.PI);ctx.stroke();
-    }
-    ctx.restore();
-  }
-  if(tier>=1){
-    const tc=(RAGE_TIERS[tier]||RAGE_TIERS[0]).color;
-    for(let ri=0;ri<Math.min(tier,4);ri++){
-      const angOffset=G.elapsed*0.04*(1+ri*0.3)+ri*Math.PI*0.5,arcR=18+ri*7,arcLen=0.4+ri*0.1;
-      ctx.save();ctx.strokeStyle=tc;ctx.lineWidth=1.5-ri*0.2;ctx.globalAlpha=0.5-ri*0.08;ctx.shadowBlur=6;ctx.shadowColor=tc;
-      ctx.beginPath();ctx.arc(G.mx,G.my,arcR,angOffset,angOffset+arcLen*Math.PI);ctx.stroke();
-      ctx.beginPath();ctx.arc(G.mx,G.my,arcR,angOffset+Math.PI,angOffset+Math.PI+arcLen*Math.PI);ctx.stroke();ctx.restore();
-    }
-    if(tier>=5){const pulseR=16+(G.elapsed*1.2)%24,pulseAlpha=1-(pulseR-16)/24;ctx.save();ctx.strokeStyle=tc;ctx.lineWidth=1.5;ctx.globalAlpha=pulseAlpha*0.4;ctx.beginPath();ctx.arc(G.mx,G.my,pulseR,0,Math.PI*2);ctx.stroke();ctx.restore();}
-  }
-  if(tier>=7){const tc7=(RAGE_TIERS[tier]||RAGE_TIERS[0]).color;ctx.save();ctx.globalAlpha=0.22+Math.sin(G.elapsed*0.08)*0.08;ctx.fillStyle=tc7;ctx.beginPath();ctx.arc(G.mx,G.my,24+Math.sin(G.elapsed*0.05)*4,0,Math.PI*2);ctx.fill();ctx.restore();}
 
+  // ── 境界粒子光环（tier1起） ──
+  if(tier>=1){
+    // 旋转弧线（tier1-5每档+1条）
+    const arcCount=Math.min(tier,5);
+    for(let ri=0;ri<arcCount;ri++){
+      const angOffset=G.elapsed*0.04*(1+ri*0.3)+ri*Math.PI*0.5;
+      const arcR=18+ri*7,arcLen=0.4+ri*0.1;
+      const blur = tier>=6 ? 18+tier*8 : 6;
+      const shadowCol = tier>=6
+        ? (tier===8?'#aa0033':tier===7?'#cc0044':'#ff2200')
+        : tc;
+      ctx.save();ctx.strokeStyle=tc;ctx.lineWidth=1.5-ri*0.15;
+      ctx.globalAlpha=0.5-ri*0.06;ctx.shadowBlur=blur;ctx.shadowColor=shadowCol;
+      ctx.beginPath();ctx.arc(G.mx,G.my,arcR,angOffset,angOffset+arcLen*Math.PI);ctx.stroke();
+      ctx.beginPath();ctx.arc(G.mx,G.my,arcR,angOffset+Math.PI,angOffset+Math.PI+arcLen*Math.PI);ctx.stroke();
+      ctx.restore();
+    }
+
+    // tier5+ 脉冲扩散环
+    if(tier>=5){
+      const pulseR=16+(G.elapsed*1.2)%24,pulseAlpha=1-(pulseR-16)/24;
+      ctx.save();ctx.strokeStyle=tc;ctx.lineWidth=1.5;ctx.globalAlpha=pulseAlpha*0.4;
+      ctx.shadowBlur=tier>=6?40:12;ctx.shadowColor=tier>=6?'#ff2200':tc;
+      ctx.beginPath();ctx.arc(G.mx,G.my,pulseR,0,Math.PI*2);ctx.stroke();ctx.restore();
+    }
+
+    // tier6杀怒：第二脉冲环（错相位）
+    if(tier>=6){
+      const pulseR2=16+(G.elapsed*1.2+12)%24,pulseAlpha2=1-(pulseR2-16)/24;
+      ctx.save();ctx.strokeStyle='#ff2200';ctx.lineWidth=1;ctx.globalAlpha=pulseAlpha2*0.3;
+      ctx.shadowBlur=52;ctx.shadowColor='#ff2200';
+      ctx.beginPath();ctx.arc(G.mx,G.my,pulseR2+6,0,Math.PI*2);ctx.stroke();ctx.restore();
+    }
+
+    // tier7绝怒：暗红填充光晕
+    if(tier>=7){
+      ctx.save();ctx.globalAlpha=0.18+Math.sin(G.elapsed*0.08)*0.06;
+      ctx.fillStyle='#440022';
+      ctx.shadowBlur=64;ctx.shadowColor='#cc0044';
+      ctx.beginPath();ctx.arc(G.mx,G.my,24+Math.sin(G.elapsed*0.05)*4,0,Math.PI*2);ctx.fill();ctx.restore();
+    }
+
+    // tier8极怒：双层暗红 + 外圈慢速脉冲
+    if(tier>=8){
+      ctx.save();ctx.globalAlpha=0.22+Math.sin(G.elapsed*0.06)*0.08;
+      ctx.fillStyle='#220011';
+      ctx.shadowBlur=80;ctx.shadowColor='#aa0033';
+      ctx.beginPath();ctx.arc(G.mx,G.my,28+Math.sin(G.elapsed*0.04)*5,0,Math.PI*2);ctx.fill();ctx.restore();
+      // 外圈慢速脉冲环
+      const outerR=36+(G.elapsed*0.6)%20,outerAlpha=1-(outerR-36)/20;
+      ctx.save();ctx.strokeStyle='#660022';ctx.lineWidth=2;ctx.globalAlpha=outerAlpha*0.35;
+      ctx.shadowBlur=80;ctx.shadowColor='#aa0033';
+      ctx.beginPath();ctx.arc(G.mx,G.my,outerR,0,Math.PI*2);ctx.stroke();ctx.restore();
+    }
+  }
+
+  // ── 玩家本体（大头人形简版）──
   const dodgeAlpha=G.dodgeTimer>0?0.5+0.2*Math.sin(G.elapsed*0.3):1;
 
-  const bodyColor=hpPct<0.3?'#E24B4A':(tier>=1?(RAGE_TIERS[tier]||RAGE_TIERS[0]).color:'#1D9E75');
-  const glowStr=14+tier*7+(hpPct<0.3?12:0);
-  ctx.save();ctx.globalAlpha*=dodgeAlpha;ctx.shadowBlur=glowStr;ctx.shadowColor=bodyColor;
-  ctx.fillStyle=`rgba(29,158,117,${0.1+0.06*Math.sin(G.elapsed*0.05)})`;
-  ctx.beginPath();ctx.arc(G.mx,G.my,14,0,Math.PI*2);ctx.fill();
-  ctx.strokeStyle=bodyColor;ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(G.mx,G.my,12,0,Math.PI*2);ctx.stroke();
-  ctx.fillStyle=tier>=3?bodyColor:'#9FE1CB';ctx.beginPath();ctx.arc(G.mx,G.my,4,0,Math.PI*2);ctx.fill();
-  ctx.restore();
-  if(G.shieldHp>0){
-    ctx.save();ctx.globalAlpha=0.25+0.1*Math.sin(G.elapsed*0.08);
-    ctx.strokeStyle='#4488CC';ctx.lineWidth=3;ctx.shadowBlur=12;ctx.shadowColor='#4488CC';
-    ctx.beginPath();ctx.arc(G.mx,G.my,18,0,Math.PI*2);ctx.stroke();ctx.restore();
+  // 主体颜色：tier0-2绿色系，tier3-5橙红，tier6-8深红近黑（本体暗，靠shadowBlur发光）
+  const bodyColors=['#1D9E75','#aaee44','#ffcc00','#ff8800','#ff3300','#cc0000','#880000','#440022','#220011'];
+  const bodyColor=hpPct<0.3?'#E24B4A':(bodyColors[tier]||'#1D9E75');
+
+  // shadowBlur：tier0-5线性，tier6-8大幅加大，shadowColor用亮版暗红
+  const glowStr=tier>=8?80:tier>=7?64:tier>=6?52:(14+tier*7+(hpPct<0.3?12:0));
+  const glowColor=tier>=8?'#aa0033':tier>=7?'#cc0044':tier>=6?'#ff2200':bodyColor;
+
+  ctx.save();ctx.globalAlpha*=dodgeAlpha;
+  ctx.shadowBlur=glowStr;ctx.shadowColor=glowColor;
+
+  // 头部（大圆）
+  ctx.fillStyle=bodyColor;
+  ctx.beginPath();ctx.arc(G.mx,G.my-4,10,0,Math.PI*2);ctx.fill();
+
+  // 红光眼（两个小圆点）
+  const eyeColor=tier>=3?'#ff2200':'#ff6644';
+  const eyeBlur=tier>=6?16:8;
+  ctx.shadowBlur=eyeBlur;ctx.shadowColor=eyeColor;ctx.fillStyle=eyeColor;
+  ctx.beginPath();ctx.arc(G.mx-3,G.my-5,1.8,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.arc(G.mx+3,G.my-5,1.8,0,Math.PI*2);ctx.fill();
+
+  // 身体（小椭圆）
+  ctx.shadowBlur=glowStr;ctx.shadowColor=glowColor;ctx.fillStyle=bodyColor;
+  ctx.beginPath();ctx.ellipse(G.mx,G.my+5,4,6,0,0,Math.PI*2);ctx.fill();
+
+  // 愤怒眉毛（tier2+：V形粗眉）
+  if(tier>=2){
+    ctx.strokeStyle=eyeColor;ctx.lineWidth=1.5;ctx.shadowBlur=eyeBlur;ctx.shadowColor=eyeColor;
+    const browShake=tier>=2?Math.sin(G.elapsed*0.3+(tier*0.5))*0.8:0;
+    ctx.beginPath();ctx.moveTo(G.mx-5,G.my-8+browShake);ctx.lineTo(G.mx-2,G.my-7);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(G.mx+5,G.my-8+browShake);ctx.lineTo(G.mx+2,G.my-7);ctx.stroke();
   }
+
+  ctx.restore();
+
+  // HP条
   const hbw=48,hbh=5;
   ctx.fillStyle='rgba(0,0,0,0.6)';ctx.fillRect(G.mx-hbw/2,G.my-36,hbw,hbh);
   const hbCol=hpPct<0.3?'#ff3333':hpPct<0.6?'#EF9F27':'#44ee66';
   ctx.fillStyle=hbCol;ctx.fillRect(G.mx-hbw/2,G.my-36,hbw*hpPct,hbh);
   if(hpPct>0.05){ctx.fillStyle='rgba(255,255,255,0.2)';ctx.fillRect(G.mx-hbw/2,G.my-36,hbw*hpPct,hbh/2);}
+
+  // 护盾环
+  if(G.shieldHp>0){
+    ctx.save();ctx.globalAlpha=0.25+0.1*Math.sin(G.elapsed*0.08);
+    ctx.strokeStyle='#4488CC';ctx.lineWidth=3;ctx.shadowBlur=12;ctx.shadowColor='#4488CC';
+    ctx.beginPath();ctx.arc(G.mx,G.my,18,0,Math.PI*2);ctx.stroke();ctx.restore();
+  }
   if(G.shieldHp>0){
     ctx.fillStyle='rgba(0,0,0,0.5)';ctx.fillRect(G.mx-hbw/2,G.my-40,hbw,2);
     ctx.fillStyle='#4488CC';ctx.fillRect(G.mx-hbw/2,G.my-40,hbw,2);
