@@ -418,6 +418,27 @@ canvas{display:block;background:#04060f;touch-action:none;width:100%;flex:1;min-
 .intro-line.show{animation-play-state:running}
 .intro-line.l5{font-size:24px;font-weight:700;color:#EF9F27;text-shadow:0 0 24px #EF9F2799;margin-top:14px;animation-name:introDrop;animation-duration:0.8s;animation-timing-function:cubic-bezier(.25,.1,.25,1);transform:translateY(-130vh)}
 .intro-flash{position:fixed;inset:0;z-index:199;pointer-events:none;background:radial-gradient(ellipse at 50% 50%,rgba(239,159,39,0.3),transparent 60%);transition:opacity 0.5s ease}
+/* ── 余怒三阶段动画 ── */
+@keyframes rage-burn {
+  0%,100%{ opacity:1; transform:scale(1); }
+  50%{ opacity:0.85; transform:scale(1.05); }
+}
+@keyframes rage-flicker {
+  0%,100%{ opacity:1; }
+  20%{ opacity:0.6; }
+  40%{ opacity:1; }
+  60%{ opacity:0.5; }
+  80%{ opacity:0.9; }
+}
+@keyframes rage-shatter {
+  0%{ opacity:1; transform:scale(1) rotate(0deg); filter:none; }
+  50%{ opacity:0.7; transform:scale(1.15) rotate(3deg); filter:blur(1px); }
+  100%{ opacity:0.3; transform:scale(0.9) rotate(-2deg); filter:blur(2px); }
+}
+/* h-sync-disp 根据余怒阶段自动切换动画（由JS添加class驱动） */
+#h-sync-disp.rage-phase-burn    { animation: rage-burn    0.8s ease-in-out infinite; }
+#h-sync-disp.rage-phase-flicker { animation: rage-flicker 0.4s linear infinite; }
+#h-sync-disp.rage-phase-shatter { animation: rage-shatter 0.25s ease-in-out infinite; }
 </style>
 </head>
 <body>

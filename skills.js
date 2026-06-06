@@ -231,7 +231,7 @@ function initGame(){
     comboSpeedBonus:_baseComboSpeed,comboDmgBonus:_baseComboDmg,
     evolveRateBonus:_baseEvolveRate,xpBoost:_baseXpBoost,
     starDmgBonus:_baseStarDmg,evolveRangeBonus:_baseEvolveRange,
-    stagePhase:0,viewMode:'free',activeBossAt:null,totalTime:360,envParticles:[],
+    stagePhase:0,viewMode:'free',activeBossAt:null,totalTime:360,envParticles:[],introTimer:180,introDone:false,
   };
   // viewMode分区 + 阶段初始化
   const stageId=_currentRealm+1;
@@ -352,6 +352,17 @@ function updateCombo(G){
 
   // 狂怒（tier5）专属：高速感知（视觉粒子密度加倍，在draw里处理）
   G.rageMaxActive=(G.rageTier>=5);
+  // 余怒三阶段图标动画（驱动CSS class）
+  const el=document.getElementById('h-sync-disp');
+  if(el&&G.combo>0&&G.comboTimer>0){
+    const ratio=G.comboTimer/RAGE_WINDOW_NORMAL;
+    el.classList.remove('rage-phase-burn','rage-phase-flicker','rage-phase-shatter');
+    if(ratio>0.55)       el.classList.add('rage-phase-burn');     // 燃烧阶段
+    else if(ratio>0.25)  el.classList.add('rage-phase-flicker');  // 闪烁阶段
+    else                 el.classList.add('rage-phase-shatter');  // 碎裂阶段
+  } else if(el){
+    el.classList.remove('rage-phase-burn','rage-phase-flicker','rage-phase-shatter');
+  }
 }
 
 // ── 法宝combo效果（提取自_update）──

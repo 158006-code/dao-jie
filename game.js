@@ -221,6 +221,12 @@ function update(){
 
 function _update(){
   if(G.paused||G.dead||G.won)return;
+  // 开场过场：前3秒锁定输入，只播动画
+  if(!G.introDone){
+    G.introTimer--;
+    if(G.introTimer<=0){G.introDone=true;G.paused=false;}
+    return; // 过场期间不跑游戏逻辑
+  }
   G.elapsed++;
   const sec=Math.floor(G.elapsed/FPS);
 
@@ -1083,6 +1089,92 @@ function draw(){
   }
 
   ctx.restore();
+
+  // ── 开场过场动画 ──
+  if(!G.introDone){
+    const t=G.introTimer; // 180→0
+    const progress=1-(t/180); // 0→1
+
+    // 黑色蒙版（前0.5秒淡入，后0.5秒淡出）
+    const overlayAlpha=t>150?((180-t)/30):t<30?(t/30):1;
+    ctx.save();
+    ctx.fillStyle=`rgba(0,0,0,${overlayAlpha*0.88})`;
+    ctx.fillRect(0,0,W,H);
+
+    // 台词文字（第30帧后出现，第150帧前消失）
+    if(t<150&&t>30){
+      const textAlpha=t>120?((150-t)/30):t<60?(t-30)/30:1;
+      ctx.globalAlpha=textAlpha;
+      ctx.textAlign='center';
+      ctx.fillStyle='#ff2200';
+      ctx.shadowColor='#ff4400';
+      ctx.shadowBlur=24;
+      ctx.font='bold 18px Arial';
+      ctx.fillText('今天，谁都别想让我冷静下来。',W/2,H/2-18);
+      // 副行小字
+      ctx.fillStyle='rgba(255,100,50,0.7)';
+      ctx.shadowBlur=10;
+      ctx.font='13px Arial';
+      ctx.fillText('— 练气期第一天',W/2,H/2+10);
+      ctx.globalAlpha=1;
+    }
+
+    // 拳头攥紧动画（Canvas简版：圆→握拳椭圆，居中偏下）
+    if(t<140&&t>20){
+      const fistProgress=Math.min(1,(140-t)/80); // 0→1 握拳过程
+      const fistAlpha=t<40?(t-20)/20:t>120?(140-t)/20:1;
+      const cx=W/2, cy=H/2+55;
+      ctx.save();
+      ctx.globalAlpha=fistAlpha*0.9;
+      ctx.shadowBlur=30+fistProgress*20;
+      ctx.shadowColor='#ff3300';
+
+      // 手掌（椭圆，随progress从圆变扁）
+      const pw=18+fistProgress*4, ph=22-fistProgress*6;
+      ctx.fillStyle='#cc4422';
+      ctx.beginPath();ctx.ellipse(cx,cy,pw,ph,0,0,Math.PI*2);ctx.fill();
+
+      // 四根手指（顶部，随progress弯曲）
+      for(let fi=0;fi<4;fi++){
+        const fx=cx-12+fi*8;
+        const fingerLen=12-fistProgress*9; // 握拳时手指缩短
+        const fiy=cy-ph;
+        ctx.fillStyle='#bb3311';
+        ctx.beginPath();ctx.ellipse(fx,fiy-fingerLen/2,3,fingerLen/2+1,0,0,Math.PI*2);ctx.fill();
+      }
+
+      // 拇指（侧面）
+      ctx.fillStyle='#bb3311';
+      const thumbX=cx+pw-2,thumbY=cy+2;
+      const thumbLen=8-fistProgress*5;
+      ctx.beginPath();ctx.ellipse(thumbX,thumbY,thumbLen/2+1,3,Math.PI*0.3,0,Math.PI*2);ctx.fill();
+
+      // 握紧时爆出粒子（fistProgress>0.8时）
+      if(fistProgress>0.8&&G.elapsed%4===0){
+        const sparks=3;
+        for(let si=0;si<sparks;si++){
+          const sa=Math.random()*Math.PI*2;
+          const sr=pw+Math.random()*12;
+          ctx.globalAlpha=fistAlpha*(1-fistProgress)*3;
+          ctx.fillStyle='#ff6633';
+          ctx.shadowBlur=8;ctx.shadowColor='#ff4400';
+          ctx.beginPath();ctx.arc(cx+Math.cos(sa)*sr,cy+Math.sin(sa)*sr,1.5,0,Math.PI*2);ctx.fill();
+        }
+      }
+      ctx.restore();
+    }
+
+    // 跳过提示
+    if(t<160){
+      ctx.save();
+      ctx.globalAlpha=0.35+Math.sin(G.elapsed*0.15)*0.15;
+      ctx.fillStyle='#ffffff';
+      ctx.font='11px Arial';
+      ctx.textAlign='center';
+      ctx.fillText('点击跳过',W/2,H-28);
+      ctx.restore();
+    }
+  }
 }
 
 // ── 怒气需求检查（Boss绑定空架子）──
@@ -1133,8 +1225,10 @@ function bindDpad(id,key,sk){const el=document.getElementById(id);if(!el)return;
 bindDpad('du','ArrowUp','u');bindDpad('dd','ArrowDown','d');bindDpad('dl','ArrowLeft','l');bindDpad('dr','ArrowRight','r');
 let touchStart=null;
 let lastTapTime=0;
+CV.addEventListener('mousedown',e=>{if(G&&!G.introDone){G.introTimer=0;G.introDone=true;G.paused=false;return;}});
 CV.addEventListener('touchstart',e=>{
   e.preventDefault();
+  if(G&&!G.introDone){G.introTimer=0;G.introDone=true;G.paused=false;return;}
   const now=Date.now();
   if(now-lastTapTime<300){togglePause();lastTapTime=0;return;}
   lastTapTime=now;
