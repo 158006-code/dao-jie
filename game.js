@@ -1128,6 +1128,9 @@ function draw(){
       expression:'blank', shake
     });
     ctx.save(); ctx.translate(e.x+shake, e.y);
+    // 遮盖drawMonsterBase默认眼
+    ctx.fillStyle='#9090A0';
+    ctx.fillRect(-6, -20, 5, 5); ctx.fillRect(1, -20, 5, 5);
     ctx.fillStyle='#fff';
     ctx.beginPath(); ctx.arc(-3,-17,2.5,0,Math.PI*2); ctx.fill();
     ctx.beginPath(); ctx.arc(3.5,-16,2.5,0,Math.PI*2); ctx.fill();

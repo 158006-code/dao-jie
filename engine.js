@@ -241,6 +241,7 @@ function updateProjectiles(G){
           let bsFinalDmg=actualDmg+(G.buffs.dmgFlat||0);
           if(G.critRate>0&&Math.random()<G.critRate){bsFinalDmg*=2;}
           e.hp-=bsFinalDmg;
+          e._hitShake=6; // 大头人形受击抖动（虫弹略轻）
           if(p.poison&&!e.immuneDot){e.poison=Math.max(e.poison||0,p.poison);}
           addDamageText(G,e.x+(Math.random()-0.5)*10,e.y-4,Math.ceil(bsFinalDmg)+'','#88ddaa',13);
           addPt(G,e.x,e.y,'#9FE1CB',1,1);
@@ -263,6 +264,7 @@ function updateProjectiles(G){
         let finalDmg=actualDmg+(G.buffs.dmgFlat||0);
         if(G.critRate>0&&Math.random()<G.critRate){finalDmg*=2;addDamageText(G,e.x+(Math.random()-0.5)*10,e.y-16,'暴击!','#ffcc00',18);}
         e.hp-=finalDmg;
+        e._hitShake=8; // 大头人形受击抖动
         if(G.comboHit>0){e._comboHitCnt=(e._comboHitCnt||0)+1;if(e._comboHitCnt>=3){e._comboHitCnt=0;for(let ci=0;ci<G.comboHit;ci++){e.hp-=(p.dmg*0.5)/(e.defMult||1);addDamageText(G,e.x+(Math.random()-0.5)*10,e.y-8,'连击!','#ff8800',14);}playSound('hit');}}
         if(e.shield>0&&!p.poison){e.shield=Math.max(0,e.shield-0.3);addPt(G,e.x,e.y,'#4488CC',3,1.5);hit=true;p._pierced++;if(p._pierced>totalPierce){dp.push(i);recycleProj(p);}return;}
         hit=true;
