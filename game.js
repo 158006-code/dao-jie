@@ -780,6 +780,39 @@ function draw(){
     if(e._frostFlash>0){e._frostFlash--;ctx.save();ctx.globalAlpha=0.5;ctx.fillStyle='#aaddff';ctx.shadowBlur=12;ctx.shadowColor='#88CCFF';ctx.beginPath();ctx.arc(e.x,e.y,e.sz/2+5,0,Math.PI*2);ctx.fill();ctx.globalAlpha=0.3;ctx.fillStyle='#ffffff';ctx.beginPath();ctx.arc(e.x,e.y,e.sz/2,0,Math.PI*2);ctx.fill();ctx.restore();}
     if(e.freezeTimer>0){ctx.save();ctx.globalAlpha=0.6;ctx.strokeStyle='#88CCFF';ctx.lineWidth=3;ctx.shadowBlur=10;ctx.shadowColor='#88CCFF';ctx.beginPath();ctx.arc(e.x,e.y,e.sz/2+4,0,Math.PI*2);ctx.stroke();ctx.restore();}
     if(e.frostDot>0){ctx.save();ctx.globalAlpha=0.12+Math.sin(G.elapsed*0.08)*0.06;ctx.fillStyle='#88CCFF';ctx.beginPath();ctx.arc(e.x,e.y,e.sz/2+6,0,Math.PI*2);ctx.fill();ctx.restore();}
+    // ── 大头人形分派 ──
+    let _drawnAsHuman = true;
+    switch(e.typeKey || e.key){
+      case 'normal':  drawEnemy_normal(ctx,e,G); break;
+      case 'lied':    drawEnemy_lied(ctx,e,G); break;
+      case 'sly':     drawEnemy_sly(ctx,e,G); break;
+      case 'hard':    drawEnemy_hard(ctx,e,G); break;
+      case 'cute':    drawEnemy_cute(ctx,e,G); break;
+      case 'hikikomori': drawEnemy_hikikomori(ctx,e,G); break;
+      case 'dainty_e':drawEnemy_dainty_e(ctx,e,G); break;
+      case 'swift':   drawEnemy_swift(ctx,e,G); break;
+      case 'poor':    drawEnemy_poor(ctx,e,G); break;
+      case 'dumb':    drawEnemy_dumb(ctx,e,G); break;
+      case 'slick':   drawEnemy_slick(ctx,e,G); break;
+      case 'poser':   drawEnemy_poser(ctx,e,G); break;
+      case 'runner':  drawEnemy_runner(ctx,e,G); break;
+      case 'greedy':  drawEnemy_greedy(ctx,e,G); break;
+      case 'roller':  drawEnemy_roller(ctx,e,G); break;
+      case 'berserker': drawEnemy_berserker(ctx,e,G); break;
+      case 'rich':    drawEnemy_rich(ctx,e,G); break;
+      case 'lazy':    drawEnemy_lazy(ctx,e,G); break;
+      case 'brute':   drawEnemy_brute(ctx,e,G); break;
+      default: _drawnAsHuman = false;
+    }
+    if(_drawnAsHuman){
+      // 人形已绘制，只补HP条
+      const pct2=e.hp/e.maxhp;
+      ctx.fillStyle='rgba(0,0,0,0.45)';ctx.fillRect(e.x-e.sz/2,e.y-e.sz/2-7,e.sz,2);
+      ctx.fillStyle=pct2>0.5?'#1D9E75':'#E24B4A';ctx.fillRect(e.x-e.sz/2,e.y-e.sz/2-7,e.sz*pct2,2);
+      ctx.globalAlpha=1;
+      return;
+    }
+    // 以下是原有几何图形绘制（保留不动）
     ctx.fillStyle=col;
     if(e.special==='armored'){ctx.strokeStyle='#7080A0';ctx.lineWidth=2;ctx.beginPath();ctx.rect(e.x-e.sz/2,e.y-e.sz/2,e.sz,e.sz);ctx.fill();ctx.stroke();}
     else if(e.special==='bomber'||e.special==='suicidal'){
@@ -823,6 +856,490 @@ function draw(){
     ctx.fillStyle=pct>0.5?'#1D9E75':'#E24B4A';ctx.fillRect(e.x-e.sz/2,e.y-e.sz/2-7,e.sz*pct,2);
     ctx.globalAlpha=1;
   });
+
+  // ══════ 大头人形基础绘制 ══════
+  function drawMonsterBase(ctx, x, y, opts){
+    const {
+      color='#B04040', headR=9, bodyW=5, bodyH=7,
+      eyeL={x:-3,y:-1}, eyeR={x:3,y:-1},
+      expression='angry', glow=0, glowColor=color,
+      lean=0, shake=0
+    } = opts;
+    ctx.save();
+    ctx.translate(x + shake, y);
+    ctx.rotate(lean);
+    if(glow>0){ ctx.shadowBlur=glow; ctx.shadowColor=glowColor; }
+    // 头部
+    ctx.fillStyle=color;
+    ctx.beginPath(); ctx.arc(0, -bodyH-headR, headR, 0, Math.PI*2); ctx.fill();
+    // 眼白
+    ctx.fillStyle='#fff';
+    ctx.beginPath(); ctx.arc(eyeL.x, -bodyH-headR+eyeL.y, 2.2, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(eyeR.x, -bodyH-headR+eyeR.y, 2.2, 0, Math.PI*2); ctx.fill();
+    // 眼珠
+    ctx.fillStyle='#111';
+    ctx.beginPath(); ctx.arc(eyeL.x+0.5, -bodyH-headR+eyeL.y+0.3, 1.1, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(eyeR.x+0.5, -bodyH-headR+eyeR.y+0.3, 1.1, 0, Math.PI*2); ctx.fill();
+    // 表情线
+    ctx.strokeStyle=color; ctx.lineWidth=1.3;
+    if(expression==='angry'){
+      ctx.beginPath(); ctx.moveTo(-headR*0.55,-bodyH-headR+headR*0.35);
+      ctx.lineTo(-headR*0.15,-bodyH-headR+headR*0.55); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(headR*0.55,-bodyH-headR+headR*0.35);
+      ctx.lineTo(headR*0.15,-bodyH-headR+headR*0.55); ctx.stroke();
+    } else if(expression==='smug'){
+      ctx.beginPath(); ctx.moveTo(-headR*0.5,-bodyH-headR+headR*0.3);
+      ctx.lineTo(-headR*0.1,-bodyH-headR+headR*0.45); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(headR*0.5,-bodyH-headR+headR*0.45);
+      ctx.lineTo(headR*0.1,-bodyH-headR+headR*0.45); ctx.stroke();
+    } else if(expression==='scared'){
+      ctx.beginPath(); ctx.moveTo(-headR*0.55,-bodyH-headR+headR*0.55);
+      ctx.lineTo(-headR*0.15,-bodyH-headR+headR*0.3); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(headR*0.55,-bodyH-headR+headR*0.55);
+      ctx.lineTo(headR*0.15,-bodyH-headR+headR*0.3); ctx.stroke();
+    } else if(expression==='blank'){
+      ctx.beginPath(); ctx.moveTo(-headR*0.5,-bodyH-headR+headR*0.4);
+      ctx.lineTo(-headR*0.1,-bodyH-headR+headR*0.4); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(headR*0.5,-bodyH-headR+headR*0.4);
+      ctx.lineTo(headR*0.1,-bodyH-headR+headR*0.4); ctx.stroke();
+    }
+    // 身体椭圆
+    ctx.fillStyle=color; ctx.shadowBlur=0;
+    ctx.beginPath(); ctx.ellipse(0, 0, bodyW, bodyH, 0, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+
+  // ── 逊der（初期·摇摆群体）──────────────────
+  function drawEnemy_normal(ctx, e, G){
+    const shake = e._hitShake>0 ? (Math.random()-0.5)*4 : 0;
+    if(e._hitShake>0) e._hitShake--;
+    const phase = e.hp/e.maxhp > 0.66 ? 0 : e.hp/e.maxhp > 0.33 ? 1 : 2;
+    const headR = 9 + phase;
+    const lean = 0.18;
+    drawMonsterBase(ctx, e.x, e.y, {
+      color: phase===2?'#882020':phase===1?'#aa3030':'#B04040',
+      headR, bodyW:5+phase, bodyH:7, expression:'angry', lean, shake
+    });
+    if(!e._hairPts) e._hairPts=[];
+    if(G.elapsed%120===0) e._hairPts.push({x:e.x+(Math.random()-0.5)*6, y:e.y-headR-7, vy:-0.4, life:60});
+    e._hairPts = e._hairPts.filter(p=>{
+      p.y+=p.vy; p.life--;
+      if(p.life>0){
+        ctx.save(); ctx.globalAlpha=p.life/60; ctx.fillStyle='#884422';
+        ctx.beginPath(); ctx.arc(p.x,p.y,1.2,0,Math.PI*2); ctx.fill(); ctx.restore();
+      }
+      return p.life>0;
+    });
+    if(phase===2){
+      ctx.save(); ctx.globalAlpha=0.25; ctx.strokeStyle='#ff4400'; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.arc(e.x, e.y, e.sz/2+4, 0, Math.PI*2); ctx.stroke(); ctx.restore();
+    }
+  }
+
+  // ── 躺der（初期·碰撞触发）──────────────────
+  function drawEnemy_lied(ctx, e, G){
+    const shake = e._hitShake>0 ? (Math.random()-0.5)*3 : 0;
+    if(e._hitShake>0) e._hitShake--;
+    ctx.save();
+    ctx.translate(e.x + shake, e.y);
+    ctx.rotate(Math.PI*0.5);
+    ctx.fillStyle='#8B5030';
+    ctx.beginPath(); ctx.ellipse(0, 0, 12, 7, 0, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle='#A06040';
+    ctx.beginPath(); ctx.arc(14, 0, 7, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle='#fff';
+    ctx.beginPath(); ctx.arc(14, -2.5, 2, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle='#111';
+    ctx.beginPath(); ctx.arc(14, -2, 1, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,0.12)';
+    ctx.beginPath(); ctx.ellipse(0, -3, 8, 4, 0, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+
+  // ── 苟der（初期·弧线保距）──────────────────
+  function drawEnemy_sly(ctx, e, G){
+    const shake = e._hitShake>0 ? (Math.random()-0.5)*3 : 0;
+    if(e._hitShake>0) e._hitShake--;
+    drawMonsterBase(ctx, e.x, e.y, {
+      color:'#7060A0', headR:8, bodyW:4, bodyH:8,
+      expression:'smug', lean:0.1, shake
+    });
+    ctx.save(); ctx.translate(e.x+shake, e.y);
+    ctx.strokeStyle='#7060A0'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.arc(0, -4, 6, Math.PI*0.2, Math.PI*0.8); ctx.stroke();
+    ctx.fillStyle='#ffeeaa'; ctx.strokeStyle='#aa8800'; ctx.lineWidth=1;
+    ctx.fillRect(8, -16, 7, 9); ctx.strokeRect(8, -16, 7, 9);
+    ctx.strokeStyle='#aa6600'; ctx.lineWidth=0.5;
+    for(let i=1;i<3;i++){ ctx.beginPath(); ctx.moveTo(9,-16+i*3); ctx.lineTo(14,-16+i*3); ctx.stroke(); }
+    ctx.restore();
+  }
+
+  // ── 硬der（初期·冲刺停顿）──────────────────
+  function drawEnemy_hard(ctx, e, G){
+    const shake = e._hitShake>0 ? (Math.random()-0.5)*3 : 0;
+    if(e._hitShake>0) e._hitShake--;
+    const dashing = e._dashing>0;
+    drawMonsterBase(ctx, e.x, e.y, {
+      color: dashing?'#8090C0':'#607090',
+      headR:12, bodyW:7, bodyH:8,
+      expression:'smug', lean: dashing?0.35:0.15, shake
+    });
+    ctx.save(); ctx.translate(e.x+shake, e.y);
+    ctx.fillStyle='#505870'; ctx.strokeStyle='#8090A0'; ctx.lineWidth=1.5;
+    ctx.fillRect(-8, -26, 16, 10); ctx.strokeRect(-8, -26, 16, 10);
+    ctx.fillStyle='#a0b0c0';
+    [[-6,-23],[6,-23],[-6,-18],[6,-18]].forEach(([rx,ry])=>{
+      ctx.beginPath(); ctx.arc(rx,ry,1.5,0,Math.PI*2); ctx.fill();
+    });
+    ctx.restore();
+  }
+
+  // ── 萌der（初期·群体波形出生）──────────────────
+  function drawEnemy_cute(ctx, e, G){
+    const shake = e._hitShake>0 ? (Math.random()-0.5)*2 : 0;
+    if(e._hitShake>0) e._hitShake--;
+    if(e._seed===undefined) e._seed = Math.random()*999;
+    const bounce = Math.sin(G.elapsed*0.2 + e._seed)*2;
+    drawMonsterBase(ctx, e.x, e.y+bounce, {
+      color:'#E06080', headR:7, bodyW:3, bodyH:3,
+      expression:'blank', shake
+    });
+    if(e._hitShake>4){
+      ctx.save(); ctx.translate(e.x, e.y+bounce);
+      ctx.fillStyle='#ffff88'; ctx.font='8px Arial'; ctx.textAlign='center';
+      ctx.fillText('★', -8, -20); ctx.fillText('★', 8, -18);
+      ctx.restore();
+    }
+  }
+
+  // ── 宅der（中期·靠近爆发）──────────────────
+  function drawEnemy_hikikomori(ctx, e, G){
+    const shake = e._hitShake>0 ? (Math.random()-0.5)*3 : 0;
+    if(e._hitShake>0) e._hitShake--;
+    drawMonsterBase(ctx, e.x, e.y, {
+      color:'#405060', headR:10, bodyW:6, bodyH:9,
+      expression:'blank', lean:0.05, shake
+    });
+    ctx.save(); ctx.translate(e.x+shake, e.y);
+    ctx.strokeStyle='#405060'; ctx.lineWidth=2.5;
+    ctx.beginPath(); ctx.moveTo(-8,-2); ctx.lineTo(8,4); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(8,-2); ctx.lineTo(-8,4); ctx.stroke();
+    const d = Math.hypot(e.x-G.mx, e.y-G.my);
+    if(d<60){
+      ctx.globalAlpha=0.3*(1-d/60);
+      ctx.fillStyle='#ff2200';
+      ctx.beginPath(); ctx.arc(0,-9,10,0,Math.PI*2); ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  // ── 娇der（中期·中心聚·粉色粒子）──────────────────
+  function drawEnemy_dainty_e(ctx, e, G){
+    const shake = e._hitShake>0 ? (Math.random()-0.5)*2 : 0;
+    if(e._hitShake>0) e._hitShake--;
+    drawMonsterBase(ctx, e.x, e.y, {
+      color:'#D060A0', headR:9, bodyW:5, bodyH:7,
+      expression:'smug', lean:0.2, shake
+    });
+    ctx.save(); ctx.translate(e.x+shake, e.y);
+    ctx.strokeStyle='#40A040'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(6,-2); ctx.lineTo(12,-10); ctx.stroke();
+    ctx.fillStyle='#FF80C0'; ctx.shadowBlur=4; ctx.shadowColor='#FF80C0';
+    ctx.beginPath(); ctx.arc(12,-11,3,0,Math.PI*2); ctx.fill();
+    ctx.shadowBlur=0;
+    if(!e._pinkPts) e._pinkPts=[];
+    if(G.elapsed%40===0){
+      e._pinkPts.push({
+        x:e.x+(Math.random()-0.5)*12, y:e.y-16,
+        vx:(Math.random()-0.5)*0.8, vy:-0.6, life:50
+      });
+    }
+    ctx.restore();
+    e._pinkPts=(e._pinkPts||[]).filter(p=>{
+      p.x+=p.vx; p.y+=p.vy; p.life--;
+      if(p.life>0){
+        ctx.save(); ctx.globalAlpha=p.life/50; ctx.fillStyle='#FF80C0';
+        ctx.beginPath(); ctx.arc(p.x,p.y,1.5,0,Math.PI*2); ctx.fill(); ctx.restore();
+      }
+      return p.life>0;
+    });
+  }
+
+  // ── 快der（中期·高速直线）──────────────────
+  function drawEnemy_swift(ctx, e, G){
+    if(e._hitShake>0) e._hitShake--;
+    const spd = Math.hypot(e.vx||0, e.vy||0);
+    const lean = Math.min(0.5, spd*0.15);
+    drawMonsterBase(ctx, e.x, e.y, {
+      color:'#E06030', headR:7, bodyW:4, bodyH:7,
+      expression:'smug', lean, shake:0
+    });
+    if(!e._trail) e._trail=[];
+    e._trail.push({x:e.x,y:e.y});
+    if(e._trail.length>3) e._trail.shift();
+    e._trail.forEach((p,i)=>{
+      ctx.save();
+      ctx.globalAlpha=[0.05,0.12,0.22][i]||0.05;
+      ctx.fillStyle='#E06030';
+      ctx.beginPath(); ctx.arc(p.x,p.y,5,0,Math.PI*2); ctx.fill();
+      ctx.restore();
+    });
+    ctx.save(); ctx.translate(e.x, e.y);
+    ctx.strokeStyle='rgba(220,80,40,0.5)'; ctx.lineWidth=2;
+    const legSwing = Math.sin(G.elapsed*0.5)*8;
+    ctx.beginPath(); ctx.moveTo(-3,7); ctx.lineTo(-3+legSwing,18); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(3,7); ctx.lineTo(3-legSwing,18); ctx.stroke();
+    ctx.restore();
+  }
+
+  // ── 穷der（中期·随机抖）──────────────────
+  function drawEnemy_poor(ctx, e, G){
+    const shake = e._hitShake>0?(Math.random()-0.5)*4:Math.sin(G.elapsed*0.3+(e._seed||0))*1.5;
+    if(e._hitShake>0) e._hitShake--;
+    ctx.save(); ctx.translate(e.x+shake, e.y);
+    ctx.fillStyle='#806050';
+    ctx.beginPath();
+    const pts=12, r=8;
+    for(let i=0;i<pts;i++){
+      const a=i/pts*Math.PI*2;
+      const ri=r+(i%3===0?-2:1);
+      i===0?ctx.moveTo(Math.cos(a)*ri,-9+Math.sin(a)*ri)
+            :ctx.lineTo(Math.cos(a)*ri,-9+Math.sin(a)*ri);
+    }
+    ctx.closePath(); ctx.fill();
+    ctx.save(); ctx.globalCompositeOperation='destination-out';
+    [[2,2],[-3,-1],[1,-4]].forEach(([bx,by])=>{
+      ctx.beginPath(); ctx.arc(bx,by,1.5,0,Math.PI*2); ctx.fill();
+    });
+    ctx.restore();
+    ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(-2.5,-10,1.8,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(2.5,-10,1.8,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#333'; ctx.beginPath(); ctx.arc(-2,-9.5,0.9,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(2.5,-9.5,0.9,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+
+  // ── 傻der（中期·随机方向）──────────────────
+  function drawEnemy_dumb(ctx, e, G){
+    const shake = e._hitShake>0?(Math.random()-0.5)*4:0;
+    if(e._hitShake>0) e._hitShake--;
+    drawMonsterBase(ctx, e.x, e.y, {
+      color:'#9090A0', headR:10, bodyW:5, bodyH:7,
+      expression:'blank', shake
+    });
+    ctx.save(); ctx.translate(e.x+shake, e.y);
+    ctx.fillStyle='#fff';
+    ctx.beginPath(); ctx.arc(-3,-17,2.5,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(3.5,-16,2.5,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#222';
+    ctx.beginPath(); ctx.arc(-4.5,-17,1.2,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(4.5,-15.5,1.2,0,Math.PI*2); ctx.fill();
+    if(G.elapsed%180<60){
+      ctx.fillStyle='#cccccc'; ctx.font='bold 10px Arial'; ctx.textAlign='center';
+      ctx.fillText('?', 0, -26);
+    }
+    ctx.restore();
+  }
+
+  // ── 油der（中期·闪现）──────────────────
+  function drawEnemy_slick(ctx, e, G){
+    if(e._hitShake>0) e._hitShake--;
+    drawMonsterBase(ctx, e.x, e.y, {
+      color:'#607050', headR:9, bodyW:5, bodyH:8,
+      expression:'smug', lean:0.05
+    });
+    ctx.save(); ctx.translate(e.x, e.y);
+    ctx.fillStyle='#405030';
+    ctx.beginPath();
+    ctx.moveTo(-4,-18); ctx.lineTo(0,-26); ctx.lineTo(4,-18);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,0.35)';
+    ctx.beginPath(); ctx.arc(2,-20,2,0,Math.PI*2); ctx.fill();
+    (e._blinkTrail||[]).forEach((p,i)=>{
+      ctx.globalAlpha=[0.08,0.18][i]||0.05;
+      ctx.fillStyle='#607050';
+      ctx.beginPath(); ctx.arc(p.x-e.x,p.y-e.y-9,9,0,Math.PI*2); ctx.fill();
+    });
+    ctx.restore();
+  }
+
+  // ── 装der（后期·仰头挺胸）──────────────────
+  function drawEnemy_poser(ctx, e, G){
+    const shake = e._hitShake>0?(Math.random()-0.5)*3:0;
+    if(e._hitShake>0) e._hitShake--;
+    drawMonsterBase(ctx, e.x, e.y, {
+      color:'#C08000', headR:10, bodyW:6, bodyH:8,
+      expression:'smug', lean:-0.15, shake
+    });
+    ctx.save(); ctx.translate(e.x+shake, e.y);
+    ctx.strokeStyle='rgba(255,220,0,0.6)'; ctx.lineWidth=2;
+    ctx.shadowBlur=8; ctx.shadowColor='#ffdd00';
+    ctx.beginPath(); ctx.ellipse(0,-26,10,3,0,0,Math.PI*2); ctx.stroke();
+    ctx.shadowBlur=0;
+    ctx.strokeStyle='#C08000'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.ellipse(0,0,6,8,0,0,Math.PI*2); ctx.stroke();
+    ctx.restore();
+  }
+
+  // ── 跑der（后期·低血逃跑）──────────────────
+  function drawEnemy_runner(ctx, e, G){
+    const shake = e._hitShake>0?(Math.random()-0.5)*3:0;
+    if(e._hitShake>0) e._hitShake--;
+    const fleeing = e.hp/e.maxhp < 0.3;
+    drawMonsterBase(ctx, e.x, e.y, {
+      color: fleeing?'#dd4422':'#AA6040',
+      headR:8, bodyW:4, bodyH:8,
+      expression: fleeing?'scared':'angry',
+      lean: fleeing?0.4:0.1, shake
+    });
+    ctx.save(); ctx.translate(e.x+shake, e.y);
+    if(fleeing){
+      ctx.fillStyle='rgba(255,255,255,0.8)';
+      ctx.beginPath(); ctx.arc(-6,-18,2,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#333';
+      ctx.beginPath(); ctx.arc(-7,-18,1,0,Math.PI*2); ctx.fill();
+      ctx.strokeStyle='#AA6040'; ctx.lineWidth=2.5;
+      const ls=Math.sin(G.elapsed*0.6)*14;
+      ctx.beginPath(); ctx.moveTo(-3,8); ctx.lineTo(-3+ls,22); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(3,8); ctx.lineTo(3-ls,22); ctx.stroke();
+      ctx.fillStyle='#88aaff'; ctx.globalAlpha=0.7;
+      ctx.beginPath(); ctx.arc(8,-22,2,0,Math.PI*2); ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  // ── 贪der（后期·慢移贪婪）──────────────────
+  function drawEnemy_greedy(ctx, e, G){
+    const shake = e._hitShake>0?(Math.random()-0.5)*3:0;
+    if(e._hitShake>0) e._hitShake--;
+    drawMonsterBase(ctx, e.x, e.y, {
+      color:'#806020', headR:10, bodyW:7, bodyH:10,
+      expression:'smug', shake
+    });
+    ctx.save(); ctx.translate(e.x+shake, e.y);
+    const coins=[[-8,-3],[8,-2],[-6,5],[7,6],[0,-8]];
+    coins.forEach(([cx,cy],i)=>{
+      ctx.fillStyle='#FFD700'; ctx.strokeStyle='#AA8800'; ctx.lineWidth=1;
+      ctx.shadowBlur=3; ctx.shadowColor='#FFD700';
+      ctx.beginPath(); ctx.arc(cx,cy,3.5,0,Math.PI*2);
+      ctx.fill(); ctx.stroke();
+      ctx.shadowBlur=0;
+      ctx.fillStyle='#886600'; ctx.font='4px Arial'; ctx.textAlign='center';
+      ctx.fillText('¥',cx,cy+1.5);
+    });
+    ctx.restore();
+  }
+
+  // ── 卷der精英（速×2.2·手持书）──────────────────
+  function drawEnemy_roller(ctx, e, G){
+    const shake = e._hitShake>0?(Math.random()-0.5)*5:0;
+    if(e._hitShake>0) e._hitShake--;
+    ctx.save();
+    drawMonsterBase(ctx, e.x, e.y, {
+      color:'#C86000', headR:10, bodyW:5, bodyH:8,
+      expression:'angry', lean:0.25, shake,
+      glow:16, glowColor:'#ff8800'
+    });
+    ctx.translate(e.x+shake, e.y);
+    ctx.strokeStyle='#ff8800'; ctx.lineWidth=2; ctx.globalAlpha=0.6;
+    ctx.shadowBlur=12; ctx.shadowColor='#ff8800';
+    ctx.beginPath(); ctx.arc(0,-9,14,0,Math.PI*2); ctx.stroke();
+    ctx.globalAlpha=1; ctx.shadowBlur=0;
+    ctx.fillStyle='#8B4513'; ctx.strokeStyle='#5C2D0A'; ctx.lineWidth=1;
+    ctx.fillRect(-18,-16,10,13); ctx.strokeRect(-18,-16,10,13);
+    ctx.strokeStyle='#D2B48C'; ctx.lineWidth=0.5;
+    for(let i=1;i<4;i++){ ctx.beginPath(); ctx.moveTo(-17,-16+i*3); ctx.lineTo(-9,-16+i*3); ctx.stroke(); }
+    ctx.restore();
+  }
+
+  // ── 狂der精英（叠层数字·红色渐变）──────────────────
+  function drawEnemy_berserker(ctx, e, G){
+    const shake = e._hitShake>0?(Math.random()-0.5)*6:0;
+    if(e._hitShake>0) e._hitShake--;
+    const stacks = e._hitCount||0;
+    const redness = Math.min(1, stacks/10);
+    const col = 'rgb('+Math.floor(160+redness*95)+','+Math.floor(40-redness*30)+','+Math.floor(40-redness*30)+')';
+    drawMonsterBase(ctx, e.x, e.y, {
+      color: col, headR:11, bodyW:6, bodyH:9,
+      expression:'angry', shake, glow:stacks*2, glowColor:'#ff2200'
+    });
+    ctx.save(); ctx.translate(e.x+shake, e.y);
+    if(stacks>0){
+      ctx.fillStyle='#ffdd00'; ctx.font='bold '+(9+stacks)+'px Arial'; ctx.textAlign='center';
+      ctx.shadowBlur=6; ctx.shadowColor='#ff4400';
+      ctx.fillText('×'+stacks, 0, -28);
+      ctx.shadowBlur=0;
+    }
+    ctx.restore();
+  }
+
+  // ── 壕der精英（慢移·金盾）──────────────────
+  function drawEnemy_rich(ctx, e, G){
+    const shake = e._hitShake>0?(Math.random()-0.5)*4:0;
+    if(e._hitShake>0) e._hitShake--;
+    drawMonsterBase(ctx, e.x, e.y, {
+      color:'#C09020', headR:11, bodyW:6, bodyH:9,
+      expression:'smug', shake, glow:10, glowColor:'#FFD700'
+    });
+    ctx.save(); ctx.translate(e.x+shake, e.y);
+    ctx.strokeStyle='#FFD700'; ctx.lineWidth=2.5;
+    ctx.shadowBlur=10; ctx.shadowColor='#FFD700';
+    ctx.beginPath(); ctx.arc(0,-9,15,0,Math.PI*2); ctx.stroke();
+    ctx.shadowBlur=0;
+    ctx.fillStyle='#DAA520'; ctx.strokeStyle='#8B6914'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.arc(16,-4,6,0,Math.PI*2); ctx.fill(); ctx.stroke();
+    ctx.strokeStyle='#8B6914'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(11,-4); ctx.lineTo(11,-8); ctx.stroke();
+    if(e.shield>0){
+      ctx.globalAlpha=0.35+Math.sin(G.elapsed*0.1)*0.1;
+      ctx.fillStyle='#FFD700';
+      ctx.beginPath(); ctx.arc(0,-9,18,0,Math.PI*2); ctx.fill();
+      ctx.globalAlpha=1;
+    }
+    ctx.restore();
+  }
+
+  // ── 废der精英（横躺·独特）──────────────────
+  function drawEnemy_lazy(ctx, e, G){
+    const shake = e._hitShake>0?(Math.random()-0.5)*4:0;
+    if(e._hitShake>0) e._hitShake--;
+    ctx.save();
+    ctx.translate(e.x+shake, e.y);
+    ctx.rotate(Math.PI*0.5);
+    ctx.fillStyle='#8B2020';
+    ctx.shadowBlur=12; ctx.shadowColor='#ff1111';
+    ctx.beginPath(); ctx.ellipse(0,0,14,8,0,0,Math.PI*2); ctx.fill();
+    ctx.shadowBlur=0;
+    ctx.fillStyle='#AA3030';
+    ctx.beginPath(); ctx.arc(17,0,9,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#fff';
+    ctx.beginPath(); ctx.arc(17,-3,2.2,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#111';
+    ctx.beginPath(); ctx.arc(17,-2.5,1.1,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle='#ff4400'; ctx.lineWidth=2; ctx.globalAlpha=0.7;
+    ctx.beginPath(); ctx.arc(5,0,20,0,Math.PI*2); ctx.stroke();
+    ctx.globalAlpha=1;
+    ctx.restore();
+  }
+
+  // ── 猛der精英（大体型·肌肉感）──────────────────
+  function drawEnemy_brute(ctx, e, G){
+    const shake = e._hitShake>0?(Math.random()-0.5)*6:0;
+    if(e._hitShake>0) e._hitShake--;
+    drawMonsterBase(ctx, e.x, e.y, {
+      color:'#702020', headR:16, bodyW:11, bodyH:13,
+      expression:'angry', shake, glow:14, glowColor:'#ff2200'
+    });
+    ctx.save(); ctx.translate(e.x+shake, e.y);
+    ctx.fillStyle='#702020';
+    ctx.beginPath(); ctx.ellipse(-16,-4,7,5,Math.PI*0.3,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(16,-4,7,5,-Math.PI*0.3,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle='#ff2200'; ctx.lineWidth=2.5; ctx.globalAlpha=0.6;
+    ctx.shadowBlur=14; ctx.shadowColor='#ff2200';
+    ctx.beginPath(); ctx.arc(0,-13,20,0,Math.PI*2); ctx.stroke();
+    ctx.globalAlpha=1; ctx.shadowBlur=0;
+    ctx.restore();
+  }
 
   // ── Boss ──
   if(G.boss){

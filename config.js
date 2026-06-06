@@ -436,22 +436,34 @@ const WEAPONS={
 };
 
 const ENEMY_TYPES=[
-  {key:'normal',name:'邪修残念',col:'#B04040',sz:10,hpBase:2.5,spdBase:0.58,atk:0.38,hasKB:false,unlockSec:0,special:null},
-  {key:'swift',name:'游魂刀客',col:'#E06030',sz:8,hpBase:1.2,spdBase:1.05,atk:0.24,hasKB:false,unlockSec:25,special:'fast'},
-  {key:'armored',name:'铁甲傀儡',col:'#607090',sz:16,hpBase:10,spdBase:0.34,atk:0.65,hasKB:true,unlockSec:50,special:'armored',defMult:2.5},
-  {key:'ranged',name:'御剑散修',col:'#A060C0',sz:9,hpBase:3.5,spdBase:0.50,atk:0.44,hasKB:false,unlockSec:80,special:'ranged',keepDist:120},
-  {key:'bomber',name:'自爆走火',col:'#C09020',sz:11,hpBase:4.5,spdBase:0.46,atk:0.55,hasKB:false,unlockSec:130,special:'bomber',explodeR:50,explodeDmg:18},
-  {key:'elite',name:'魔道精英',col:'#C83030',sz:13,hpBase:16,spdBase:0.72,atk:0.75,hasKB:true,unlockSec:90,special:'elite'},
-  {key:'queen',name:'召魂法师',col:'#8030A0',sz:18,hpBase:28,spdBase:0.28,atk:0.9,hasKB:false,unlockSec:200,special:'spawner',spawnInterval:160},
-  {key:'regen',name:'不死邪灵',col:'#206040',sz:14,hpBase:18,spdBase:0.44,atk:0.58,hasKB:false,unlockSec:300,special:'regen',regenRate:0.05},
-  {key:'void',name:'虚空裂隙',col:'#8040C0',sz:11,hpBase:7,spdBase:1.10,atk:0.65,hasKB:false,unlockSec:400,special:'void'},
-  {key:'shield',name:'护道金盾',col:'#4488CC',sz:12,hpBase:8,spdBase:0.52,atk:0.46,hasKB:false,unlockSec:100,special:'shield',immuneDot:true},
-  {key:'jumper',name:'凌空刺客',col:'#FF6644',sz:9,hpBase:4,spdBase:0.58,atk:0.52,hasKB:false,unlockSec:150,special:'jumper'},
-  {key:'devourer',name:'噬魂魔兽',col:'#664422',sz:11,hpBase:6,spdBase:0.46,atk:0.56,hasKB:false,unlockSec:280,special:'devourer'},
+  // ── 初期（0-60s）──
+  {key:'normal',name:'逊der',  col:'#B04040',sz:10,hpBase:2.5,spdBase:0.58,atk:0.38,hasKB:false,unlockSec:0, special:null},
+  {key:'lied',   name:'躺der',  col:'#8B5030',sz:14,hpBase:12, spdBase:0.25,atk:0.80,hasKB:true, unlockSec:40, special:'lied'},
+  {key:'cute',   name:'萌der',  col:'#E06080',sz:7, hpBase:1.5,spdBase:0.90,atk:0.20,hasKB:false,unlockSec:15, special:'swarm'},
+  {key:'hard',   name:'硬der',  col:'#607090',sz:16,hpBase:10, spdBase:0.34,atk:0.65,hasKB:true, unlockSec:50, special:'armored',defMult:2.5},
+  // ── 中期（60-240s）──
+  {key:'swift',  name:'快der',  col:'#E06030',sz:8, hpBase:1.2,spdBase:1.05,atk:0.24,hasKB:false,unlockSec:25, special:'fast'},
+  {key:'sly',    name:'苟der',  col:'#7060A0',sz:9, hpBase:4,  spdBase:0.48,atk:0.42,hasKB:false,unlockSec:70, special:'ranged',keepDist:130},
+  {key:'poor',   name:'穷der',  col:'#806050',sz:10,hpBase:3,  spdBase:0.45,atk:0.35,hasKB:false,unlockSec:55, special:'fragile'},
+  {key:'dumb',   name:'傻der',  col:'#9090A0',sz:11,hpBase:4,  spdBase:0.40,atk:0.38,hasKB:false,unlockSec:90, special:'random'},
+  {key:'dainty_e',name:'娇der', col:'#D060A0',sz:9, hpBase:5,  spdBase:0.50,atk:0.48,hasKB:false,unlockSec:160,special:'aura'},
+  {key:'bomber', name:'自爆走火',col:'#C09020',sz:11,hpBase:4.5,spdBase:0.46,atk:0.55,hasKB:false,unlockSec:130,special:'bomber',explodeR:50,explodeDmg:18},
+  {key:'roller', name:'卷der精英',col:'#C86000',sz:13,hpBase:16,spdBase:0.72,atk:0.75,hasKB:true, unlockSec:90, special:'elite'},
+  // ── 后期（240s+）──
+  {key:'slick',  name:'油der',  col:'#607050',sz:10,hpBase:6,  spdBase:1.20,atk:0.60,hasKB:false,unlockSec:260,special:'void'},
+  {key:'poser',  name:'装der',  col:'#C08000',sz:11,hpBase:5,  spdBase:0.55,atk:0.45,hasKB:false,unlockSec:110,special:'fake'},
+  {key:'runner', name:'跑der',  col:'#AA6040',sz:9, hpBase:3,  spdBase:0.55,atk:0.35,hasKB:false,unlockSec:140,special:'flee'},
+  {key:'greedy', name:'贪der',  col:'#806020',sz:12,hpBase:8,  spdBase:0.35,atk:0.52,hasKB:false,unlockSec:240,special:'devourer'},
+  {key:'queen',  name:'召魂法师',col:'#8030A0',sz:18,hpBase:28, spdBase:0.28,atk:0.9, hasKB:false,unlockSec:200,special:'spawner',spawnInterval:160},
+  {key:'hikikomori',name:'宅der',col:'#405060',sz:12,hpBase:9, spdBase:0.20,atk:1.20,hasKB:false,unlockSec:180,special:'burst',burstR:55,burstDmg:20},
+  {key:'devourer',name:'噬魂魔兽',col:'#664422',sz:11,hpBase:6, spdBase:0.46,atk:0.56,hasKB:false,unlockSec:280,special:'devourer'},
   {key:'suicidal',name:'玉碎魔君',col:'#FF2200',sz:14,hpBase:20,spdBase:0.65,atk:0.80,hasKB:false,unlockSec:350,special:'suicidal',explodeR:65,explodeDmg:24},
-  // V13 新增
-  {key:'hivemind',name:'天机巢核',col:'#CC4488',sz:14,hpBase:22,spdBase:0.32,atk:0.68,hasKB:false,unlockSec:310,special:'hivemind'},
-  {key:'corruptor',name:'领域腐蚀',col:'#448844',sz:12,hpBase:8,spdBase:0.52,atk:0.56,hasKB:false,unlockSec:270,special:'corruptor'},
+  {key:'corruptor',name:'领域腐蚀',col:'#448844',sz:12,hpBase:8, spdBase:0.52,atk:0.56,hasKB:false,unlockSec:270,special:'corruptor'},
+  // ── 精英组（后期+）──
+  {key:'berserker',name:'狂der精英',col:'#AA2020',sz:13,hpBase:20,spdBase:0.70,atk:0.85,hasKB:true, unlockSec:420,special:'elite'},
+  {key:'lazy',   name:'废der精英',col:'#8B2020',sz:14,hpBase:22,spdBase:0.30,atk:0.90,hasKB:false,unlockSec:380,special:'elite'},
+  {key:'brute',  name:'猛der精英',col:'#702020',sz:18,hpBase:35,spdBase:0.45,atk:1.10,hasKB:true, unlockSec:460,special:'elite',defMult:1.5},
+  {key:'rich',   name:'壕der精英',col:'#C09020',sz:12,hpBase:8, spdBase:0.52,atk:0.46,hasKB:false,unlockSec:100,special:'shield',immuneDot:true},
 ];
 
 const BOSS_DEFS=[
