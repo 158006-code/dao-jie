@@ -591,6 +591,13 @@ function updateAndDrawEnvParticles(ctx,G,id){
   ctx.globalAlpha=1;ctx.restore();
 }
 
+// ── 玩家粒子辅助（文件作用域，避免每帧重定义）──
+function _addParticle(G,x,y,vx,vy,life,color,size,text){
+  if(!G.playerParticles)G.playerParticles=[];
+  if(G.playerParticles.length>=50)return;
+  G.playerParticles.push({x,y,vx,vy,life,maxLife:life,color,size,text:text||null});
+}
+
 // ══════ 绘制 ══════
 function draw(){
   ctx.save();
@@ -993,10 +1000,6 @@ function draw(){
   if(!G.playerParticles)G.playerParticles=[];
   G.playerParticles.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.life--;p.size*=0.92;});
   G.playerParticles=G.playerParticles.filter(p=>p.life>0);
-  function _addParticle(x,y,vx,vy,life,color,size,text){
-    if(G.playerParticles.length>=50)return;
-    G.playerParticles.push({x,y,vx,vy,life,maxLife:life,color,size,text:text||null});
-  }
 
   // ── 颜色表 ──
   const tierColors=['#2db87a','#ffcc00','#ff8800','#ff4400','#ff2200','#cc0000','#880000','#440022','#220011'];
@@ -1101,39 +1104,39 @@ function draw(){
 
   // tier2：每30帧"?"粒子
   if(tier>=2&&G.elapsed%30===0){
-    _addParticle(mx,G.my-22,(Math.random()-0.5)*0.5,-1.2-Math.random(),50,'#ffcc00',10,'?');
+    _addParticle(G,mx,G.my-22,(Math.random()-0.5)*0.5,-1.2-Math.random(),50,'#ffcc00',10,'?');
   }
 
   // tier3：每20帧4个橙色粒子
   if(tier>=3&&G.elapsed%20===0){
     for(let i=0;i<4;i++){
       const a=Math.random()*Math.PI*2,d=8+Math.random()*14;
-      _addParticle(mx+Math.cos(a)*d,G.my+6+Math.sin(a)*d,(Math.random()-0.5)*0.8,(Math.random()-0.5)*0.8,30,'#ff8800',2,null);
+      _addParticle(G,mx+Math.cos(a)*d,G.my+6+Math.sin(a)*d,(Math.random()-0.5)*0.8,(Math.random()-0.5)*0.8,30,'#ff8800',2,null);
     }
   }
 
   // tier4：每帧随机橙红粒子
-  if(tier>=4&&G.elapsed%1===0){
+  if(tier>=4){
     const n=tier>=5?2:1;
     for(let k=0;k<n;k++){
       const a=Math.random()*Math.PI*2,d=5+Math.random()*20;
-      _addParticle(mx+Math.cos(a)*d,G.my+6+Math.sin(a)*d,(Math.random()-0.5)*0.6,(Math.random()-0.5)*0.6,25,'#ff4400',2.5,null);
+      _addParticle(G,mx+Math.cos(a)*d,G.my+6+Math.sin(a)*d,(Math.random()-0.5)*0.6,(Math.random()-0.5)*0.6,25,'#ff4400',2.5,null);
     }
   }
 
   // tier5-8：头顶持续红粒上升
   if(tier>=5){
-    const hd=tier>=5?2:0;const intens=tier>=7?2:1;
-    for(let k=0;k<hd+intens;k++){
+    const intens=tier>=7?2:1;
+    for(let k=0;k<2+intens;k++){
       if(Math.random()<0.5){
-        _addParticle(mx+(Math.random()-0.5)*10,G.my-20,(Math.random()-0.5)*0.4,-1-Math.random()*1.5,40,'#ff2200',3,null);
+        _addParticle(G,mx+(Math.random()-0.5)*10,G.my-20,(Math.random()-0.5)*0.4,-1-Math.random()*1.5,40,'#ff2200',3,null);
       }
     }
   }
 
   // tier6+：每60帧"杀！"粒子
   if(tier>=6&&G.elapsed%60===0){
-    _addParticle(mx+(Math.random()-0.5)*16,G.my-24,(Math.random()-0.5)*1,-2-Math.random(),50,'#ff0000',14,'杀！');
+    _addParticle(G,mx+(Math.random()-0.5)*16,G.my-24,(Math.random()-0.5)*1,-2-Math.random(),50,'#ff0000',14,'杀！');
   }
 
   // tier8：暗红椭圆光晕
