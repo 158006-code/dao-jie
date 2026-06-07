@@ -1961,6 +1961,7 @@ function draw(){
       ctx.fillText('点击跳过',W/2,H-28);
       ctx.restore();
     }
+    ctx.restore(); // 匹配line 1884的ctx.save()
   }
 }
 
