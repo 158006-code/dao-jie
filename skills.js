@@ -153,7 +153,7 @@ function dismissBuildInfo(){
 
 // ── 初始化游戏 ──
 function initGame(){
-  resizeCanvas();
+  resizeCanvas(true);
   mX=W/2;mY=H/2;
   let _baseAtk=1,_baseSpd=1,_baseCd=1,_baseDmgFlat=0;
   let _baseCritRate=0,_baseComboHit=0,_baseSplashR=0,_basePierce=0,_baseReflect=0;
