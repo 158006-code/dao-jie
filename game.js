@@ -789,17 +789,6 @@ function draw(){
     const pct=e.hp/e.maxhp;
     const baseFade=G.comboTier>=5?0.65:0.85;
     const alpha=(e.special==='stealth'?(e.stealthAlpha||1):1)*baseFade;
-    const distToPlayer=Math.hypot(e.x-G.mx,e.y-G.my);
-    // 远距离敌人：简化渲染，跳过高成本特效
-    if(distToPlayer>200){
-      ctx.globalAlpha=alpha*0.7;
-      ctx.fillStyle=e.poison>0&&!e.immuneDot?'#3a6a1a':e.slowTimer>60?'#3050A0':e.col;
-      ctx.beginPath();ctx.arc(e.x,e.y,e.sz/2,0,Math.PI*2);ctx.fill();
-      ctx.fillStyle='rgba(0,0,0,0.45)';ctx.fillRect(e.x-e.sz/2,e.y-e.sz/2-7,e.sz,2);
-      ctx.fillStyle=pct>0.5?'#1D9E75':'#E24B4A';ctx.fillRect(e.x-e.sz/2,e.y-e.sz/2-7,e.sz*pct,2);
-      ctx.globalAlpha=1;
-      return; // 跳过特效分派和详细绘制
-    }
     ctx.globalAlpha=alpha;
     if((e.overloadStacks||0)>=2){ctx.save();ctx.strokeStyle='#7aadff';ctx.lineWidth=2;ctx.globalAlpha=0.6+Math.sin(G.elapsed*0.3)*0.4;ctx.beginPath();ctx.arc(e.x,e.y,e.sz/2+4,0,Math.PI*2);ctx.stroke();ctx.restore();}
     let col=e.poison>0&&!e.immuneDot?'#3a6a1a':e.slowTimer>60?'#3050A0':e.col;
