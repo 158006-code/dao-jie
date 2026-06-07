@@ -209,10 +209,10 @@ function updateEnemyCooperation(G){
 function updateEnemySpawning(G,sec){
   if(G.bossMode)return;
   G.spawnTimer++;
-  const earlyReduction=sec<60?0.80:sec<120?0.90:1;
   const comboMult=G.combo>=300?0.45:1;
-  const rate=Math.max(8,(75-G.phase*12-G.lv*1.5)*(G.spawnMult||1)/1.6*comboMult/earlyReduction);
-  if(G.spawnTimer>=rate&&G.enemies.length<45){
+  const rate=Math.max(8,(75-G.phase*12-G.lv*1.5)*(G.spawnMult||1)/1.6*comboMult);
+  const spawnCap=sec<60?20:sec<120?30:45;
+  if(G.spawnTimer>=rate&&G.enemies.length<spawnCap){
     G.spawnTimer=0;
     const baseSpawn=G.combo>=300?3:1;
     for(let i=0;i<baseSpawn;i++)spawnEnemy(G);
