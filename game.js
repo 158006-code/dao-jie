@@ -819,6 +819,7 @@ function draw(){
       const pct2=e.hp/e.maxhp;
       ctx.fillStyle='rgba(0,0,0,0.45)';ctx.fillRect(e.x-e.sz/2,e.y-e.sz/2-7,e.sz,2);
       ctx.fillStyle=pct2>0.5?'#1D9E75':'#E24B4A';ctx.fillRect(e.x-e.sz/2,e.y-e.sz/2-7,e.sz*pct2,2);
+      drawBubble(ctx, e);
       ctx.globalAlpha=1;
       return;
     }
@@ -1980,6 +1981,7 @@ function drawBubble(ctx, e){
   const alpha=d.timer>30?1:d.timer/30;
   const sz=e.sz||10;
   ctx.save();ctx.globalAlpha=alpha;
+  ctx.font='9px Arial';ctx.textAlign='center';
   const tw=ctx.measureText(d.text).width+12;
   const bx=e.x, by=e.y-sz-14;
   ctx.fillStyle='rgba(0,0,0,0.72)';
@@ -1991,7 +1993,7 @@ function drawBubble(ctx, e){
   ctx.lineTo(x+r,y+h);ctx.arcTo(x,y+h,x,y+h-r,r);
   ctx.lineTo(x,y+r);ctx.arcTo(x,y,x+r,y,r);
   ctx.closePath();ctx.fill();
-  ctx.fillStyle='#ffffff';ctx.font='9px Arial';ctx.textAlign='center';
+  ctx.fillStyle='#ffffff';
   ctx.fillText(d.text,bx,by+4);
   ctx.restore();
 }
