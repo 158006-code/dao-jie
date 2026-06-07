@@ -362,6 +362,7 @@ function updateCombo(G){
   } else if(el){
     el.classList.remove('rage-phase-burn','rage-phase-flicker','rage-phase-shatter');
   }
+  applyEquipBonuses(G);
 }
 
 // ── 法宝combo效果（提取自_update）──
