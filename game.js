@@ -68,7 +68,6 @@ function triggerBoss(i){
   G.boss={...def,x:W/2,y:-100,vx:0,vy:0,maxhp:def.hp,poison:0,puddles:def.puddles||[],_phase:0};
   document.getElementById('boss-name').textContent=def.name;
   document.getElementById('boss-wrap').classList.add('show');
-  setTimeout(resizeCanvas,10);
   showAlert('⚡ BOSS出现：'+def.name);
 }
 
@@ -100,7 +99,6 @@ function updateBoss(G){
     const bi=G.bossPhase-1;G.boss=null;G.bossMode=false;
     document.getElementById('boss-wrap').classList.remove('show');
     document.getElementById('boss-phase-dots').textContent='';
-    setTimeout(resizeCanvas,10);
     const reqBoss=(G.activeBossAt||BOSS_AT).length-1;
     if(bi>=reqBoss){doVictory();return true;}
     showUpgrade();return true;

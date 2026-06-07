@@ -42,8 +42,7 @@ function resizeCanvas(){
   const topH=document.querySelector('.top-bar').offsetHeight||26;
   const wepH=document.querySelector('.weapon-row').offsetHeight||50;
   const botH=document.querySelector('.bottom-bar').offsetHeight||34;
-  const bossH=document.getElementById('boss-wrap').classList.contains('show')?(document.getElementById('boss-wrap').offsetHeight||22):0;
-  H=Math.max(200,window.innerHeight-topH-wepH-botH-bossH);
+  H=Math.max(200,window.innerHeight-topH-wepH-botH);
   CV.width=W;CV.height=H;CV.style.width=W+'px';CV.style.height=H+'px';
 }
 resizeCanvas();
