@@ -1971,6 +1971,7 @@ function drawBossDialogue(ctx, G){
   const bossY = G.boss ? G.boss.y : H/2;
 
   ctx.save();
+  ctx.font='bold 13px Arial';ctx.textAlign='center';
   ctx.globalAlpha = alpha;
   const tw = ctx.measureText(d.text).width + 24;
   const bx = Math.max(tw/2+8, Math.min(W-tw/2-8, G.boss ? G.boss.x : W/2));
@@ -1984,7 +1985,7 @@ function drawBossDialogue(ctx, G){
   ctx.lineTo(x+r,y+22);ctx.arcTo(x,y+22,x,y+22-r,r);
   ctx.lineTo(x,y+r);ctx.arcTo(x,y,x+r,y,r);
   ctx.closePath();ctx.fill();
-  ctx.fillStyle='#ffffff';ctx.font='bold 13px Arial';ctx.textAlign='center';
+  ctx.fillStyle='#ffffff';
   ctx.shadowColor='rgba(0,0,0,0)';ctx.shadowBlur=0;
   ctx.fillText(d.text, bx, by-5);
   ctx.restore();
