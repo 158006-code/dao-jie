@@ -57,13 +57,14 @@ function triggerBoss(i){
   // 从STAGE_BOSS_MAP找Boss key
   const stageId=G.stageId||1;
   const bossCfg=STAGE_BOSS_MAP[stageId-1]||STAGE_BOSS_MAP[0];
-  const bossKey=bossCfg[i]||bossCfg[0];
-  const hpMult=bossCfg[bossCfg.length-1]; // 最后一项是hpMult
+  const bossKey=bossCfg.bosses[i];
+  if(!bossKey)return; // 索引越界防御（不应触发）
+  const hpMult=bossCfg.hpMult||1.0;
   const defSrc=BOSS_DEFS.find(b=>b.key===bossKey)||BOSS_DEFS[0];
   const def=JSON.parse(JSON.stringify(defSrc));
   def.update=defSrc.update;def.onDamage=defSrc.onDamage;def.dmgMult=defSrc.dmgMult;
   def.taunts=defSrc.taunts;
-  def.hp=Math.floor(def.hp*(typeof hpMult==='number'?hpMult:1.0));
+  def.hp=Math.floor(def.hp*hpMult);
   G.boss={...def,x:W/2,y:-100,vx:0,vy:0,maxhp:def.hp,poison:0,puddles:def.puddles||[],_phase:0};
   document.getElementById('boss-name').textContent=def.name;
   document.getElementById('boss-wrap').classList.add('show');

@@ -665,16 +665,16 @@ const BOSS_DEFS=[
 
 // ── 关卡Boss配置 ──
 const STAGE_BOSS_MAP=[
-  ['fake_zhuji','fake_skill',1.00],
-  ['fake_skill','old_teeth',1.12],
-  ['old_teeth','has_treasure',1.25],
-  ['has_treasure','has_backing',1.40],
-  ['has_backing','always_eat',1.55],
-  ['always_eat','dainty',1.72],
-  ['dainty','dad_zifu',1.90],
-  ['dad_zifu','vlogger',2.10],
-  ['vlogger','dominator',2.32],
-  ['dominator','rich_armor','tyrant',2.60],
+  {bosses:['fake_zhuji','fake_skill'], hpMult:1.00},
+  {bosses:['fake_skill','old_teeth'], hpMult:1.12},
+  {bosses:['old_teeth','has_treasure'], hpMult:1.25},
+  {bosses:['has_treasure','has_backing'], hpMult:1.40},
+  {bosses:['has_backing','always_eat'], hpMult:1.55},
+  {bosses:['always_eat','dainty'], hpMult:1.72},
+  {bosses:['dainty','dad_zifu'], hpMult:1.90},
+  {bosses:['dad_zifu','vlogger'], hpMult:2.10},
+  {bosses:['vlogger','dominator'], hpMult:2.32},
+  {bosses:['dominator','rich_armor','tyrant'], hpMult:2.60},
 ];
 
 const QUALITY_DEFS=[
