@@ -864,6 +864,7 @@ function draw(){
     ctx.globalAlpha=alpha;
     ctx.fillStyle='rgba(0,0,0,0.45)';ctx.fillRect(e.x-e.sz/2,e.y-e.sz/2-7,e.sz,2);
     ctx.fillStyle=pct>0.5?'#1D9E75':'#E24B4A';ctx.fillRect(e.x-e.sz/2,e.y-e.sz/2-7,e.sz*pct,2);
+    drawBubble(ctx, e);
     ctx.globalAlpha=1;
   });
 
@@ -1968,6 +1969,30 @@ function drawBossDialogue(ctx, G){
   ctx.fillStyle='#ffffff';ctx.font='bold 13px Arial';ctx.textAlign='center';
   ctx.shadowColor='rgba(0,0,0,0)';ctx.shadowBlur=0;
   ctx.fillText(d.text, bx, by-5);
+  ctx.restore();
+}
+
+// ── 小怪出场气泡 ──
+function drawBubble(ctx, e){
+  if(!e._bubble||e._bubble.timer<=0) return;
+  e._bubble.timer--;
+  const d=e._bubble;
+  const alpha=d.timer>30?1:d.timer/30;
+  const sz=e.sz||10;
+  ctx.save();ctx.globalAlpha=alpha;
+  const tw=ctx.measureText(d.text).width+12;
+  const bx=e.x, by=e.y-sz-14;
+  ctx.fillStyle='rgba(0,0,0,0.72)';
+  const r=5,w=tw,h=14,x=bx-tw/2,y=by-h/2;
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);ctx.lineTo(x+tw-r,y);ctx.arcTo(x+tw,y,x+tw,y+r,r);
+  ctx.lineTo(x+tw,y+h);ctx.arcTo(x+tw,y+h,x+tw-r,y+h,r);
+  ctx.lineTo(bx+4,y+h);ctx.lineTo(bx,y+h+5);ctx.lineTo(bx-4,y+h);
+  ctx.lineTo(x+r,y+h);ctx.arcTo(x,y+h,x,y+h-r,r);
+  ctx.lineTo(x,y+r);ctx.arcTo(x,y,x+r,y,r);
+  ctx.closePath();ctx.fill();
+  ctx.fillStyle='#ffffff';ctx.font='9px Arial';ctx.textAlign='center';
+  ctx.fillText(d.text,bx,by+4);
   ctx.restore();
 }
 

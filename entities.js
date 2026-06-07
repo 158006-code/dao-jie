@@ -72,6 +72,7 @@ function spawnEnemyAt(G, typeKey, x, y, enemyPhase){
     devourCount:0, enrageTimer:0,
     overloadStacks:0, hivebuff:0,
     _hitShake:0, _hitCount:0,
+    _bubble: def.quotes ? { text: def.quotes[Math.floor(Math.random()*def.quotes.length)], timer: 180 } : null,
   });
 }
 function spawnEnemy(G){
