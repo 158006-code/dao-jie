@@ -830,8 +830,8 @@ let _adType=null,_adTimer=null,_adProgress=0,_adOnSuccess=null;
 
 function showRewardedAd(type,onSuccess){
   _adType=type;_adOnSuccess=onSuccess;_adProgress=0;
-  const titles={save:'📺 观看广告·保留法宝',double:'📺 观看广告·法宝×2',equip2:'📺 观看广告·额外法宝槽',expand:'📺 观看广告·仓库扩容',signin:'📺 观看广告·领取法宝'};
-  const descs={save:'战斗虽败，法宝不失！\n观看完成后本局掉落法宝将保留入库。',double:'道心坚韧·奖励加倍！\n观看完成后本局法宝奖励翻倍。',equip2:'道心坚定·双宝护体！\n观看完成后解锁第二法宝槽，双倍加成入局。',expand:'观看完成后仓库永久+5格',signin:'观看完成后今日法宝奖励入库'};
+  const titles={save:'📺 观看广告·保留法宝',double:'📺 观看广告·法宝×2',equip2:'📺 观看广告·额外法宝槽',expand:'📺 观看广告·仓库扩容',signin:'📺 观看广告·领取法宝',reroll:'📺 观看广告·重新鉴定品质',synth:'📺 观看广告·合成保底'};
+  const descs={save:'战斗虽败，法宝不失！\n观看完成后本局掉落法宝将保留入库。',double:'道心坚韧·奖励加倍！\n观看完成后本局法宝奖励翻倍。',equip2:'道心坚定·双宝护体！\n观看完成后解锁第二法宝槽，双倍加成入局。',expand:'观看完成后仓库永久+5格',signin:'观看完成后今日法宝奖励入库',reroll:'以天道之力重鉴法宝品质，或有升品之机！',synth:'广告完成后合成成功率+20%'};
   document.getElementById('ad-box-title').textContent=titles[type]||'📺 观看广告';
   document.getElementById('ad-box-desc').textContent=descs[type]||'即将获得奖励';
   document.getElementById('ad-progress-fill').style.width='0%';
@@ -1183,11 +1183,11 @@ function showHomePage(){
   const stageName=realm.stageNames[Math.min(p.stageCleared||0,realm.stages-1)];
   const aCnt=getAchievements().length;
   document.getElementById('home-char-btn').innerHTML=`修士档案 ›<span class="char-vault-dot" id="char-vault-dot"></span><br><span style="font-size:8px;color:#665">${realm.icon} ${realm.name}·${p.stageCleared}/${realm.stages}</span><br><span style="font-size:7px;color:#EF9F27" id="achieve-count">🏆${aCnt}</span>`;
-  // 每日签到检测
-  const ds=getDailySignin();
-  if(ds.lastDate!==todayStr()){
-    setTimeout(()=>showDailySignin(),600);
-  }
+  // 每日签到检测（暂时关闭）
+  // const ds=getDailySignin();
+  // if(ds.lastDate!==todayStr()){
+  //   setTimeout(()=>showDailySignin(),600);
+  // }
 }
 function updateVaultDot(){
   const vault=getVault();
