@@ -168,6 +168,11 @@ function applyReflect(G,dmgAmount){
 function applyBossDamage(G, boss, rawDmg){
   if(boss.invincible)return 0;
   let dmg = rawDmg;
+  // 单次伤害上限：最多打掉8%血量
+  dmg = Math.min(dmg, boss.maxhp * 0.08);
+  // 进场护盾：前10秒伤害从30%线性恢复到100%
+  if(boss._spawnShield===undefined)boss._spawnShield=600;
+  if(boss._spawnShield>0){boss._spawnShield--;dmg*=0.3+0.7*(1-boss._spawnShield/600);}
   if(boss.shield&&boss.onDamage){dmg = boss.onDamage(G, boss, dmg) ?? dmg;if(dmg===0)return 0;}
   if(boss.key==='has_treasure'&&boss.treasures&&boss.treasures.length>0){dmg=Math.min(dmg,50);}
   if(boss.key==='has_backing'&&boss._hasBackup){dmg*=0.5;}

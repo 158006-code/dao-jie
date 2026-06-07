@@ -479,7 +479,7 @@ const STAGE_ENEMY_RULES={
 const BOSS_DEFS=[
   // ── Boss1：假筑基 ──
   {
-    key:'fake_zhuji',name:'筑基失败的假筑基',hp:800,spd:0.55,sz:32,col:'#C97B3A',reward:4,
+    key:'fake_zhuji',name:'筑基失败的假筑基',hp:4000,spd:0.55,sz:32,col:'#C97B3A',reward:4,
     _rageRequire:0,
     taunts:{spawn:['我是筑基了！你们练气期的根本打不过我！'],half:['哼，还没结束呢……'],fake_death:['……（装死）'],revive:['你别想杀我！'],death:['不公平！一定是灵根的问题！']},
     fakeDeathTriggered:false,fakeDeathTimer:0,
@@ -496,7 +496,7 @@ const BOSS_DEFS=[
   },
   // ── Boss2：伪筑基 ──
   {
-    key:'fake_skill',name:'卡瓶颈的伪筑基',hp:1100,spd:0.68,sz:30,col:'#8040A8',reward:5,
+    key:'fake_skill',name:'卡瓶颈的伪筑基',hp:5500,spd:0.68,sz:30,col:'#8040A8',reward:5,
     _rageRequire:0,
     taunts:{spawn:['我的大招蓄力中……'],half:['我的必杀马上就好了！'],empty_skill:['……怎么没效果？','不对不对，再来一次！','功法问题，怪不得我'],death:['是功法的问题！绝对是！']},
     emptySkillCd:0,charging:0,
@@ -511,7 +511,7 @@ const BOSS_DEFS=[
   },
   // ── Boss3：老掉牙 ──
   {
-    key:'old_teeth',name:'老掉牙的筑基初期',hp:1350,spd:0.35,sz:34,col:'#888870',reward:5,
+    key:'old_teeth',name:'老掉牙的筑基初期',hp:7000,spd:0.35,sz:34,col:'#888870',reward:5,
     _rageRequire:0,
     taunts:{spawn:['当年老夫筑基的时候……'],taunt:['当年老夫筑基时，那灵气……','你们年轻人不懂……','这世道真的变了……','再让我说一句话……'],half:['老夫还有话要说！'],death:['老夫话还没说完……']},
     _dmgSinceTaunt:0,taunting:0,
@@ -526,7 +526,7 @@ const BOSS_DEFS=[
   },
   // ── Boss4：带法宝 ──
   {
-    key:'has_treasure',name:'带法宝的筑基初期',hp:1600,spd:0.60,sz:32,col:'#C0901A',reward:6,
+    key:'has_treasure',name:'带法宝的筑基初期',hp:8000,spd:0.60,sz:32,col:'#C0901A',reward:6,
     _rageRequire:0,
     taunts:{spawn:['我有法宝！你们练气期的算什么！'],treasure_break:['我的宝贝！','那是家传的！','你赔！'],all_broken:['……没有法宝我也能打！'],death:['法宝质量太差了……']},
     treasures:[],_treasureTimer:0,
@@ -542,7 +542,7 @@ const BOSS_DEFS=[
   },
   // ── Boss5：有后台 ──
   {
-    key:'has_backing',name:'有后台的筑基初期',hp:1900,spd:0.65,sz:34,col:'#4060A0',reward:7,
+    key:'has_backing',name:'有后台的筑基初期',hp:9500,spd:0.65,sz:34,col:'#4060A0',reward:7,
     _rageRequire:0,
     taunts:{spawn:['我后台硬！你打不了我！'],call_backup:['兄弟们！上！'],backup_dead:['没用的废物！'],no_backup:['……不管了，我自己上！'],death:['等我上面知道了……']},
     _backupWaves:0,
@@ -558,7 +558,7 @@ const BOSS_DEFS=[
   },
   // ── Boss6：吃不停 ──
   {
-    key:'always_eat',name:'吃不停的筑基中期',hp:2200,spd:0.58,sz:36,col:'#A05828',reward:8,
+    key:'always_eat',name:'吃不停的筑基中期',hp:11000,spd:0.58,sz:36,col:'#A05828',reward:8,
     _rageRequire:1,
     taunts:{spawn:['还不够……我还没吃够……'],devour:['好吃！','嗝——','再来一个！'],enrage:['吃饱了！打！','能量补满了！'],death:['……减肥明天再说……']},
     _devour:0,enrage:0,
@@ -573,7 +573,7 @@ const BOSS_DEFS=[
   },
   // ── Boss7：娇滴滴 ──
   {
-    key:'dainty',name:'娇滴滴的筑基中期',hp:2000,spd:0.62,sz:30,col:'#E060A0',reward:8,
+    key:'dainty',name:'娇滴滴的筑基中期',hp:10000,spd:0.62,sz:30,col:'#E060A0',reward:8,
     _rageRequire:0,
     taunts:{spawn:['你、你干嘛……人家还没准备好……'],jiaoqi:['哇呜……你好过分……','为什么要这么打人家……'],counter:['你惹我生气了！','哼！'],death:['哼！']},
     jiaoDun:0,_counterTimer:0,
@@ -589,7 +589,7 @@ const BOSS_DEFS=[
   },
   // ── Boss8：我爸是紫府 ──
   {
-    key:'dad_zifu',name:'我爸是紫府的筑基中期',hp:2600,spd:0.60,sz:34,col:'#6030C0',reward:9,
+    key:'dad_zifu',name:'我爸是紫府的筑基中期',hp:13000,spd:0.60,sz:34,col:'#6030C0',reward:9,
     _rageRequire:2,
     taunts:{spawn:['我爸是紫府！你打我试试！'],shield_on:['护盾开了！你打不穿的！'],shield_break:['怎么……怎么可能！'],half:['我爸听到了你完蛋！'],death:['我爸……会为我报仇的……']},
     _shieldTimer:0,shield:false,
@@ -604,7 +604,7 @@ const BOSS_DEFS=[
   },
   // ── Boss9：爱发vlog ──
   {
-    key:'vlogger',name:'爱发vlog的筑基后期',hp:2500,spd:0.65,sz:30,col:'#E04020',reward:10,
+    key:'vlogger',name:'爱发vlog的筑基后期',hp:12500,spd:0.65,sz:30,col:'#E04020',reward:10,
     _rageRequire:0,
     taunts:{spawn:['等一下，我开个播——'],vlog_start:['大家好！今天来打个练气期！','关注一下哦～'],vlog_hit:['停！这帧不好看！','哎这镜头歪了！'],vlog_end:['这条发布了哦～'],death:['这条……不发了……']},
     _vlogTimer:0,vlogging:0,
@@ -619,7 +619,7 @@ const BOSS_DEFS=[
   },
   // ── Boss10：功法霸道 ──
   {
-    key:'dominator',name:'功法霸道的筑基后期',hp:3000,spd:0.55,sz:36,col:'#203080',reward:11,
+    key:'dominator',name:'功法霸道的筑基后期',hp:15000,spd:0.55,sz:36,col:'#203080',reward:11,
     _rageRequire:3,
     taunts:{spawn:['功法天下第一！你的攻击在我面前毫无意义！'],rage_break:['怎么……反而变强了！这不可能！'],half:['继续！我的功法无敌！'],death:['……功法有……问题……']},
     update(G,boss){
@@ -634,7 +634,7 @@ const BOSS_DEFS=[
   },
   // ── Boss11：壕气冲天 ──
   {
-    key:'rich_armor',name:'壕气冲天的筑基后期',hp:3200,spd:0.58,sz:38,col:'#C8A000',reward:12,
+    key:'rich_armor',name:'壕气冲天的筑基后期',hp:16000,spd:0.58,sz:38,col:'#C8A000',reward:12,
     _rageRequire:0,
     taunts:{spawn:['钱能解决一切！你伤不了我！'],recharge:['再充一次！','钱不是问题！'],armor_break:['退款！','我要投诉！'],death:['……钱也不是万能的……']},
     armorStack:3,_armorTimer:0,_critStreak:0,
@@ -648,7 +648,7 @@ const BOSS_DEFS=[
   },
   // ── Boss12：作威作福（终Boss）──
   {
-    key:'tyrant',name:'作威作福的半步紫府',hp:3800,spd:0.50,sz:44,col:'#802010',reward:20,
+    key:'tyrant',name:'作威作福的半步紫府',hp:20000,spd:0.50,sz:44,col:'#802010',reward:20,
     _rageRequire:4,
     taunts:{spawn:['区区练气期……你们也配？'],phase2:['威压！让你看看真正的差距！'],phase3_norage:['怎么，你还想赢？就这点怒气？'],phase3_rage:['这……不可能……你……'],death:['不可能……我半步紫府……怎么……']},
     _phase:0,
