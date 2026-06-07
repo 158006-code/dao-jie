@@ -240,6 +240,7 @@ function _update(){
 
   updateDodge(G);
   updateShieldRegen(G);
+  if(G.hurtInvTimer>0)G.hurtInvTimer--;
   updateCombo(G);
   updateArtifactCombo(G);
   updateDomainGrowth(G);

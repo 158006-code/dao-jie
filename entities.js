@@ -449,7 +449,7 @@ function updateEnemyAI(G,sec){
     if(G.viewMode==='arena'){e.x=clamp(e.x,8,W-8);e.y=clamp(e.y,8,H-8);}
     const d2=Math.hypot(G.mx-e.x,G.my-e.y);
     e.hitCd=(e.hitCd||0);if(e.hitCd>0)e.hitCd--;
-    if(d2<14&&e.hitCd<=0&&!e._invincible2){e.hitCd=35;let dmgDealt=e.atk;if(e._burstArmed){dmgDealt*=3;addExplosionWave(G,e.x,e.y,35,'#ff4400');e.hp-=e.maxhp*0.3;}applyPlayerDamage(G,dmgDealt);applyReflect(G,dmgDealt);G.noDmgTimer=0;screenShake(e._burstArmed?10:4);playSound('hurt');addPt(G,G.mx,G.my,'#E24B4A',3,1.5);addDamageText(G,G.mx+(Math.random()-0.5)*12,G.my-14,'-'+Math.ceil(dmgDealt),'#ff3333',15);}
+    if(d2<14&&e.hitCd<=0&&!e._invincible2){e.hitCd=35;let dmgDealt=e.atk*0.7;if(e._burstArmed){dmgDealt*=3;addExplosionWave(G,e.x,e.y,35,'#ff4400');e.hp-=e.maxhp*0.3;}applyPlayerDamage(G,dmgDealt);applyReflect(G,dmgDealt);G.noDmgTimer=0;screenShake(e._burstArmed?10:4);playSound('hurt');addPt(G,G.mx,G.my,'#E24B4A',3,1.5);addDamageText(G,G.mx+(Math.random()-0.5)*12,G.my-14,'-'+Math.ceil(dmgDealt),'#ff3333',15);}
     if(e.hasKB&&e.kbCd<=0){G.bugs.forEach(b=>{if(Math.hypot(b.x-e.x,b.y-e.y)<e.sz/2+6){knockback(b,e.x,e.y,4);e.kbCd=45;addPt(G,b.x,b.y,'#EF9F27',3,1.5);}});}
   });
 }

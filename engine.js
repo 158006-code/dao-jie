@@ -142,6 +142,7 @@ function knockback(obj,fx,fy,force){const dx=obj.x-fx,dy=obj.y-fy,d=Math.hypot(d
 // ── 伤害计算 ──
 function applyPlayerDamage(G,amount){
   if(!amount||amount<=0)return;
+  if(G.hurtInvTimer>0)return; // 受伤无敌帧
   amount*=(1-(G.dmgReduce||0));
   if(G.dodgeTimer>0)return;
   if(G.shieldHp>0){
@@ -149,6 +150,7 @@ function applyPlayerDamage(G,amount){
     amount-=G.shieldHp;G.shieldHp=0;
   }
   G.mhp-=amount;
+  G.hurtInvTimer=30; // 受伤后0.5秒无敌
   G._hurtFrames=3; // 玩家绘制抖动触发器
   // 受伤时：延长余怒窗口到6秒（不清零combo，激怒效果）
   if(G.comboTimer>0){
