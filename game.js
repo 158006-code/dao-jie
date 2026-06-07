@@ -1449,6 +1449,10 @@ function draw(){
     if(b._phase>=1){ctx.save();ctx.strokeStyle=b._phase>=2?'#ff2200':'#EF9F27';ctx.lineWidth=2;ctx.globalAlpha=0.5;ctx.beginPath();ctx.arc(b.x,b.y,b.sz/2+8+pulse*0.5,0,Math.PI*2);ctx.stroke();ctx.restore();}
     ctx.fillStyle='rgba(0,0,0,0.55)';ctx.fillRect(b.x-b.sz/2,b.y-b.sz/2-14,b.sz,6);
     ctx.fillStyle=pct>0.5?'#EF9F27':'#E24B4A';ctx.fillRect(b.x-b.sz/2,b.y-b.sz/2-14,b.sz*pct,6);
+    // 壕气护甲层数
+    if(b.armorStack>0){ctx.font='bold 11px Arial';ctx.textAlign='center';ctx.fillStyle='#FFD700';ctx.fillText('🛡×'+b.armorStack,b.x,b.y-b.sz/2-20);}
+    // vlogger录像机
+    if(b.key==='vlogger'&&b.vlogging>0){ctx.save();ctx.translate(b.x+b.sz/2+8,b.y-b.sz/2-8);ctx.fillStyle='#333';ctx.fillRect(-6,-5,12,10);ctx.strokeStyle='#888';ctx.lineWidth=1.5;ctx.strokeRect(-6,-5,12,10);ctx.fillStyle='#111';ctx.fillRect(-4,-3,8,6);ctx.fillStyle='#666';ctx.beginPath();ctx.arc(0,0,3,0,Math.PI*2);ctx.fill();ctx.fillStyle='#555';ctx.fillRect(-8,-3,3,6);if(G.elapsed%30<15){ctx.fillStyle='#ff0000';ctx.beginPath();ctx.arc(8,-4,2,0,Math.PI*2);ctx.fill();}ctx.restore();}
   }
 
   // 环绕武器

@@ -154,21 +154,25 @@ function spawnBug(n,x,y){
 // ── 后期规则变化 ──
 function updateLateGameRules(G,sec){
   if(sec>=240&&!G.bossMode){
-    G.hatchTideTimer=(G.hatchTideTimer||0)+1;
-    const hatchInterval=Math.max(540,1100-sec*0.8);
-    if(G.hatchTideTimer>=hatchInterval){
-      G.hatchTideTimer=0;
+    G._wasteTideTimer=(G._wasteTideTimer||0)+1;
+    const tideInterval=Math.max(480,1000-sec*0.7);
+    if(G._wasteTideTimer>=tideInterval){
+      G._wasteTideTimer=0;
       const cx=Math.random()*W,cy=Math.random()*H;
       G.dangerCircles.push({x:cx,y:cy,r:80,life:90,color:'#ff8800'});
-      showEcoAlert('💥 孵化潮爆发！');
+      showEcoAlert('💥 练气废物大潮！');
       setTimeout(()=>{
         if(!G||G.dead||G.won)return;
-        const n=4+Math.floor(sec/90);
+        const n=5+Math.floor(sec/80);
+        const stageKey='s'+(G.stageId||1);
+        const rule=STAGE_ENEMY_RULES[stageKey]||STAGE_ENEMY_RULES['s1'];
+        const pool=rule.pool.slice(0,rule.typeLimit);
         for(let i=0;i<n;i++){
           const a=Math.random()*Math.PI*2,rr=20+Math.random()*60;
-          spawnEnemyAt(G,Math.random()<0.3?'berserker':'normal',cx+Math.cos(a)*rr,cy+Math.sin(a)*rr,'late');
+          const rKey=pool[Math.floor(Math.random()*pool.length)];
+          spawnEnemyAt(G,rKey,cx+Math.cos(a)*rr,cy+Math.sin(a)*rr,'late');
         }
-        addExplosionWave(G,cx,cy,80,'#ff8800');addPt(G,cx,cy,'#E85D24',20,3);
+        addExplosionWave(G,cx,cy,90,'#ff8800');addPt(G,cx,cy,'#E85D24',25,3);
         playSound('pulse');
       },90/SPEED*16);
     }
@@ -181,8 +185,7 @@ function updateLateGameRules(G,sec){
       G.worldPulseFlash=40;
       playSound('pulse');
       G.enemies.forEach(e=>{e.rage=1.1;e.spd=Math.min(e.spd*1.03,e.spd*1.25);});
-      G.enemies.forEach(e=>{if(e.special==='shield')e.shield=1;});
-      showEcoAlert('🌊 世界脉冲！');
+      showEcoAlert('⚡ 天道压制！');
     }
     if(G.worldPulseFlash>0)G.worldPulseFlash--;
   }
@@ -190,34 +193,26 @@ function updateLateGameRules(G,sec){
 
 // ── 敌人协同AI ──
 function updateEnemyCooperation(G){
-  G.enemies.forEach(hive=>{
-    if(hive.special!=='hivemind')return;
+  // 壕der：护盾时保护周围同伴（shield_aura，60px内减伤标记）
+  G.enemies.forEach(rich=>{
+    if(rich.key!=='rich'||rich.shield<=0)return;
     G.enemies.forEach(e=>{
-      if(e===hive)return;
-      if(Math.hypot(e.x-hive.x,e.y-hive.y)<100){
-        e.hivebuff=30;
-        e.immuneDot=true;
+      if(e===rich)return;
+      if(Math.hypot(e.x-rich.x,e.y-rich.y)<60){e._shieldAura=Math.max(e._shieldAura||0,20);}
+    });
+  });
+  // 娇der死亡时触发周围5秒群体狂暴
+  G.enemies.forEach(dty=>{
+    if(dty.key!=='dainty_e'||dty.hp>0)return;
+    let hasDead=false;
+    G.enemies.forEach(e=>{
+      if(e!==dty&&Math.hypot(e.x-dty.x,e.y-dty.y)<80){
+        e._groupEnrage=300;hasDead=true;
       }
     });
+    if(hasDead){addExplosionWave(G,dty.x,dty.y,80,'#FF80C0');showEcoAlert('💢 娇der阵亡·群体狂暴5秒！');}
   });
-  G.enemies.forEach(sh=>{
-    if(sh.special!=='shield'||sh.shield<=0)return;
-    G.enemies.forEach(e=>{
-      if(e===sh)return;
-      if(Math.hypot(e.x-sh.x,e.y-sh.y)<60){e.shieldBubble=Math.max(e.shieldBubble||0,20);}
-    });
-  });
-  G.enemies.forEach(q=>{
-    if(q.special!=='spawner')return;
-    q.spawnTimer=(q.spawnTimer||0)+1;
-    if(q.spawnTimer>=q.spawnInterval){
-      q.spawnTimer=0;
-      spawnEnemyAt(G,'normal',q.x+(Math.random()-0.5)*30,q.y+(Math.random()-0.5)*30,'late');
-      q.spawnInterval=Math.max(60,q.spawnInterval-5);
-    }
-  });
-  G.enemies.forEach(e=>{if(e.hivebuff>0)e.hivebuff--;else{if(!e.immuneDot&&e.typeKey==='normal')e.immuneDot=false;}});
-  G.enemies.forEach(e=>{if(e.shieldBubble>0)e.shieldBubble--;});
+  G.enemies.forEach(e=>{if(e._shieldAura>0)e._shieldAura--;});
 }
 
 // ── 敌人生成调度（提取自_update）──
@@ -353,6 +348,10 @@ function updateEnemyAI(G,sec){
     const spdMult=e.slowTimer>0?0.3:1;
     if(e.freezeTimer>0){e.vx*=0.3;e.vy*=0.3;}else{e.vx*=0.88;e.vy*=0.88;}
     if(e.rage&&e.rage>1){e.spd=Math.min(e.spd*1.0006,e.spd*1.45);}
+    // 娇der死亡群体狂暴
+    if(e._groupEnrage>0){e._groupEnrage--;spdMult*=1.35;}
+    // 壕der护盾光环
+    if(e._shieldAura>0){e.defMult=(e.defMult||1)*0.85;}
 
     if(e.special==='shield'){
       e.shieldCd=(e.shieldCd||0)+1;

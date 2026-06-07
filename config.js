@@ -23,7 +23,7 @@ const RAGE_DROP_IMMUNITY = 120;  // 掉级保护帧数
 
 // ── 游戏常量 ──
 const FPS=60,TOTAL=360; // 1-9关6分钟，第10关9分钟(由G.totalTime覆写)
-const BOSS_AT=[180,360];
+const BOSS_AT=[180,330];
 const STAGE_10_BOSS_AT=[180,360,540];
 const SPEEDS=[1,1.5,2,3];
 
@@ -550,7 +550,7 @@ const BOSS_DEFS=[
       const pct=boss.hp/boss.maxhp;
       if(!boss._spawnTaunt){boss._spawnTaunt=true;bossTaunt(boss,'spawn',G);}
       const waveThresh=[0.75,0.50,0.25,0.05];
-      waveThresh.forEach((t,i)=>{if(pct<t&&(boss._backupWaves||0)<=i){boss._backupWaves=(boss._backupWaves||0)+1;bossTaunt(boss,'call_backup',G);for(let j=0;j<4;j++){const angle=Math.random()*Math.PI*2;spawnEnemyAt(G,'berserker',boss.x+Math.cos(angle)*80,boss.y+Math.sin(angle)*80,'late');const e2=G.enemies[G.enemies.length-1];if(e2)e2._isBackup=true;}showEcoAlert('🚨 援军到来！先清援军再打Boss！');}});
+      waveThresh.forEach((t,i)=>{if(pct<t&&(boss._backupWaves||0)<=i){boss._backupWaves=(boss._backupWaves||0)+1;bossTaunt(boss,'call_backup',G);const backupTypes=['roller','berserker','rich'];for(let j=0;j<4;j++){const angle=Math.random()*Math.PI*2;const bt=backupTypes[Math.floor(Math.random()*backupTypes.length)];spawnEnemyAt(G,bt,boss.x+Math.cos(angle)*80,boss.y+Math.sin(angle)*80,'late');const e2=G.enemies[G.enemies.length-1];if(e2)e2._isBackup=true;}showEcoAlert('🚨 援军到来！先清援军再打Boss！');}});
       const hasBackup=G.enemies.some(e=>e._isBackup);boss._hasBackup=hasBackup;
       if(!hasBackup&&boss._backupWaves>0&&!boss._noBackupTaunt){boss._noBackupTaunt=true;bossTaunt(boss,'backup_dead',G);setTimeout(()=>bossTaunt(boss,'no_backup',G),2000);}
       boss._bulletT=(boss._bulletT||0)+1;const cd=hasBackup?150:90;if(boss._bulletT>=cd){boss._bulletT=0;const a2=Math.atan2(G.my-boss.y,G.mx-boss.x);addProj(G,boss.x,boss.y,Math.cos(a2)*4,Math.sin(a2)*4,{dmg:9,r:6,color:'#4060A0',life:80,isBossBullet:true});}
