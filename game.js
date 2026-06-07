@@ -2045,9 +2045,9 @@ window.addEventListener('keydown',e=>{
   if(e.key==='Escape'||e.key==='p'||e.key==='P'||e.key===' ')togglePause();
 });
 window.addEventListener('keyup',e=>{G&&(G.keys[e.key]=false);});
-CV.addEventListener('mousemove',e=>{const r=CV.getBoundingClientRect();mX=e.clientX-r.left;mY=e.clientY-r.top;});
+CV.addEventListener('mousemove',e=>{if(!G||G.paused)return;const r=CV.getBoundingClientRect();mX=e.clientX-r.left;mY=e.clientY-r.top;});
 let dpadState={u:false,d:false,l:false,r:false};
-function bindDpad(id,key,sk){const el=document.getElementById(id);if(!el)return;const press=e=>{e.preventDefault();dpadState[sk]=true;if(G)G.keys[key]=true;};const release=e=>{e.preventDefault();dpadState[sk]=false;if(G)G.keys[key]=false;};el.addEventListener('touchstart',press,{passive:false});el.addEventListener('touchend',release,{passive:false});el.addEventListener('mousedown',press);el.addEventListener('mouseup',release);el.addEventListener('mouseleave',release);}
+function bindDpad(id,key,sk){const el=document.getElementById(id);if(!el)return;const press=e=>{e.preventDefault();dpadState[sk]=true;if(G&&!G.paused)G.keys[key]=true;};const release=e=>{e.preventDefault();dpadState[sk]=false;if(G&&!G.paused)G.keys[key]=false;};el.addEventListener('touchstart',press,{passive:false});el.addEventListener('touchend',release,{passive:false});el.addEventListener('mousedown',press);el.addEventListener('mouseup',release);el.addEventListener('mouseleave',release);}
 bindDpad('du','ArrowUp','u');bindDpad('dd','ArrowDown','d');bindDpad('dl','ArrowLeft','l');bindDpad('dr','ArrowRight','r');
 let touchStart=null;
 let lastTapTime=0;
@@ -2060,5 +2060,5 @@ CV.addEventListener('touchstart',e=>{
   lastTapTime=now;
   const r=CV.getBoundingClientRect();touchStart={x:e.touches[0].clientX-r.left,y:e.touches[0].clientY-r.top};
 },{passive:false});
-CV.addEventListener('touchmove',e=>{e.preventDefault();if(!touchStart||!G)return;const r=CV.getBoundingClientRect();const tx=e.touches[0].clientX-r.left,ty=e.touches[0].clientY-r.top;G.mx=Math.max(14,Math.min(W-14,G.mx+(tx-touchStart.x)*0.5));G.my=Math.max(14,Math.min(H-14,G.my+(ty-touchStart.y)*0.5));touchStart={x:tx,y:ty};},{passive:false});
+CV.addEventListener('touchmove',e=>{e.preventDefault();if(!touchStart||!G||G.paused)return;const r=CV.getBoundingClientRect();const tx=e.touches[0].clientX-r.left,ty=e.touches[0].clientY-r.top;G.mx=Math.max(14,Math.min(W-14,G.mx+(tx-touchStart.x)*0.5));G.my=Math.max(14,Math.min(H-14,G.my+(ty-touchStart.y)*0.5));touchStart={x:tx,y:ty};},{passive:false});
 CV.addEventListener('touchend',e=>{e.preventDefault();touchStart=null;},{passive:false});
