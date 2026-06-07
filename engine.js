@@ -36,18 +36,13 @@ function playSound(type){
 // ── Canvas ──
 const CV=document.getElementById('c');
 const ctx=CV.getContext('2d');
-let W,H,_gameW=null,_gameH=null;
-function resizeCanvas(force){
-  const vw=window.innerWidth;
+let W,H;
+function resizeCanvas(){
+  W=window.innerWidth;
   const topH=document.querySelector('.top-bar').offsetHeight||26;
   const wepH=document.querySelector('.weapon-row').offsetHeight||50;
   const botH=document.querySelector('.bottom-bar').offsetHeight||34;
-  const newH=Math.max(200,window.innerHeight-topH-wepH-botH);
-  // 游戏中锁定W/H：窗口resize只改Canvas缓冲，不改变游戏坐标
-  if(!force&&G&&!G.dead&&!G.won&&_gameW!==null){
-    CV.width=_gameW;CV.height=_gameH;CV.style.width=_gameW+'px';CV.style.height=_gameH+'px';return;
-  }
-  W=_gameW=vw;H=_gameH=newH;
+  H=Math.max(200,window.innerHeight-topH-wepH-botH);
   CV.width=W;CV.height=H;CV.style.width=W+'px';CV.style.height=H+'px';
 }
 resizeCanvas();
