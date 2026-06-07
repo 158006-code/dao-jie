@@ -96,7 +96,7 @@ const PtPool=[],ProjPool=[],DmgPool=[];
 function getPt(){return PtPool.pop()||{};}
 function getProj(){return ProjPool.pop()||{};}
 function getDmg(){return DmgPool.pop()||{};}
-function recyclePt(p){if(PtPool.length<200)PtPool.push(p);}
+function recyclePt(p){if(PtPool.length<120)PtPool.push(p);}
 function recycleProj(p){if(ProjPool.length<100)ProjPool.push(p);}
 function recycleDmg(d){if(DmgPool.length<100)DmgPool.push(d);}
 

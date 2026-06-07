@@ -778,9 +778,9 @@ function draw(){
     ctx.beginPath();let cx=a.x,cy=a.y;for(let i=0;i<4;i++){const nx=cx+(Math.random()-0.5)*20,ny=cy+(Math.random()-0.5)*20;ctx.moveTo(cx,cy);ctx.lineTo(nx,ny);cx=nx;cy=ny;}ctx.stroke();ctx.restore();});}
 
   // 粒子
-  const showAllPt=G.comboTier<6;
   G.pts.forEach((p,i)=>{
-    if(!showAllPt&&i%2===0)return;
+    if(G.comboTier<4&&i%2===0)return;
+    if(G.comboTier>=4&&i%3!==0)return;
     ctx.globalAlpha=p.life*0.65;ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,Math.max(0.5,p.r),0,Math.PI*2);ctx.fill();
   });
   ctx.globalAlpha=1;

@@ -404,14 +404,16 @@ function updateDomainGrowth(G){
       }
       else if(phaseTime<180){G.mhp=Math.min(G.mmaxhp,G.mhp+0.025);}
     }
-    G.enemies.forEach(e=>{
-      const dx=e.x-z.x,dy=e.y-z.y;
-      if(dx*dx+dy*dy<z.r*z.r){
-        if(!z.hostile&&phaseTime<180){e.slowTimer=Math.max(e.slowTimer||0,8);}
-        else if(z.hostile){e.rage=1.1;}
-      }
-    });
-    G.enemies.forEach(e=>{if(e.special==='corruptor'&&!z.hostile&&Math.hypot(e.x-z.x,e.y-z.y)<z.r*0.5){z.r=Math.min(z.r+0.05,120);z.hostile=phaseTime>180;}});
+    if(G.elapsed%6===0){ // 每6帧检查一次敌人碰撞
+      G.enemies.forEach(e=>{
+        const dx=e.x-z.x,dy=e.y-z.y;
+        if(dx*dx+dy*dy<z.r*z.r){
+          if(!z.hostile&&phaseTime<180){e.slowTimer=Math.max(e.slowTimer||0,8);}
+          else if(z.hostile){e.rage=1.1;}
+        }
+      });
+      G.enemies.forEach(e=>{if(e.special==='corruptor'&&!z.hostile&&Math.hypot(e.x-z.x,e.y-z.y)<z.r*0.5){z.r=Math.min(z.r+0.05,120);z.hostile=phaseTime>180;}});
+    }
   });
   G.infectionMap=G.infectionMap.filter(z=>z.life>0);
 }

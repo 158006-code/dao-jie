@@ -163,10 +163,11 @@ function updateLateGameRules(G,sec){
       showEcoAlert('💥 练气废物大潮！');
       setTimeout(()=>{
         if(!G||G.dead||G.won)return;
-        const n=5+Math.floor(sec/80);
+        const maxN=5+Math.floor(sec/80);
         const stageKey='s'+(G.stageId||1);
         const rule=STAGE_ENEMY_RULES[stageKey]||STAGE_ENEMY_RULES['s1'];
         const pool=rule.pool.slice(0,rule.typeLimit);
+        const n=Math.min(maxN,Math.max(0,45-G.enemies.length));
         for(let i=0;i<n;i++){
           const a=Math.random()*Math.PI*2,rr=20+Math.random()*60;
           const rKey=pool[Math.floor(Math.random()*pool.length)];
@@ -211,7 +212,7 @@ function updateEnemySpawning(G,sec){
   const earlyReduction=sec<60?0.80:sec<120?0.90:1;
   const comboMult=G.combo>=300?0.45:1;
   const rate=Math.max(8,(75-G.phase*12-G.lv*1.5)*(G.spawnMult||1)/1.6*comboMult/earlyReduction);
-  if(G.spawnTimer>=rate){
+  if(G.spawnTimer>=rate&&G.enemies.length<45){
     G.spawnTimer=0;
     const baseSpawn=G.combo>=300?3:1;
     for(let i=0;i<baseSpawn;i++)spawnEnemy(G);
@@ -285,10 +286,13 @@ function updateBugAI(G){
 
     let tgt=null;
     if(b.targetId!=null){tgt=allTargets.find(e=>e.id===b.targetId&&e.hp>0);if(!tgt)b.targetId=null;}
-    if(!tgt&&allTargets.length>0){
-      const nearest=allTargets.filter(e=>e.hp>0).sort((a,b2)=>Math.hypot(a.x-b.x,a.y-b.y)-Math.hypot(b2.x-b.x,b2.y-b.y));
-      if(nearest.length>0){tgt=nearest[0];b.targetId=tgt.id;}
-    }
+    b._retargetCd=(b._retargetCd||0)+1;
+    if(!tgt&&allTargets.length>0&&b._retargetCd>=15){
+      b._retargetCd=0;
+      let best=null,bd=Infinity;
+      for(let j=0;j<allTargets.length;j++){const d=Math.hypot(allTargets[j].x-b.x,allTargets[j].y-b.y);if(d<bd){bd=d;best=allTargets[j];}}
+      if(best){tgt=best;b.targetId=best.id;}
+    } else if(tgt){b._retargetCd=0;}
     if(tgt){
       const nd=Math.hypot(tgt.x-b.x,tgt.y-b.y);
       const spd=(1.6+(b.elite?0.7:0));
