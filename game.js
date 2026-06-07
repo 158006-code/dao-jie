@@ -892,6 +892,156 @@ function draw(){
     ctx.globalAlpha=1;
   });
 
+  // ══════ 玩家Q版人形 ══════
+  function drawPlayer(ctx, G){
+    const tier=G.rageTier||0;
+    const rt=RAGE_TIERS[tier]||RAGE_TIERS[0];
+    const hpPct=G.mhp/G.mmaxhp;
+    const dodgeAlpha=G.dodgeTimer>0?0.55:1;
+    const hurtShakeX=(G._hurtFrames||0)>0?(Math.random()-0.5)*6:0;
+    if(G._hurtFrames>0)G._hurtFrames--;
+    const mx=G.mx+hurtShakeX,my=G.my;
+    // 行走摆动
+    const moved=Math.hypot(G._pmx!==undefined?mx-G._pmx:0,G._pmy!==undefined?my-G._pmy:0)>0.3;
+    const bob=moved?Math.sin(G.elapsed*0.18)*1.8:Math.sin(G.elapsed*0.06)*0.5;
+    const lean=moved?Math.atan2(my-(G._pmy||my),mx-(G._pmx||mx))*0.12:0;
+    G._pmx=mx;G._pmy=my;
+    ctx.save();
+    ctx.globalAlpha*=dodgeAlpha;
+    // 闪避倾斜
+    if(G.dodgeTimer>0){ctx.translate(mx,my);ctx.rotate(0.087);ctx.translate(-mx,-my);}
+    // ── 境界光晕（底层）──
+    if(tier>=1){
+      const halo=ctx.createRadialGradient(mx,my-4,6,mx,my-4,30);
+      halo.addColorStop(0,rt.glowColor);halo.addColorStop(1,'rgba(0,0,0,0)');
+      ctx.fillStyle=halo;ctx.fillRect(mx-30,my-34,60,60);
+    }
+    // ── 主体绘制 ──
+    ctx.save();
+    ctx.translate(mx,my);
+    ctx.rotate(lean);
+    const boby=bob;
+    // 身体发光
+    const bodyGlow=tier>=8?80:tier>=7?64:tier>=6?52:tier>=5?36:8+tier*8;
+    const glowCol=tier>=8?'#aa0033':tier>=7?'#cc0044':tier>=6?'#ff2200':tier>=3?'#ff4400':rt.color;
+    ctx.shadowBlur=bodyGlow;ctx.shadowColor=glowCol;
+    // 袍子（主体椭圆）
+    const robeCol=tier>=5?'#992222':tier>=3?'#bb2a1a':'#cc3322';
+    ctx.fillStyle=robeCol;
+    ctx.beginPath();ctx.ellipse(0,6+boby,8,11,0,0,Math.PI*2);ctx.fill();
+    // 袍子暗色下半
+    ctx.fillStyle=tier>=5?'#661010':'#882020';
+    ctx.beginPath();ctx.ellipse(0,12+boby,7,6,0,0,Math.PI*2);ctx.fill();
+    // 袖子（左）
+    ctx.fillStyle=robeCol;
+    ctx.beginPath();ctx.ellipse(-10,6+boby,4,7,-0.25,0,Math.PI*2);ctx.fill();
+    // 袖子（右）
+    ctx.beginPath();ctx.ellipse(10,6+boby,4,7,0.25,0,Math.PI*2);ctx.fill();
+    // 手（肤色小圆）
+    ctx.fillStyle='#f5d5a0';ctx.shadowBlur=0;
+    ctx.beginPath();ctx.arc(-13,9+boby,2.8,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(13,9+boby,2.8,0,Math.PI*2);ctx.fill();
+    // 腿（袍子下方）
+    ctx.fillStyle='#442020';
+    ctx.beginPath();ctx.ellipse(-4,18+boby,3,4,0,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.ellipse(4,18+boby,3,4,0,0,Math.PI*2);ctx.fill();
+    // 鞋
+    ctx.fillStyle='#1a1008';
+    ctx.beginPath();ctx.ellipse(-4,22+boby,3.5,2.2,0,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.ellipse(4,22+boby,3.5,2.2,0,0,Math.PI*2);ctx.fill();
+    // ── 飘带（后）──
+    ctx.fillStyle='#ffcc44';ctx.shadowBlur=6;ctx.shadowColor='#ffcc44';
+    const ribbonPhase=Math.sin(G.elapsed*0.12)*2.5;
+    ctx.beginPath();ctx.moveTo(-8,4+boby);ctx.quadraticCurveTo(-16+ribbonPhase,10+boby,-14+ribbonPhase,18+boby);
+    ctx.lineTo(-10+ribbonPhase,16+boby);ctx.quadraticCurveTo(-10,9+boby,-6,5+boby);ctx.closePath();ctx.fill();
+    ctx.beginPath();ctx.moveTo(8,4+boby);ctx.quadraticCurveTo(16-ribbonPhase,10+boby,14-ribbonPhase,18+boby);
+    ctx.lineTo(10-ribbonPhase,16+boby);ctx.quadraticCurveTo(10,9+boby,6,5+boby);ctx.closePath();ctx.fill();
+    ctx.shadowBlur=bodyGlow;ctx.shadowColor=glowCol;
+    // ── 头部（大圆）──
+    ctx.fillStyle='#f5d5a0';
+    ctx.beginPath();ctx.arc(0,-6+boby,10,0,Math.PI*2);ctx.fill();
+    // 头部描边
+    if(tier>=4){ctx.strokeStyle=glowCol;ctx.lineWidth=1.2;ctx.beginPath();ctx.arc(0,-6+boby,10.5,0,Math.PI*2);ctx.stroke();}
+    // ── 发髻 ──
+    ctx.fillStyle='#1a1008';ctx.shadowBlur=0;
+    ctx.beginPath();ctx.arc(0,-16+boby,5.5,0,Math.PI);ctx.fill();
+    // 发髻小球
+    ctx.beginPath();ctx.arc(0,-20+boby,3,0,Math.PI*2);ctx.fill();
+    // 发带
+    ctx.strokeStyle='#ffcc44';ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(-5,-18+boby);ctx.lineTo(5,-18+boby);ctx.stroke();
+    // 两侧鬓发
+    ctx.fillStyle='#1a1008';
+    ctx.beginPath();ctx.ellipse(-9,-10+boby,2.5,5,-0.3,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.ellipse(9,-10+boby,2.5,5,0.3,0,Math.PI*2);ctx.fill();
+    // ── 面部 ──
+    // 眼白
+    ctx.fillStyle='#ffffff';ctx.shadowBlur=0;
+    ctx.beginPath();ctx.arc(-4,-7+boby,2.3,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(4,-7+boby,2.3,0,Math.PI*2);ctx.fill();
+    // 眼珠（随tier变色+发光）
+    const eyeCol=tier>=7?'#ff0044':tier>=5?'#ff1100':tier>=3?'#ff4400':tier>=1?'#ff8800':'#442222';
+    const eyeGlow=tier>=6?14:tier>=3?8:0;
+    ctx.fillStyle=eyeCol;ctx.shadowBlur=eyeGlow;ctx.shadowColor=eyeCol;
+    ctx.beginPath();ctx.arc(-4,-7+boby,1.3,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(4,-7+boby,1.3,0,Math.PI*2);ctx.fill();
+    ctx.shadowBlur=0;
+    // 眼高光
+    ctx.fillStyle='#ffffff';
+    ctx.beginPath();ctx.arc(-4.5,-7.8+boby,0.6,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(3.5,-7.8+boby,0.6,0,Math.PI*2);ctx.fill();
+    // 眉毛
+    const browY=moved?-8.2+boby+Math.sin(G.elapsed*0.4+tier)*0.5:-8.2+boby;
+    ctx.strokeStyle=tier>=3?glowCol:'#333';ctx.lineWidth=1.8;
+    if(tier<=1){
+      ctx.beginPath();ctx.moveTo(-6,browY-2);ctx.lineTo(-1,browY-2);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(1,browY-2);ctx.lineTo(6,browY-2);ctx.stroke();
+    }else{
+      ctx.beginPath();ctx.moveTo(-6,browY-1);ctx.lineTo(-1,browY+0.5);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(6,browY-1);ctx.lineTo(1,browY+0.5);ctx.stroke();
+    }
+    // 嘴巴
+    ctx.strokeStyle=tier===0?'#553322':tier<=2?'#553322':glowCol;ctx.lineWidth=1.5;
+    if(tier===0){
+      ctx.beginPath();ctx.arc(0,-2+boby,3.5,0.15*Math.PI,0.85*Math.PI);ctx.stroke();
+    }else if(tier<=2){
+      ctx.beginPath();ctx.moveTo(-3,-2+boby);ctx.lineTo(3,-2+boby);ctx.stroke();
+    }else{
+      ctx.beginPath();ctx.arc(0,2+boby,4,1.15*Math.PI,1.85*Math.PI);ctx.stroke();
+    }
+    // 怒气纹（tier3+ 额头纹路）
+    if(tier>=3){
+      ctx.strokeStyle=glowCol;ctx.lineWidth=1;ctx.shadowBlur=tier>=5?8:4;ctx.shadowColor=glowCol;
+      const veinOff=tier>=6?Math.sin(G.elapsed*0.25)*0.8:0;
+      ctx.beginPath();ctx.moveTo(-3+veinOff,-12+boby);ctx.lineTo(1+veinOff,-14+boby);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(3-veinOff,-12+boby);ctx.lineTo(-1-veinOff,-14+boby);ctx.stroke();
+    }
+    ctx.shadowBlur=0;
+    // ── 武器 ──
+    const atkSlot=G.slots.find(s=>s.id&&WEAPONS[s.id]&&WEAPONS[s.id].type==='attack');
+    if(atkSlot&&WEAPONS[atkSlot.id]){
+      const w=WEAPONS[atkSlot.id];
+      const wCol=w.color||(atkSlot.stars>=2?'#ff4400':atkSlot.stars>=1?'#ffaa00':'#1D9E75');
+      ctx.fillStyle=wCol;ctx.shadowBlur=8;ctx.shadowColor=wCol;
+      // 武器在右手
+      ctx.beginPath();ctx.arc(15,8+boby,3.5,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle=wCol;ctx.lineWidth=2;
+      ctx.beginPath();ctx.moveTo(13,8+boby);ctx.lineTo(16,0+boby);ctx.stroke();
+      ctx.shadowBlur=0;
+    }
+    ctx.restore(); // translate(mx,my)
+    // ── tier特效（在translate外部）──
+    if(tier>=2&&G.elapsed%30===0)_addParticle(G,mx,my-22,(Math.random()-0.5)*0.5,-1.2-Math.random(),50,'#ffcc00',10,'?');
+    if(tier>=3&&G.elapsed%20===0){for(let i=0;i<4;i++){const a=Math.random()*Math.PI*2,d=8+Math.random()*14;_addParticle(G,mx+Math.cos(a)*d,my+6+Math.sin(a)*d,(Math.random()-0.5)*0.8,(Math.random()-0.5)*0.8,30,'#ff8800',2,null);}}
+    if(tier>=4){const n=tier>=5?2:1;for(let k=0;k<n;k++){const a=Math.random()*Math.PI*2,d=5+Math.random()*20;_addParticle(G,mx+Math.cos(a)*d,my+6+Math.sin(a)*d,(Math.random()-0.5)*0.6,(Math.random()-0.5)*0.6,25,'#ff4400',2.5,null);}}
+    if(tier>=5){const intens=tier>=7?2:1;for(let k=0;k<2+intens;k++){if(Math.random()<0.5)_addParticle(G,mx+(Math.random()-0.5)*10,my-20,(Math.random()-0.5)*0.4,-1-Math.random()*1.5,40,'#ff2200',3,null);}}
+    if(tier>=6&&G.elapsed%60===0)_addParticle(G,mx+(Math.random()-0.5)*16,my-24,(Math.random()-0.5)*1,-2-Math.random(),50,'#ff0000',14,'杀！');
+    if(tier>=8){ctx.globalAlpha=0.15;ctx.fillStyle='#440022';ctx.shadowBlur=24;ctx.shadowColor='#aa0033';ctx.beginPath();ctx.ellipse(mx,my+6,20,28,0,0,Math.PI*2);ctx.fill();ctx.globalAlpha=dodgeAlpha;}
+    // 低血红线
+    if(hpPct<0.3){ctx.strokeStyle='#ff3333';ctx.lineWidth=1;ctx.shadowBlur=0;ctx.beginPath();ctx.arc(mx,my+6,30,0,Math.PI*2);ctx.stroke();}
+    ctx.restore();
+  }
+
   // ══════ 大头人形基础绘制 ══════
   function drawMonsterBase(ctx, x, y, opts){
     const {
@@ -1646,157 +1796,12 @@ function draw(){
     }
   }
 
-  // ── 玩家本体（大头人形强化版）──
-  // ── 玩家粒子系统 ──
+  // ── 玩家Q版人形 + 粒子 ──
   if(!G.playerParticles)G.playerParticles=[];
   G.playerParticles.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.life--;p.size*=0.92;});
   G.playerParticles=G.playerParticles.filter(p=>p.life>0);
 
-  // ── 颜色表 ──
-  const tierColors=['#2db87a','#ffcc00','#ff8800','#ff4400','#ff2200','#cc0000','#880000','#440022','#220011'];
-  const bodyColor=tierColors[tier]||'#2db87a';
-  const glowStr=tier>=8?80:tier>=7?64:tier>=6?52:10+tier*6;
-  const glowColor=tier>=8?'#aa0033':tier>=7?'#cc0044':tier>=6?'#ff2200':bodyColor;
-
-  // ── 动态状态 ──
-  const dodgeAlpha=G.dodgeTimer>0?0.55:1;
-  const hurtShakeX=(G._hurtFrames||0)>0?(Math.random()-0.5)*6:0;
-  if(G._hurtFrames>0)G._hurtFrames--;
-  const mx=G.mx+hurtShakeX;
-
-  ctx.save();
-  ctx.globalAlpha*=dodgeAlpha;
-
-  // 闪避中：身体向右倾斜5度
-  if(G.dodgeTimer>0){
-    ctx.translate(mx,G.my);ctx.rotate(0.087);ctx.translate(-mx,-G.my);
-  }
-
-  // ── 主体绘制（shadowBlur发光）──
-  ctx.shadowBlur=glowStr;ctx.shadowColor=glowColor;
-  ctx.fillStyle=bodyColor;ctx.strokeStyle=bodyColor;
-
-  // 头部（半径12，圆心在my-8）
-  ctx.beginPath();ctx.arc(mx,G.my-8,12,0,Math.PI*2);ctx.fill();
-
-  // 脖子 lineWidth=4
-  ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(mx,G.my+4);ctx.lineTo(mx,G.my+8);ctx.stroke();
-  // 身体 lineWidth=5
-  ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(mx,G.my+8);ctx.lineTo(mx,G.my+20);ctx.stroke();
-  // 左臂 lineWidth=3.5
-  ctx.lineWidth=3.5;ctx.beginPath();ctx.moveTo(mx,G.my+11);ctx.lineTo(mx-12,G.my+20);ctx.stroke();
-  // 右臂 lineWidth=3.5
-  ctx.beginPath();ctx.moveTo(mx,G.my+11);ctx.lineTo(mx+12,G.my+20);ctx.stroke();
-  // 左腿 lineWidth=4
-  ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(mx,G.my+20);ctx.lineTo(mx-8,G.my+33);ctx.stroke();
-  // 右腿 lineWidth=4
-  ctx.beginPath();ctx.moveTo(mx,G.my+20);ctx.lineTo(mx+8,G.my+33);ctx.stroke();
-
-  // tier4+ 身体描边变橙
-  if(tier>=4){
-    ctx.strokeStyle='#ff8800';ctx.lineWidth=1.5;ctx.shadowBlur=22;ctx.shadowColor='#ff8800';
-    ctx.beginPath();ctx.moveTo(mx,G.my+8);ctx.lineTo(mx,G.my+20);ctx.stroke();
-    ctx.beginPath();ctx.moveTo(mx,G.my+11);ctx.lineTo(mx-12,G.my+20);ctx.stroke();
-    ctx.beginPath();ctx.moveTo(mx,G.my+11);ctx.lineTo(mx+12,G.my+20);ctx.stroke();
-  }
-
-  // 低血红色描边
-  if(hpPct<0.3){
-    ctx.strokeStyle='#ff3333';ctx.lineWidth=1;ctx.shadowBlur=0;
-    ctx.beginPath();ctx.arc(mx,G.my+6,30,0,Math.PI*2);ctx.stroke();
-  }
-
-  // ── 面部 ──
-  ctx.shadowBlur=0;
-  // 眼白（两个白圆，半径2）
-  ctx.fillStyle='#ffffff';
-  ctx.beginPath();ctx.arc(mx-4,G.my-9,2,0,Math.PI*2);ctx.fill();
-  ctx.beginPath();ctx.arc(mx+4,G.my-9,2,0,Math.PI*2);ctx.fill();
-  // 眼珠（红色小圆，半径1.2）
-  const pupilColor=tier>=3?'#ff0000':'#cc3300';
-  const pupilBlur=tier>=6?16:6;
-  ctx.shadowBlur=pupilBlur;ctx.shadowColor=pupilColor;ctx.fillStyle=pupilColor;
-  ctx.beginPath();ctx.arc(mx-4,G.my-9,1.2,0,Math.PI*2);ctx.fill();
-  ctx.beginPath();ctx.arc(mx+4,G.my-9,1.2,0,Math.PI*2);ctx.fill();
-  ctx.shadowBlur=0;
-
-  // 眉毛
-  if(tier<=1){
-    ctx.strokeStyle='#333';ctx.lineWidth=1.5;
-    ctx.beginPath();ctx.moveTo(mx-6,G.my-13);ctx.lineTo(mx-1,G.my-13);ctx.stroke();
-    ctx.beginPath();ctx.moveTo(mx+1,G.my-13);ctx.lineTo(mx+6,G.my-13);ctx.stroke();
-  } else {
-    const browShake=Math.sin(G.elapsed*0.4+tier*0.6)*(tier>=4?1.8:0.9);
-    ctx.strokeStyle=bodyColor;ctx.lineWidth=2.5;
-    ctx.beginPath();ctx.moveTo(mx-6,G.my-14+browShake);ctx.lineTo(mx-1,G.my-12);ctx.stroke();
-    ctx.beginPath();ctx.moveTo(mx+6,G.my-14+browShake);ctx.lineTo(mx+1,G.my-12);ctx.stroke();
-  }
-
-  // 嘴巴
-  if(tier===0){
-    ctx.strokeStyle='#333';ctx.lineWidth=1.5;ctx.beginPath();
-    ctx.arc(mx,G.my-3,4,0.15*Math.PI,0.85*Math.PI);ctx.stroke();
-  } else if(tier<=2){
-    ctx.strokeStyle='#444';ctx.lineWidth=1.5;ctx.beginPath();
-    ctx.moveTo(mx-3,G.my-4);ctx.lineTo(mx+3,G.my-4);ctx.stroke();
-  } else {
-    ctx.strokeStyle=bodyColor;ctx.lineWidth=2;ctx.beginPath();
-    ctx.arc(mx,G.my+1,4,1.15*Math.PI,1.85*Math.PI);ctx.stroke();
-  }
-
-  // ── 境界特效 ──
-  // tier1：头部额外红光
-  if(tier===1){
-    ctx.shadowBlur=8;ctx.shadowColor='#ff0000';
-    ctx.strokeStyle='rgba(255,0,0,0.4)';ctx.lineWidth=1.5;
-    ctx.beginPath();ctx.arc(mx,G.my-8,14,0,Math.PI*2);ctx.stroke();
-    ctx.shadowBlur=0;
-  }
-
-  // tier2：每30帧"?"粒子
-  if(tier>=2&&G.elapsed%30===0){
-    _addParticle(G,mx,G.my-22,(Math.random()-0.5)*0.5,-1.2-Math.random(),50,'#ffcc00',10,'?');
-  }
-
-  // tier3：每20帧4个橙色粒子
-  if(tier>=3&&G.elapsed%20===0){
-    for(let i=0;i<4;i++){
-      const a=Math.random()*Math.PI*2,d=8+Math.random()*14;
-      _addParticle(G,mx+Math.cos(a)*d,G.my+6+Math.sin(a)*d,(Math.random()-0.5)*0.8,(Math.random()-0.5)*0.8,30,'#ff8800',2,null);
-    }
-  }
-
-  // tier4：每帧随机橙红粒子
-  if(tier>=4){
-    const n=tier>=5?2:1;
-    for(let k=0;k<n;k++){
-      const a=Math.random()*Math.PI*2,d=5+Math.random()*20;
-      _addParticle(G,mx+Math.cos(a)*d,G.my+6+Math.sin(a)*d,(Math.random()-0.5)*0.6,(Math.random()-0.5)*0.6,25,'#ff4400',2.5,null);
-    }
-  }
-
-  // tier5-8：头顶持续红粒上升
-  if(tier>=5){
-    const intens=tier>=7?2:1;
-    for(let k=0;k<2+intens;k++){
-      if(Math.random()<0.5){
-        _addParticle(G,mx+(Math.random()-0.5)*10,G.my-20,(Math.random()-0.5)*0.4,-1-Math.random()*1.5,40,'#ff2200',3,null);
-      }
-    }
-  }
-
-  // tier6+：每60帧"杀！"粒子
-  if(tier>=6&&G.elapsed%60===0){
-    _addParticle(G,mx+(Math.random()-0.5)*16,G.my-24,(Math.random()-0.5)*1,-2-Math.random(),50,'#ff0000',14,'杀！');
-  }
-
-  // tier8：暗红椭圆光晕
-  if(tier>=8){
-    ctx.globalAlpha=0.15;ctx.fillStyle='#440022';ctx.shadowBlur=24;ctx.shadowColor='#aa0033';
-    ctx.beginPath();ctx.ellipse(mx,G.my+6,20,28,0,0,Math.PI*2);ctx.fill();ctx.globalAlpha=dodgeAlpha;
-  }
-
-  ctx.restore();
+  drawPlayer(ctx, G);
 
   // ── 绘制玩家粒子 ──
   G.playerParticles.forEach(p=>{
