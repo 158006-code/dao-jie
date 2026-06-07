@@ -90,18 +90,18 @@ function spawnEnemy(G){
   // 按 typeLimit 截取可用怪池
   const pool = rule.pool.slice(0, rule.typeLimit);
 
-  // 按 phaseWeights 决定 enemyPhase
+  // 按 G.stagePhase 偏移 phaseWeights（stagePhase↑ → 怪群阶段↑）
   const pw = rule.phaseWeights;
-  const totalW = pw.early + pw.mid + pw.late;
-  let rp = Math.random() * totalW;
+  const sp = G.stagePhase || 0;
+  let ew = pw.early, mw = pw.mid, lw = pw.late;
+  if(sp>=1){ ew=Math.max(0,ew*0.5); mw=mw+ew*0.5; lw=lw+ew*0.5; } // phase1: 前期减半→转中期
+  if(sp>=2){ ew=0; mw=Math.max(0,mw*0.3); lw=lw+mw*0.7; }        // phase2+: 仅留中后期
+  const totalW = ew + mw + lw;
+  let rp = Math.random() * (totalW||1);
   let chosenPhase = 'early';
-  if(rp < pw.early){
-    chosenPhase = 'early';
-  } else if(rp < pw.early + pw.mid){
-    chosenPhase = 'mid';
-  } else {
-    chosenPhase = 'late';
-  }
+  if(rp < ew){ chosenPhase = 'early'; }
+  else if(rp < ew + mw){ chosenPhase = 'mid'; }
+  else { chosenPhase = 'late'; }
 
   // 在 pool 内按权重随机选取
   const baseW = {
@@ -401,6 +401,22 @@ function updateEnemyAI(G,sec){
       const dx=G.mx-e.x,dy=G.my-e.y,d=Math.hypot(dx,dy)||1;
       let cx=(dx/d)*e.spd*spdMult*0.1,cy=(dy/d)*e.spd*spdMult*0.1;
       if(G.viewMode==='vertical'){cx*=0.2;cy*=1.3;}
+      // ── 阶段行为分叉 ──
+      const ep=e.enemyPhase||'early';
+      if(ep==='mid'){
+        // chase_group3: 成群时互相保持间距
+        let nearCnt=0;
+        G.enemies.forEach(o=>{if(o!==e&&Math.hypot(o.x-e.x,o.y-e.y)<40)nearCnt++;});
+        if(nearCnt>=3){cx*=0.45;cy*=0.45;} // 密集时减速
+      } else if(ep==='late'){
+        // dash_spawn: 偶尔冲刺
+        e._dashCd=(e._dashCd||0)+1;
+        if(e._dashCd>=180+Math.random()*60){
+          e._dashCd=0;e._dashing2=true;e._dashVx=cx*3;e._dashVy=cy*3;
+        }
+        if(e._dashing2){e._dashVx*=0.92;e._dashVy*=0.92;cx+=e._dashVx;cy+=e._dashVy;
+          if(Math.hypot(e._dashVx,e._dashVy)<0.3)e._dashing2=false;}
+      }
       e.vx+=cx;e.vy+=cy;
     }
     const ev=Math.hypot(e.vx,e.vy);if(ev>e.spd*2.2){e.vx=e.vx/ev*e.spd*2.2;e.vy=e.vy/ev*e.spd*2.2;}

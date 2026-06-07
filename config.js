@@ -438,28 +438,28 @@ const WEAPONS={
 const ENEMY_TYPES=[
   // ── 普通14种 ──
   // 初期
-  {key:'normal',    name:'逊der',    phase:'early',col:'#B04040',sz:10,hpBase:2.5, spdBase:0.58,atk:0.38,hasKB:false,unlockSec:0,special:null},
-  {key:'lied',      name:'躺der',    phase:'early',col:'#8B5030',sz:14,hpBase:12,  spdBase:0.25,atk:0.80,hasKB:true, unlockSec:0,special:'lied'},
-  {key:'cute',      name:'萌der',    phase:'early',col:'#E06080',sz:7, hpBase:1.5, spdBase:0.90,atk:0.20,hasKB:false,unlockSec:0,special:'swarm'},
-  {key:'hard',      name:'硬der',    phase:'early',col:'#607090',sz:16,hpBase:10,  spdBase:0.34,atk:0.65,hasKB:true, unlockSec:0,special:'armored',defMult:2.5},
+  {key:'normal',    name:'逊der',    phase:'early',col:'#B04040',sz:10,hpBase:2.5, spdBase:0.58,atk:0.38,hasKB:false,unlockSec:0,phases:['chase','chase_group3','dash_spawn'],special:null},
+  {key:'lied',      name:'躺der',    phase:'early',col:'#8B5030',sz:14,hpBase:12,  spdBase:0.25,atk:0.80,hasKB:true, unlockSec:0,phases:['chase','chase_group3','dash_spawn'],special:'lied'},
+  {key:'cute',      name:'萌der',    phase:'early',col:'#E06080',sz:7, hpBase:1.5, spdBase:0.90,atk:0.20,hasKB:false,unlockSec:0,phases:['chase','chase_group3','dash_spawn'],special:'swarm'},
+  {key:'hard',      name:'硬der',    phase:'early',col:'#607090',sz:16,hpBase:10,  spdBase:0.34,atk:0.65,hasKB:true, unlockSec:0,phases:['chase','chase_group3','dash_spawn'],special:'armored',defMult:2.5},
   // 中期
-  {key:'hikikomori',name:'宅der',    phase:'mid',  col:'#405060',sz:12,hpBase:9,   spdBase:0.20,atk:1.20,hasKB:false,unlockSec:0,special:'burst',burstR:55,burstDmg:20},
-  {key:'dainty_e',  name:'娇der',    phase:'mid',  col:'#D060A0',sz:9, hpBase:5,   spdBase:0.50,atk:0.48,hasKB:false,unlockSec:0,special:'aura'},
-  {key:'swift',     name:'快der',    phase:'mid',  col:'#E06030',sz:8, hpBase:1.2, spdBase:1.05,atk:0.24,hasKB:false,unlockSec:0,special:'fast'},
-  {key:'poor',      name:'穷der',    phase:'mid',  col:'#806050',sz:10,hpBase:3,   spdBase:0.45,atk:0.35,hasKB:false,unlockSec:0,special:'fragile'},
-  {key:'dumb',      name:'傻der',    phase:'mid',  col:'#9090A0',sz:11,hpBase:4,   spdBase:0.40,atk:0.38,hasKB:false,unlockSec:0,special:'random'},
-  {key:'sly',       name:'苟der',    phase:'mid',  col:'#7060A0',sz:9, hpBase:4,   spdBase:0.48,atk:0.42,hasKB:false,unlockSec:0,special:'ranged',keepDist:130},
+  {key:'hikikomori',name:'宅der',    phase:'mid',  col:'#405060',sz:12,hpBase:9,   spdBase:0.20,atk:1.20,hasKB:false,unlockSec:0,phases:['chase','chase_group3','dash_spawn'],special:'burst',burstR:55,burstDmg:20},
+  {key:'dainty_e',  name:'娇der',    phase:'mid',  col:'#D060A0',sz:9, hpBase:5,   spdBase:0.50,atk:0.48,hasKB:false,unlockSec:0,phases:['chase','chase_group3','dash_spawn'],special:'aura'},
+  {key:'swift',     name:'快der',    phase:'mid',  col:'#E06030',sz:8, hpBase:1.2, spdBase:1.05,atk:0.24,hasKB:false,unlockSec:0,phases:['chase','chase_group3','dash_spawn'],special:'fast'},
+  {key:'poor',      name:'穷der',    phase:'mid',  col:'#806050',sz:10,hpBase:3,   spdBase:0.45,atk:0.35,hasKB:false,unlockSec:0,phases:['chase','chase_group3','dash_spawn'],special:'fragile'},
+  {key:'dumb',      name:'傻der',    phase:'mid',  col:'#9090A0',sz:11,hpBase:4,   spdBase:0.40,atk:0.38,hasKB:false,unlockSec:0,phases:['chase','chase_group3','dash_spawn'],special:'random'},
+  {key:'sly',       name:'苟der',    phase:'mid',  col:'#7060A0',sz:9, hpBase:4,   spdBase:0.48,atk:0.42,hasKB:false,unlockSec:0,phases:['chase','chase_group3','dash_spawn'],special:'ranged',keepDist:130},
   // 后期
-  {key:'slick',     name:'油der',    phase:'late', col:'#607050',sz:10,hpBase:6,   spdBase:1.20,atk:0.60,hasKB:false,unlockSec:0,special:'void'},
-  {key:'poser',     name:'装der',    phase:'late', col:'#C08000',sz:11,hpBase:5,   spdBase:0.55,atk:0.45,hasKB:false,unlockSec:0,special:'fake'},
-  {key:'runner',    name:'跑der',    phase:'late', col:'#AA6040',sz:9, hpBase:3,   spdBase:0.55,atk:0.35,hasKB:false,unlockSec:0,special:'flee'},
-  {key:'greedy',    name:'贪der',    phase:'late', col:'#806020',sz:12,hpBase:8,   spdBase:0.35,atk:0.52,hasKB:false,unlockSec:0,special:'devourer'},
+  {key:'slick',     name:'油der',    phase:'late', col:'#607050',sz:10,hpBase:6,   spdBase:1.20,atk:0.60,hasKB:false,unlockSec:0,phases:['chase','chase_group3','dash_spawn'],special:'void'},
+  {key:'poser',     name:'装der',    phase:'late', col:'#C08000',sz:11,hpBase:5,   spdBase:0.55,atk:0.45,hasKB:false,unlockSec:0,phases:['chase','chase_group3','dash_spawn'],special:'fake'},
+  {key:'runner',    name:'跑der',    phase:'late', col:'#AA6040',sz:9, hpBase:3,   spdBase:0.55,atk:0.35,hasKB:false,unlockSec:0,phases:['chase','chase_group3','dash_spawn'],special:'flee'},
+  {key:'greedy',    name:'贪der',    phase:'late', col:'#806020',sz:12,hpBase:8,   spdBase:0.35,atk:0.52,hasKB:false,unlockSec:0,phases:['chase','chase_group3','dash_spawn'],special:'devourer'},
   // ── 精英5种 ──
-  {key:'roller',    name:'卷der精英',phase:'elite',col:'#C86000',sz:13,hpBase:16,  spdBase:0.72,atk:0.75,hasKB:true, unlockSec:0,special:'elite'},
-  {key:'berserker', name:'狂der精英',phase:'elite',col:'#AA2020',sz:13,hpBase:20,  spdBase:0.70,atk:0.85,hasKB:true, unlockSec:0,special:'elite'},
-  {key:'rich',      name:'壕der精英',phase:'elite',col:'#C09020',sz:12,hpBase:8,   spdBase:0.52,atk:0.46,hasKB:false,unlockSec:0,special:'shield',immuneDot:true},
-  {key:'lazy',      name:'废der精英',phase:'elite',col:'#8B2020',sz:14,hpBase:22,  spdBase:0.30,atk:0.90,hasKB:false,unlockSec:0,special:'elite'},
-  {key:'brute',     name:'猛der精英',phase:'elite',col:'#702020',sz:18,hpBase:35,  spdBase:0.45,atk:1.10,hasKB:true, unlockSec:0,special:'elite',defMult:1.5},
+  {key:'roller',    name:'卷der精英',phase:'elite',col:'#C86000',sz:13,hpBase:16,  spdBase:0.72,atk:0.75,hasKB:true, unlockSec:0,phases:['chase','chase_group3','dash_spawn'],special:'elite'},
+  {key:'berserker', name:'狂der精英',phase:'elite',col:'#AA2020',sz:13,hpBase:20,  spdBase:0.70,atk:0.85,hasKB:true, unlockSec:0,phases:['chase','chase_group3','dash_spawn'],special:'elite'},
+  {key:'rich',      name:'壕der精英',phase:'elite',col:'#C09020',sz:12,hpBase:8,   spdBase:0.52,atk:0.46,hasKB:false,unlockSec:0,phases:['chase','chase_group3','dash_spawn'],special:'shield',immuneDot:true},
+  {key:'lazy',      name:'废der精英',phase:'elite',col:'#8B2020',sz:14,hpBase:22,  spdBase:0.30,atk:0.90,hasKB:false,unlockSec:0,phases:['chase','chase_group3','dash_spawn'],special:'elite'},
+  {key:'brute',     name:'猛der精英',phase:'elite',col:'#702020',sz:18,hpBase:35,  spdBase:0.45,atk:1.10,hasKB:true, unlockSec:0,phases:['chase','chase_group3','dash_spawn'],special:'elite',defMult:1.5},
 ];
 
 // ── 关卡小怪阶段规则 ──
