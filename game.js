@@ -312,7 +312,7 @@ function _update(){
 
   const db=[];
   G.bugs.forEach((b,i)=>{if(b.hp<=0){db.push(i);addPt(G,b.x,b.y,'#5DCAA5',4,1.8);}});
-  for(let i=db.length-1;i>=0;i--){recyclePt(G.bugs[db[i]]);G.bugs.splice(db[i],1);}
+  for(let i=db.length-1;i>=0;i--){G.bugs.splice(db[i],1);}
 
   const de=[];
   G.enemies.forEach((e,i)=>{
