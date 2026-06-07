@@ -34,9 +34,11 @@ function spawnEnemyAt(G, typeKey, x, y, enemyPhase){
   const diff = 1.3 * earlyMult * lateScale;
 
   const ep = enemyPhase || 'early';
-  const phaseScale = ep==='late' ? 1.55 : ep==='mid' ? 1.22 : 1.0;
-  const phaseSpdScale = ep==='late' ? 1.18 : ep==='mid' ? 1.08 : 1.0;
-  const phaseSzAdd = ep==='late' ? 2 : ep==='mid' ? 1 : 0;
+  const pIdx = ep==='late'?2:ep==='mid'?1:0;
+  const pCfg = (def.phase&&def.phase[pIdx]) ? def.phase[pIdx] : {hpScale:1.0,spdScale:1.0,behavior:'chase'};
+  const phaseScale = pCfg.hpScale;
+  const phaseSpdScale = pCfg.spdScale;
+  const phaseSzAdd = pIdx===2?2:pIdx===1?1:0;
 
   G.enemies.push({
     id: enId++, x, y, vx:0, vy:0,
@@ -50,6 +52,7 @@ function spawnEnemyAt(G, typeKey, x, y, enemyPhase){
     typeKey: def.key,
     key:     def.key,
     enemyPhase: ep,
+    _behavior: pCfg.behavior,
     col:   def.col,
     special:   def.special,
     defMult:   def.defMult  || 1,
@@ -402,13 +405,13 @@ function updateEnemyAI(G,sec){
       let cx=(dx/d)*e.spd*spdMult*0.1,cy=(dy/d)*e.spd*spdMult*0.1;
       if(G.viewMode==='vertical'){cx*=0.2;cy*=1.3;}
       // ── 阶段行为分叉 ──
-      const ep=e.enemyPhase||'early';
-      if(ep==='mid'){
+      const bh=e._behavior||'chase';
+      if(bh==='chase_group3'){
         // chase_group3: 成群时互相保持间距
         let nearCnt=0;
         G.enemies.forEach(o=>{if(o!==e&&Math.hypot(o.x-e.x,o.y-e.y)<40)nearCnt++;});
         if(nearCnt>=3){cx*=0.45;cy*=0.45;} // 密集时减速
-      } else if(ep==='late'){
+      } else if(bh==='dash_spawn'){
         // dash_spawn: 偶尔冲刺
         e._dashCd=(e._dashCd||0)+1;
         if(e._dashCd>=180+Math.random()*60){
