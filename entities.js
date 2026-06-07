@@ -134,9 +134,9 @@ function spawnEnemy(G){
 // ── 灵虫生成 ──
 function spawnBug(n,x,y){
   n=n||1;
+  const cap=10+G.lv*2+G.swarmBonus;
+  n=Math.min(n,Math.max(0,cap-G.bugs.length));
   for(let i=0;i<n;i++){
-    const cap=10+G.lv*2+G.swarmBonus;
-    if(G.bugs.length>=cap)break;
     const a=Math.random()*Math.PI*2,rr=16+Math.random()*12;
     const hp=(3+G.lv*0.25)*(G.bugHpMult||1);
     const isSwarm=G.activeBuild==='swarm';
