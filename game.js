@@ -195,7 +195,8 @@ function doVictory(){
   const p=getProgress();
   p.totalWins=(p.totalWins||0)+1;
   if(G._isReplay&&G._origProg){
-    saveProgress({...G._origProg,totalWins:p.totalWins,totalRuns:p.totalRuns});
+    const cp=getProgress();
+    saveProgress({...G._origProg,totalWins:cp.totalWins,totalRuns:cp.totalRuns,bossStreak:cp.bossStreak});
   } else {
     const ri=Math.min(p.realmIdx,REALMS.length-1);
     const realm=REALMS[ri];
