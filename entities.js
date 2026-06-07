@@ -45,6 +45,7 @@ function spawnEnemyAt(G, typeKey, x, y, enemyPhase){
     hp:     def.hpBase * (1 + G.phase*0.6 + G.lv*0.18) * diff * phaseScale,
     maxhp:  def.hpBase * (1 + G.phase*0.6 + G.lv*0.18) * diff * phaseScale,
     spd:    def.spdBase * (1 + G.phase*0.07) * phaseSpdScale,
+    _baseSpd: def.spdBase * (1 + G.phase*0.07) * phaseSpdScale,
     sz:     def.sz + phaseSzAdd,
     poison:0, kbCd:0, slowTimer:0,
     hasKB: def.hasKB,
@@ -185,7 +186,7 @@ function updateLateGameRules(G,sec){
       G.worldPulseTimer=0;
       G.worldPulseFlash=40;
       playSound('pulse');
-      G.enemies.forEach(e=>{e.rage=1.1;e.spd=Math.min(e.spd*1.03,e.spd*1.25);});
+      G.enemies.forEach(e=>{e.rage=1.1;const cap=(e._baseSpd||e.spd)*1.45;e.spd=Math.min(e.spd*1.03,cap);});
       showEcoAlert('⚡ 天道压制！');
     }
     if(G.worldPulseFlash>0)G.worldPulseFlash--;
@@ -340,7 +341,7 @@ function updateEnemyAI(G,sec){
     if(e.frostDot>0){e.frostDot--;if(G.elapsed%30===0&&e._frostDmg>0){e.hp-=e._frostDmg;if(G.elapsed%60===0)addPt(G,e.x,e.y,'#88CCFF',2,0.8);}}
     const spdMult=e.slowTimer>0?0.3:1;
     if(e.freezeTimer>0){e.vx*=0.3;e.vy*=0.3;}else{e.vx*=0.88;e.vy*=0.88;}
-    if(e.rage&&e.rage>1){e.spd=Math.min(e.spd*1.0006,e.spd*1.45);}
+    if(e.rage&&e.rage>1){const maxSpd=(e._baseSpd||e.spd)*1.45;e.spd=Math.min(e.spd*1.0006,maxSpd);}
     // 娇der死亡群体狂暴
     if(e._groupEnrage>0){e._groupEnrage--;spdMult*=1.35;}
     // 壕der护盾光环（仅首次应用/最后帧恢复，避免每帧累积）
@@ -450,6 +451,19 @@ function updateEnemyAI(G,sec){
     const d2=Math.hypot(G.mx-e.x,G.my-e.y);
     e.hitCd=(e.hitCd||0);if(e.hitCd>0)e.hitCd--;
     if(d2<14&&e.hitCd<=0&&!e._invincible2){e.hitCd=35;let dmgDealt=e.atk*0.7;if(e._burstArmed){dmgDealt*=3;addExplosionWave(G,e.x,e.y,35,'#ff4400');e.hp-=e.maxhp*0.3;}applyPlayerDamage(G,dmgDealt);applyReflect(G,dmgDealt);G.noDmgTimer=0;screenShake(e._burstArmed?10:4);playSound('hurt');addPt(G,G.mx,G.my,'#E24B4A',3,1.5);addDamageText(G,G.mx+(Math.random()-0.5)*12,G.my-14,'-'+Math.ceil(dmgDealt),'#ff3333',15);}
+    // 宅der burst: 靠近爆发
+    if(e.special==='burst'){
+      e._burstCd=(e._burstCd||0)+1;
+      const burstR=e.burstR||55;
+      if(d2<burstR&&e._burstCd>=120){
+        e._burstCd=0;
+        addExplosionWave(G,e.x,e.y,burstR,'#ff4422');
+        applyPlayerDamage(G,(e.burstDmg||20)*(1-d2/burstR));
+        addPt(G,e.x,e.y,'#ff4422',12,3);
+        screenShake(6);playSound('pulse');
+        addDamageText(G,G.mx+(Math.random()-0.5)*16,G.my-14,'宅爆！','#ff4422',16);
+      }
+    }
     if(e.hasKB&&e.kbCd<=0){G.bugs.forEach(b=>{if(Math.hypot(b.x-e.x,b.y-e.y)<e.sz/2+6){knockback(b,e.x,e.y,4);e.kbCd=45;addPt(G,b.x,b.y,'#EF9F27',3,1.5);}});}
   });
 }

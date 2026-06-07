@@ -289,7 +289,7 @@ function _update(){
     }
     if(stillPressure>=1&&G.elapsed%90===0){
       applyPlayerDamage(G,0.3);
-      addDamageText(G,G.mx+(Math.random()-0.5)*20,G.my-18,'停滞惩罚','#ff8800',11);
+      addDamageText(G,G.mx+(Math.random()-0.5)*20,G.my-18,'停滞惩罚','#ff8800',15);
     }
   }
 
@@ -356,7 +356,7 @@ function _update(){
   if(G.xp>=G.xpNext){G.xp-=G.xpNext;G.xpNext=Math.floor(G.xpNext*1.38/(G.xpBoost||1));G.lv++;screenShake(4);playSound('levelup');showUpgrade();return;}
   if(G.elapsed/FPS>=G.totalTime){G.won=false;doGameover();return;}
   if(G.mhp<=0){doGameover();return;}
-  if(G.bugs.length===0&&G.enemies.length>10)applyPlayerDamage(G,0.06);
+  if(G.bugs.length===0&&G.enemies.length>10&&G.elapsed%90===0){applyPlayerDamage(G,0.06*90);if(G.elapsed%450===0)showEcoAlert('⚠ 灵虫已灭·天道侵蚀！');}
   updateBuffToast();
   updateHUD();
 }
