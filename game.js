@@ -336,6 +336,8 @@ function _update(){
       }
       // dash_spawn: 死亡爆出2只小逊der
       if(e._behavior==='dash_spawn'){spawnEnemyAt(G,'normal',e.x,e.y,'early');spawnEnemyAt(G,'normal',e.x,e.y,'early');}
+      // 娇der死亡·群体狂暴
+      if(e.key==='dainty_e'){G.enemies.forEach(o=>{if(o!==e&&Math.hypot(o.x-e.x,o.y-e.y)<80)o._groupEnrage=300;});addExplosionWave(G,e.x,e.y,80,'#FF80C0');showEcoAlert('💢 娇der阵亡·群体狂暴5秒！');}
       // burst_contact: 死亡范围爆炸
       if(e._burstArmed){addExplosionWave(G,e.x,e.y,50,'#ff4400');if(Math.hypot(G.mx-e.x,G.my-e.y)<50)applyPlayerDamage(G,12);addPt(G,e.x,e.y,'#ff4400',15,4);}
       if(Math.random()<(G.killSpawn||0))spawnBug(1,e.x,e.y);

@@ -201,17 +201,6 @@ function updateEnemyCooperation(G){
       if(Math.hypot(e.x-rich.x,e.y-rich.y)<60){e._shieldAura=Math.max(e._shieldAura||0,20);}
     });
   });
-  // 娇der死亡时触发周围5秒群体狂暴
-  G.enemies.forEach(dty=>{
-    if(dty.key!=='dainty_e'||dty.hp>0)return;
-    let hasDead=false;
-    G.enemies.forEach(e=>{
-      if(e!==dty&&Math.hypot(e.x-dty.x,e.y-dty.y)<80){
-        e._groupEnrage=300;hasDead=true;
-      }
-    });
-    if(hasDead){addExplosionWave(G,dty.x,dty.y,80,'#FF80C0');showEcoAlert('💢 娇der阵亡·群体狂暴5秒！');}
-  });
   G.enemies.forEach(e=>{if(e._shieldAura>0)e._shieldAura--;});
 }
 
@@ -350,8 +339,12 @@ function updateEnemyAI(G,sec){
     if(e.rage&&e.rage>1){e.spd=Math.min(e.spd*1.0006,e.spd*1.45);}
     // 娇der死亡群体狂暴
     if(e._groupEnrage>0){e._groupEnrage--;spdMult*=1.35;}
-    // 壕der护盾光环
-    if(e._shieldAura>0){e.defMult=(e.defMult||1)*0.85;}
+    // 壕der护盾光环（仅首次应用/最后帧恢复，避免每帧累积）
+    if(e._shieldAura>0){
+      if(!e._origDefMult){e._origDefMult=e.defMult||1;e.defMult=e._origDefMult*0.85;}
+      e._shieldAura--;
+      if(e._shieldAura<=0){e.defMult=e._origDefMult;e._origDefMult=null;}
+    }
 
     if(e.special==='shield'){
       e.shieldCd=(e.shieldCd||0)+1;
