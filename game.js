@@ -334,6 +334,10 @@ function _update(){
         G.bugs.forEach(b=>{if(Math.hypot(b.x-e.x,b.y-e.y)<e.explodeR){b.hp-=e.explodeDmg*0.3;knockback(b,e.x,e.y,6);}});
         const edist=Math.hypot(G.mx-e.x,G.my-e.y);if(edist<e.explodeR){const exDmg=e.explodeDmg*(1-edist/e.explodeR);applyPlayerDamage(G,exDmg);applyReflect(G,exDmg);}
       }
+      // dash_spawn: 死亡爆出2只小逊der
+      if(e._behavior==='dash_spawn'){spawnEnemyAt(G,'normal',e.x,e.y,'early');spawnEnemyAt(G,'normal',e.x,e.y,'early');}
+      // burst_contact: 死亡范围爆炸
+      if(e._burstArmed){addExplosionWave(G,e.x,e.y,50,'#ff4400');if(Math.hypot(G.mx-e.x,G.my-e.y)<50)applyPlayerDamage(G,12);addPt(G,e.x,e.y,'#ff4400',15,4);}
       if(Math.random()<(G.killSpawn||0))spawnBug(1,e.x,e.y);
       if(G.leechLv>=1){G.mhp=Math.min(G.mmaxhp,G.mhp+0.8*G.leechLv);triggerTreasureFlash();}
       if(G.leechRate>0){G.mhp=Math.min(G.mmaxhp,G.mhp+e.maxhp*G.leechRate);triggerTreasureFlash();}

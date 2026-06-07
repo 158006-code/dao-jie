@@ -287,6 +287,7 @@ function updateProjectiles(G){
         if(finalDmg>0){e._hitShake=(e._hitShake||0)+6;}
         if(finalDmg>0&&e.key==='berserker') e._hitCount=(e._hitCount||0)+1;
         if(G.comboHit>0){e._comboHitCnt=(e._comboHitCnt||0)+1;if(e._comboHitCnt>=3){e._comboHitCnt=0;for(let ci=0;ci<G.comboHit;ci++){e.hp-=(p.dmg*0.5)/(e.defMult||1);addDamageText(G,e.x+(Math.random()-0.5)*10,e.y-8,'连击!','#ff8800',14);}playSound('hit');}}
+        if(e._invincible2){hit=true;p._pierced++;addPt(G,e.x,e.y,'#aaaacc',2,1);if(p._pierced>totalPierce){dp.push(i);recycleProj(p);}return;}
         if(e.shield>0&&!p.poison){e.shield=Math.max(0,e.shield-0.3);addPt(G,e.x,e.y,'#4488CC',3,1.5);hit=true;p._pierced++;if(p._pierced>totalPierce){dp.push(i);recycleProj(p);}return;}
         hit=true;
         const isBig=actualDmg>=10,isMed=actualDmg>=5;

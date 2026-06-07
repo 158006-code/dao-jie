@@ -404,21 +404,45 @@ function updateEnemyAI(G,sec){
       const dx=G.mx-e.x,dy=G.my-e.y,d=Math.hypot(dx,dy)||1;
       let cx=(dx/d)*e.spd*spdMult*0.1,cy=(dy/d)*e.spd*spdMult*0.1;
       if(G.viewMode==='vertical'){cx*=0.2;cy*=1.3;}
-      // ── 阶段行为分叉 ──
+      // ── 阶段行为分叉（6种）──
       const bh=e._behavior||'chase';
       if(bh==='chase_group3'){
-        // chase_group3: 成群时互相保持间距
-        let nearCnt=0;
-        G.enemies.forEach(o=>{if(o!==e&&Math.hypot(o.x-e.x,o.y-e.y)<40)nearCnt++;});
-        if(nearCnt>=3){cx*=0.45;cy*=0.45;} // 密集时减速
+        // 逊der后期·3连冲：追踪玩家方向冲刺，每90帧一次
+        e._dashCd=(e._dashCd||0)+1;
+        if(e._dashCd>=90&&!e._dashBurst){
+          e._dashCd=0;e._dashBurst=3;e._dashBurstTimer=0;
+        }
+        if(e._dashBurst>0){
+          e._dashBurstTimer++;
+          if(e._dashBurstTimer>=18){e._dashBurstTimer=0;e._dashBurst--;if(e._dashBurst>0){const dx2=G.mx-e.x,dy2=G.my-e.y,d2=Math.hypot(dx2,dy2)||1;e.vx+=(dx2/d2)*8;e.vy+=(dy2/d2)*8;addPt(G,e.x,e.y,'#ff6600',4,2);}}
+          if(e._dashBurst<=0){e._dashBurst=0;}
+        }
       } else if(bh==='dash_spawn'){
-        // dash_spawn: 偶尔冲刺
+        // 通用后期·间歇冲刺+死亡爆2小怪（死亡逻辑在game.js）
         e._dashCd=(e._dashCd||0)+1;
         if(e._dashCd>=180+Math.random()*60){
           e._dashCd=0;e._dashing2=true;e._dashVx=cx*3;e._dashVy=cy*3;
         }
         if(e._dashing2){e._dashVx*=0.92;e._dashVy*=0.92;cx+=e._dashVx;cy+=e._dashVy;
           if(Math.hypot(e._dashVx,e._dashVy)<0.3)e._dashing2=false;}
+      } else if(bh==='arc_surround'){
+        // 苟der中期·弧线包围：绕玩家切向移动
+        const tangX=-dy/d,tangY=dx/d;
+        cx+=tangX*e.spd*0.06;cy+=tangY*e.spd*0.06;
+      } else if(bh==='triple_shot'){
+        // 苟der后期·弧线包围+三连发
+        const tx=-dy/d,ty=dx/d;
+        cx+=tx*e.spd*0.05;cy+=ty*e.spd*0.05;
+        e._shotCd=(e._shotCd||0)+1;
+        if(e._shotCd>=120){e._shotCd=0;const ang2=Math.atan2(G.my-e.y,G.mx-e.x);for(let j=-1;j<=1;j++){addProj(G,e.x,e.y,Math.cos(ang2+j*0.25)*4,Math.sin(ang2+j*0.25)*4,{dmg:e.atk*3,r:4,color:'#7060A0',life:70,isEnemyBullet:true});}}
+      } else if(bh==='burst_contact'){
+        // 躺der后期·接触大伤+自爆溅射（接触伤害在碰撞处，死亡爆炸在game.js）
+        e._burstArmed=true;
+      } else if(bh==='charge_invincible'){
+        // 硬der后期·冲刺前短暂无敌
+        e._chgCd=(e._chgCd||0)+1;
+        if(e._chgCd>=150&&!e._chgActive){e._chgCd=0;e._chgActive=true;e._chgTimer=20;e._invincible2=true;}
+        if(e._chgActive){e._chgTimer--;if(e._chgTimer<=10){const dx2=G.mx-e.x,dy2=G.my-e.y,d2=Math.hypot(dx2,dy2)||1;cx+=(dx2/d2)*12;cy+=(dy2/d2)*12;}if(e._chgTimer<=0){e._chgActive=false;e._invincible2=false;}}
       }
       e.vx+=cx;e.vy+=cy;
     }
@@ -428,7 +452,7 @@ function updateEnemyAI(G,sec){
     if(G.viewMode==='arena'){e.x=clamp(e.x,e.sz,W-e.sz);e.y=clamp(e.y,e.sz,H-e.sz);}
     const d2=Math.hypot(G.mx-e.x,G.my-e.y);
     e.hitCd=(e.hitCd||0);if(e.hitCd>0)e.hitCd--;
-    if(d2<14&&e.hitCd<=0){e.hitCd=35;const dmgDealt=e.atk;applyPlayerDamage(G,dmgDealt);applyReflect(G,dmgDealt);G.noDmgTimer=0;screenShake(4);playSound('hurt');addPt(G,G.mx,G.my,'#E24B4A',3,1.5);addDamageText(G,G.mx+(Math.random()-0.5)*12,G.my-14,'-'+Math.ceil(dmgDealt),'#ff3333',15);}
+    if(d2<14&&e.hitCd<=0&&!e._invincible2){e.hitCd=35;let dmgDealt=e.atk;if(e._burstArmed){dmgDealt*=3;addExplosionWave(G,e.x,e.y,35,'#ff4400');e.hp-=e.maxhp*0.3;}applyPlayerDamage(G,dmgDealt);applyReflect(G,dmgDealt);G.noDmgTimer=0;screenShake(e._burstArmed?10:4);playSound('hurt');addPt(G,G.mx,G.my,'#E24B4A',3,1.5);addDamageText(G,G.mx+(Math.random()-0.5)*12,G.my-14,'-'+Math.ceil(dmgDealt),'#ff3333',15);}
     if(e.hasKB&&e.kbCd<=0){G.bugs.forEach(b=>{if(Math.hypot(b.x-e.x,b.y-e.y)<e.sz/2+6){knockback(b,e.x,e.y,4);e.kbCd=45;addPt(G,b.x,b.y,'#EF9F27',3,1.5);}});}
   });
 }
