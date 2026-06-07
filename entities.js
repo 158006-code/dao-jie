@@ -12,6 +12,9 @@ function getSpawnPos(G){
       const fromTop=Math.random()<0.5;
       return{x:randBetween(W*0.1,W*0.9),y:fromTop?-OFF:H+OFF};
     }
+    case'horizontal':{
+      return Math.random()<.5?{x:-OFF,y:randBetween(0,H)}:{x:W+OFF,y:randBetween(0,H)};
+    }
     default:{
       const side=Math.floor(Math.random()*4);
       switch(side){
