@@ -11,8 +11,12 @@ function playSound(type){
   if(!soundEnabled)return;
   try{
     switch(type){
-      case'kill':zzfx(.4,.06,520,.04,.01,.1,1,1.5,0,0,0,0,0,0,0,.1,.02,0,0,.02);break;
+      case'kill':zzfx(.5,.08,600,.02,.01,.06,1,2,0,0,0,0,0,0,0,.08,.02,0,0,.01);break;
       case'hit':zzfx(.6,.08,180,.03,.01,.04,1,.8,0,0,0,0,0,0,0,.2,.02,0,0,.01);break;
+      case'hit_light':zzfx(.25,.03,900,.01,.005,.02,1,3,0,0,0,0,0,0,0,.02,.005,0,0,.005);break;
+      case'hit_heavy':zzfx(.7,.12,90,.02,.01,.06,1,-1.5,0,0,0,0,0,0,0,.3,.02,.1,0,.02);break;
+      case'rage_up':zzfx(.6,.35,180,.02,.05,.2,0,3,0,0,600,.05,.15,0,0,0,.05,.6,0,.15);break;
+      case'boss_armor_break':zzfx(.8,.25,200,.01,.02,.1,1,-4,0,0,0,0,0,0,0,.5,.15,.4,.05,.08);break;
       case'levelup':zzfx(.5,.3,300,.05,.05,.15,0,1.5,0,0,200,.05,.1,0,0,0,.05,.5,0,.1);break;
       case'ultra':zzfx(.8,.4,80,.05,.1,.3,1,.5,-5,0,0,0,0,0,0,.3,.1,.3,0,.05);break;
       case'hurt':zzfx(.7,.12,160,.01,.01,.08,1,-.5,0,0,0,0,0,0,0,.4,.01,0,0,.02);break;
@@ -175,6 +179,8 @@ function applyBossDamage(G, boss, rawDmg){
   if(boss.onDamage&&boss.key==='old_teeth'){boss.onDamage(G,boss,dmg);}
   if(boss.onDamage&&boss.key==='dainty'){dmg = boss.onDamage(G,boss,dmg) ?? dmg;}
   boss.hp -= dmg;
+  // 大伤害burst粒子（>100）
+  if(dmg>100){for(let i=0;i<10;i++){const a=Math.random()*Math.PI*2;addPt(G,boss.x+Math.cos(a)*boss.sz/2,boss.y+Math.sin(a)*boss.sz/2,'#ffaa00',1,2.5+Math.random()*3);}}
   return dmg;
 }
 

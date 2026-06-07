@@ -230,7 +230,7 @@ function initGame(){
     comboSpeedBonus:_baseComboSpeed,comboDmgBonus:_baseComboDmg,
     evolveRateBonus:_baseEvolveRate,xpBoost:_baseXpBoost,
     starDmgBonus:_baseStarDmg,evolveRangeBonus:_baseEvolveRange,
-    stagePhase:0,viewMode:'free',activeBossAt:null,totalTime:360,envParticles:[],introTimer:180,introDone:false,
+    stagePhase:0,viewMode:'free',activeBossAt:null,totalTime:360,envParticles:[],introTimer:180,introDone:false,impactFrames:0,
   };
   // viewMode分区 + 阶段初始化
   const stageId=_currentRealm+1;
@@ -317,7 +317,7 @@ function updateCombo(G){
     const rt=RAGE_TIERS[G.rageTier];
     showBuffToast('🔥 '+rt.name+' · 怒火+'+Math.round((rt.multiplier-1)*100)+'%',rt.color);
     screenShake(G.rageTier*1.2);
-    playSound('sync');
+    playSound('rage_up');
     for(let i=0;i<G.rageTier;i++){
       setTimeout(()=>{if(!G||G.dead)return;addExplosionWave(G,G.mx,G.my,14+i*7,rt.color);},i*80);
     }

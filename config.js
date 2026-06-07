@@ -644,7 +644,7 @@ const BOSS_DEFS=[
       boss._armorTimer++;if(boss._armorTimer>=1200&&boss.armorStack<3){boss._armorTimer=0;boss.armorStack++;bossTaunt(boss,'recharge',G);addExplosionWave(G,boss.x,boss.y,40,'#C8A000');showEcoAlert('💰 壕气充值护甲！连续暴击5次击碎一层！');}
       boss._bulletT=(boss._bulletT||0)+1;const cd2=Math.max(50,90-boss.armorStack*15);if(boss._bulletT>=cd2){boss._bulletT=0;const n3=3+boss.armorStack;for(let i3=0;i3<n3;i3++){const a4=i3/n3*Math.PI*2+G.elapsed*0.015;addProj(G,boss.x,boss.y,Math.cos(a4)*3.5,Math.sin(a4)*3.5,{dmg:10,r:5,color:'#C8A000',life:80,isBossBullet:true});}}
     },
-    onDamage(G,boss,dmg){const armorRes=1.0-boss.armorStack*0.15;const actualDmg=dmg*armorRes;if(dmg>50){boss._critStreak=(boss._critStreak||0)+1;if(boss._critStreak>=5){boss._critStreak=0;if(boss.armorStack>0){boss.armorStack--;bossTaunt(boss,'armor_break',G);screenShake(8);addExplosionWave(G,boss.x,boss.y,45,'#ff8800');}}}else{boss._critStreak=0;}return actualDmg;}
+    onDamage(G,boss,dmg){const armorRes=1.0-boss.armorStack*0.15;const actualDmg=dmg*armorRes;if(dmg>50){boss._critStreak=(boss._critStreak||0)+1;if(boss._critStreak>=5){boss._critStreak=0;if(boss.armorStack>0){boss.armorStack--;bossTaunt(boss,'armor_break',G);playSound('boss_armor_break');screenShake(8);addExplosionWave(G,boss.x,boss.y,45,'#ff8800');}}}else{boss._critStreak=0;}return actualDmg;}
   },
   // ── Boss12：作威作福（终Boss）──
   {

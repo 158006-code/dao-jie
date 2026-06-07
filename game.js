@@ -325,8 +325,8 @@ function _update(){
       if(G.combo>=2&&G.combo%10===0)addDamageText(G,e.x,e.y-18,G.combo+' 连斩！','#ff8800',20);
       G.enemies.forEach(other=>{if(other.special==='devourer'&&Math.hypot(other.x-e.x,other.y-e.y)<60)other.devourCount++;});
       if(G.combo===300){showBuffToast('☠ 300连杀 · 世界开始失控！','#ff2200');screenShake(8);for(let j=0;j<5;j++)spawnEnemy(G);}
-      playSound(e.special==='elite'||e.special==='suicidal'?'hit':'kill');
-      if(e.special==='elite'||e.special==='suicidal')G.eliteFlash=35;
+      playSound(e.special==='elite'||e.special==='suicidal'?'hit_heavy':'kill');
+      if(e.special==='elite'||e.special==='suicidal'){G.eliteFlash=35;if(G.rageTier>=4)G.impactFrames=2;}
       addPt(G,e.x,e.y,'#EF9F27',5,2.2);
       if(e.special==='spawner'){showEcoAlert('✓ 孵化核消灭！');G.enemies.forEach(other=>other.slowTimer=Math.max(other.slowTimer||0,120));}
       if(e.special==='bomber'||e.special==='suicidal'){
@@ -610,6 +610,15 @@ function _addParticle(G,x,y,vx,vy,life,color,size,text){
 
 // ══════ 绘制 ══════
 function draw(){
+  // ── 冲击帧（冻帧+灰度，跳过clearRect保留上帧画面）──
+  if(G.impactFrames>0){
+    ctx.save();
+    ctx.filter='grayscale(0.8)';
+    if(G.impactFrames===1){ctx.fillStyle='rgba(255,50,0,0.15)';ctx.fillRect(0,0,W,H);}
+    G.impactFrames--;
+    ctx.restore();
+    return;
+  }
   ctx.save();
   if(shakePower>0){ctx.translate((Math.random()-0.5)*shakePower,(Math.random()-0.5)*shakePower);shakePower*=0.84;if(shakePower<0.2)shakePower=0;}
   ctx.clearRect(0,0,W,H);
