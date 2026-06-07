@@ -881,14 +881,8 @@ function showAdMock(type){
     showRewardedAd('double',()=>{
       const drops=G.lastDrops||[];
       if(!drops.length)return;
-      // 直接追加到仓库（绕过saveToVault的容量限制）
-      const vault=getVault();
-      drops.forEach(d=>{
-        const t=d.t,q=d.q,b=d.b;
-        vault.push({wid:t.wid,name:t.name,icon:t.icon,desc:t.desc,quality:q.id,qualityName:q.name,qualityColor:q.color,cardClass:q.cardClass,atkMult:b.atkMult,cdMult:b.cdMult,dmgFlat:b.dmgFlat||0,extra:b.extra||'',spdMult:b.spdMult,critRate:b.critRate||0,comboHit:b.comboHit||0,splashR:b.splashR||0,pierce:b.pierce||0,reflect:b.reflect||0,hpMult:b.hpMult||1,shield:b.shield||0,leechRate:b.leechRate||0,dodgeFrames:b.dodgeFrames||0,dmgReduce:b.dmgReduce||0,revive:b.revive||false,comboSpeed:b.comboSpeed||1,comboDmg:b.comboDmg||0,evolveRate:b.evolveRate||1,xpBoost:b.xpBoost||1,starDmg:b.starDmg||0,evolveRange:b.evolveRange||1,effects:t.effects||[],qualityMult:b.qualityMult||1,date:new Date().toLocaleDateString('zh-CN')});
-      });
-      try{localStorage.setItem('daojie_vault',JSON.stringify(vault));}catch(e){}
-      updateVaultDot();
+      // 走saveToVault统一容量检查
+      drops.forEach(d=>saveToVault(d.t,d.q,d.b));
       document.getElementById('btn-ad-double').style.display='none';
       document.getElementById('drop-post-btns').style.display='none';
       document.getElementById('drop-post-btns').classList.remove('show');
@@ -1048,10 +1042,10 @@ function getVault(){try{return JSON.parse(localStorage.getItem('daojie_vault')||
 function saveToVault(t,q,b){
   const vault=getVault();
   const cap=getVaultCapacity();
+  if(vault.length>=cap){showBuffToast('⚠ 仓库已满！请先整理法宝','#ff8800');return;}
   vault.push({wid:t.wid,name:t.name,icon:t.icon,desc:t.desc,quality:q.id,qualityName:q.name,qualityColor:q.color,cardClass:q.cardClass,atkMult:b.atkMult,cdMult:b.cdMult,dmgFlat:b.dmgFlat||0,extra:b.extra||'',spdMult:b.spdMult,critRate:b.critRate||0,comboHit:b.comboHit||0,splashR:b.splashR||0,pierce:b.pierce||0,reflect:b.reflect||0,hpMult:b.hpMult||1,shield:b.shield||0,leechRate:b.leechRate||0,dodgeFrames:b.dodgeFrames||0,dmgReduce:b.dmgReduce||0,revive:b.revive||false,comboSpeed:b.comboSpeed||1,comboDmg:b.comboDmg||0,evolveRate:b.evolveRate||1,xpBoost:b.xpBoost||1,starDmg:b.starDmg||0,evolveRange:b.evolveRange||1,effects:t.effects||[],qualityMult:b.qualityMult||1,date:new Date().toLocaleDateString('zh-CN')});
-  if(vault.length>cap)vault.splice(0,vault.length-cap);
   try{localStorage.setItem('daojie_vault',JSON.stringify(vault));}catch(e){}
-  updateVaultDot(); // 实时刷新红点
+  updateVaultDot();
 }
 
 // ══════════════════════════════════════════
