@@ -235,7 +235,7 @@ function initGame(){
   // viewMode分区 + 阶段初始化
   const stageId=_currentRealm+1;
   G.stageId=stageId;
-  const VM={1:'free',2:'free',3:'free',4:'horizontal',5:'horizontal',6:'horizontal',7:'vertical',8:'vertical',9:'vertical',10:'arena'};
+  const VM={1:'free',2:'free',3:'free',4:'vertical',5:'vertical',6:'free',7:'free',8:'free',9:'vertical',10:'arena'};
   G.viewMode=VM[stageId]||'free';
   G.stagePhase=0;
   G.activeBossAt=(stageId===10)?STAGE_10_BOSS_AT:BOSS_AT;
