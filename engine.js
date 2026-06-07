@@ -258,7 +258,10 @@ function updateProjectiles(G){
       let bsHit=false;
       const bsCheck=(e)=>{
         if(bsHit)return;
-        if(Math.hypot(e.x-p.x,e.y-p.y)<e.sz/2+p.r+2){
+        const ddx=e.x-p.x,ddy=e.y-p.y;
+        const ccr=e.sz/2+p.r+2;
+        if(Math.abs(ddx)>ccr||Math.abs(ddy)>ccr)return;
+        if(ddx*ddx+ddy*ddy<ccr*ccr){
           bsHit=true;
           const actualDmg=p.dmg/(e.defMult||1)/(e.shield>0?3:1);
           let bsFinalDmg=actualDmg+(G.buffs.dmgFlat||0);
@@ -282,7 +285,11 @@ function updateProjectiles(G){
       p._pierced=(p._pierced||0);
       const totalPierce=(p.pierce?99:0)+(G.pierceCount||0);
       if(hit&&p._pierced>=totalPierce)return;
-      if(Math.hypot(e.x-p.x,e.y-p.y)<e.sz/2+p.r+2){
+      // 快速AABB预检，避免远距离hypot
+      const dx2=e.x-p.x,dy2=e.y-p.y;
+      const cr=e.sz/2+p.r+2;
+      if(Math.abs(dx2)>cr||Math.abs(dy2)>cr)return;
+      if(dx2*dx2+dy2*dy2<cr*cr){
         const shieldDiv=e.shield>0?3:1;
         const bubbleDiv=e.shieldBubble>0?1.5:1;
         const actualDmg=p.dmg/(e.defMult||1)/shieldDiv/bubbleDiv;
