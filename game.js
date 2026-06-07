@@ -249,7 +249,7 @@ function _update(){
   updateDangerZones(G);
 
   G.noDmgTimer=(G.noDmgTimer||0)+1;
-  TIME_ALERTS.forEach(a=>{if(!shownAlerts.has(a.sec)&&sec>=a.sec){shownAlerts.add(a.sec);showAlert(a.msg,a.cls);}});
+  TIME_ALERTS.forEach(a=>{if(!shownAlerts.has(a.at)&&sec>=a.at){shownAlerts.add(a.at);showAlert(a.text,a.color);}});
   if(alertTimer>0){alertTimer--;if(alertTimer<=0)document.getElementById('alert-banner').classList.remove('show');}
   if(ecoAlertTimer>0){ecoAlertTimer--;if(ecoAlertTimer<=0)document.getElementById('eco-alert').classList.remove('show');}
 
