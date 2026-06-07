@@ -613,8 +613,8 @@ function draw(){
   // ── 冲击帧（冻帧+灰度，跳过clearRect保留上帧画面）──
   if(G.impactFrames>0){
     ctx.save();
-    ctx.filter='grayscale(0.8)';
-    if(G.impactFrames===1){ctx.fillStyle='rgba(255,50,0,0.15)';ctx.fillRect(0,0,W,H);}
+    ctx.fillStyle='rgba(30,30,30,0.55)';ctx.fillRect(0,0,W,H);
+    if(G.impactFrames===1){ctx.fillStyle='rgba(255,50,0,0.18)';ctx.fillRect(0,0,W,H);}
     G.impactFrames--;
     ctx.restore();
     return;
