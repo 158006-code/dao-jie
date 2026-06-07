@@ -806,7 +806,7 @@ function draw(){
       ctx.save();ctx.strokeStyle='rgba(204,68,136,0.3)';ctx.lineWidth=1;ctx.setLineDash([4,4]);
       ctx.beginPath();ctx.arc(e.x,e.y,100,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);ctx.restore();
     }
-    if(e.special==='elite'||e.special==='suicidal'){ctx.save();ctx.shadowBlur=18;ctx.shadowColor='#ff1111';}
+    if(e.special==='suicidal'){ctx.save();ctx.shadowBlur=18;ctx.shadowColor='#ff1111';}
     if(e.shield>0){ctx.save();ctx.strokeStyle='rgba(68,136,204,0.7)';ctx.lineWidth=2;ctx.shadowBlur=8;ctx.shadowColor='#4488CC';ctx.beginPath();ctx.arc(e.x,e.y,e.sz/2+5,0,Math.PI*2);ctx.stroke();ctx.restore();}
     if((e.shieldBubble||0)>0){ctx.save();ctx.globalAlpha=0.4;ctx.strokeStyle='#44aacc';ctx.lineWidth=1;ctx.beginPath();ctx.arc(e.x,e.y,e.sz/2+8,0,Math.PI*2);ctx.stroke();ctx.restore();}
     if(e._frostFlash>0){e._frostFlash--;ctx.save();ctx.globalAlpha=0.5;ctx.fillStyle='#aaddff';ctx.shadowBlur=12;ctx.shadowColor='#88CCFF';ctx.beginPath();ctx.arc(e.x,e.y,e.sz/2+5,0,Math.PI*2);ctx.fill();ctx.globalAlpha=0.3;ctx.fillStyle='#ffffff';ctx.beginPath();ctx.arc(e.x,e.y,e.sz/2,0,Math.PI*2);ctx.fill();ctx.restore();}
@@ -883,7 +883,7 @@ function draw(){
       }ctx.restore();
     }
     else{ctx.beginPath();ctx.arc(e.x,e.y,e.sz/2,0,Math.PI*2);ctx.fill();}
-    if(e.special==='elite'||e.special==='suicidal')ctx.restore();
+    if(e.special==='suicidal')ctx.restore();
     ctx.globalAlpha=alpha;
     ctx.fillStyle='rgba(0,0,0,0.45)';ctx.fillRect(e.x-e.sz/2,e.y-e.sz/2-7,e.sz,2);
     ctx.fillStyle=pct>0.5?'#1D9E75':'#E24B4A';ctx.fillRect(e.x-e.sz/2,e.y-e.sz/2-7,e.sz*pct,2);
@@ -897,9 +897,11 @@ function draw(){
       color='#B04040', headR=9, bodyW=5, bodyH=7,
       eyeL={x:-3,y:-1}, eyeR={x:3,y:-1},
       expression='angry', glow=0, glowColor=color,
-      lean=0, shake=0
+      lean=0, shake=0, isElite=false
     } = opts;
     ctx.save();
+    // 精英外发光环
+    if(isElite){ctx.shadowBlur=22;ctx.shadowColor='#ff2200';}
     ctx.translate(x + shake, y);
     ctx.rotate(lean);
     if(glow>0){ ctx.shadowBlur=glow; ctx.shadowColor=glowColor; }
@@ -910,8 +912,8 @@ function draw(){
     ctx.fillStyle='#fff';
     ctx.beginPath(); ctx.arc(eyeL.x, -bodyH-headR+eyeL.y, 2.2, 0, Math.PI*2); ctx.fill();
     ctx.beginPath(); ctx.arc(eyeR.x, -bodyH-headR+eyeR.y, 2.2, 0, Math.PI*2); ctx.fill();
-    // 眼珠
-    ctx.fillStyle='#111';
+    // 眼珠 — 精英红眼
+    ctx.fillStyle=isElite?'#ff2200':'#111';
     ctx.beginPath(); ctx.arc(eyeL.x+0.5, -bodyH-headR+eyeL.y+0.3, 1.1, 0, Math.PI*2); ctx.fill();
     ctx.beginPath(); ctx.arc(eyeR.x+0.5, -bodyH-headR+eyeR.y+0.3, 1.1, 0, Math.PI*2); ctx.fill();
     // 表情线
@@ -941,6 +943,14 @@ function draw(){
     ctx.fillStyle=color; ctx.shadowBlur=0;
     ctx.beginPath(); ctx.ellipse(0, 0, bodyW, bodyH, 0, 0, Math.PI*2); ctx.fill();
     ctx.restore();
+    // 精英头顶★标识
+    if(isElite){
+      ctx.save();
+      ctx.fillStyle='#ff2200';ctx.font='bold 11px Arial';ctx.textAlign='center';
+      ctx.shadowBlur=8;ctx.shadowColor='#ff2200';
+      ctx.fillText('★',x,y-bodyH-headR-10);
+      ctx.restore();
+    }
   }
 
   // ── 逊der（初期·摇摆群体）──────────────────
@@ -1334,7 +1344,7 @@ function draw(){
     drawMonsterBase(ctx, e.x, e.y, {
       color:col, headR, bodyW:5+(ep==='late'?2:ep==='mid'?1:0), bodyH:8,
       expression:'angry', lean:0.25, shake,
-      glow:glowVal, glowColor:'#ff8800'
+      glow:glowVal, glowColor:'#ff8800', isElite:true
     });
     ctx.translate(e.x+shake, e.y);
     ctx.strokeStyle='#ff8800'; ctx.lineWidth=2; ctx.globalAlpha=0.6;
@@ -1361,7 +1371,7 @@ function draw(){
     const headR=ep==='late'?13:ep==='mid'?12:11;
     drawMonsterBase(ctx, e.x, e.y, {
       color: col, headR, bodyW:6+(ep==='late'?2:ep==='mid'?1:0), bodyH:9,
-      expression:'angry', shake, glow:glowVal, glowColor:'#ff2200'
+      expression:'angry', shake, glow:glowVal, glowColor:'#ff2200', isElite:true
     });
     ctx.save(); ctx.translate(e.x+shake, e.y);
     if(stacks>0){
@@ -1383,7 +1393,7 @@ function draw(){
     const headR=ep==='late'?13:ep==='mid'?12:11;
     drawMonsterBase(ctx, e.x, e.y, {
       color:col, headR, bodyW:6+(ep==='late'?2:ep==='mid'?1:0), bodyH:9,
-      expression:'smug', shake, glow:glowVal, glowColor:'#FFD700'
+      expression:'smug', shake, glow:glowVal, glowColor:'#FFD700', isElite:true
     });
     ctx.save(); ctx.translate(e.x+shake, e.y);
     ctx.strokeStyle='#FFD700'; ctx.lineWidth=2.5;
@@ -1429,6 +1439,10 @@ function draw(){
     ctx.beginPath(); ctx.arc(5,0,20,0,Math.PI*2); ctx.stroke();
     ctx.globalAlpha=1;
     ctx.restore();
+    // 精英★标识
+    ctx.save();ctx.fillStyle='#ff2200';ctx.font='bold 11px Arial';ctx.textAlign='center';
+    ctx.shadowBlur=8;ctx.shadowColor='#ff2200';
+    ctx.fillText('★',e.x,e.y-headR-8);ctx.restore();
   }
 
   // ── 猛der精英（大体型·肌肉感）──────────────────
@@ -1441,7 +1455,7 @@ function draw(){
     const headR=ep==='late'?18:ep==='mid'?17:16;
     drawMonsterBase(ctx, e.x, e.y, {
       color:col, headR, bodyW:11+(ep==='late'?2:ep==='mid'?1:0), bodyH:13,
-      expression:'angry', shake, glow:glowVal, glowColor:'#ff2200'
+      expression:'angry', shake, glow:glowVal, glowColor:'#ff2200', isElite:true
     });
     ctx.save(); ctx.translate(e.x+shake, e.y);
     ctx.fillStyle=col;
