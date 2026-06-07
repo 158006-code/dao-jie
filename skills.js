@@ -287,7 +287,8 @@ function updateWeaponUI(){
 function updateCombo(G){
   // 余怒倒计时（不直接清零combo，只在timer归零时才清）
   if(G.comboTimer>0){
-    G.comboTimer--;
+    const decayRate=1+Math.floor(G.combo/50)*0.15; // 每50连斩窗口缩短15%
+    G.comboTimer-=decayRate;
   } else {
     G.combo=0;
   }
