@@ -487,10 +487,10 @@ function showUpgrade(){
   const vWid=G.vaultEquipWid;
   if(vQual!=='white'&&vQual!=='green'&&vWid){
     const vWeapon=WEAPONS[vWid];
-    if(vWeapon&&vWeapon.evolve&&!equippedIds.includes(vWeapon.evolve)&&!choices.some(c=>c.kind==='evolve'&&G.slots[c.slot?G.slots.indexOf(c.slot):-1]&&G.slots[G.slots.indexOf(c.slot)].id===vWid)){
+    if(vWeapon&&vWeapon.evolve&&!equippedIds.includes(vWeapon.evolve)&&!choices.some(c=>c.kind==='evolve'&&c.slot&&c.slot.id===vWid)){
       const vSlot=G.slots.find(s=>s.id===vWid);
       if(vSlot&&vSlot.lv>=vWeapon.maxLv){
-        const exclusiveCard={kind:'evolve',slot:G.slots.indexOf(vSlot),exclusive:true};
+        const exclusiveCard={kind:'evolve',slot:vSlot,exclusive:true};
         const isGold=vQual==='purple'||vQual==='gold'||vQual==='red';
         if(isGold)exclusiveCard.gold=true;
         if(choices.length>=3&&Math.random()<0.75){choices[2]=exclusiveCard;}
