@@ -241,7 +241,7 @@ function initGame(){
   G.activeBossAt=(stageId===10)?STAGE_10_BOSS_AT:BOSS_AT;
   G.totalTime=(stageId===10)?540:360;
   G.bossTriggered=Array(G.activeBossAt.length).fill(false);
-  manualPaused=false;speedIdx=0;SPEED=1;buffToastTimer=0;
+  manualPaused=false;speedIdx=0;SPEED=1;buffToastTimer=0;_treasureFlashCd=0;
   document.getElementById('buff-toast').style.opacity='0';
   document.getElementById('speed-toggle-btn').textContent='1x ▶';
   document.getElementById('speed-toggle-btn').classList.remove('active');
