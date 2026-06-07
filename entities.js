@@ -93,18 +93,18 @@ function spawnEnemy(G){
   // 按 typeLimit 截取可用怪池
   const pool = rule.pool.slice(0, rule.typeLimit);
 
-  // 按 G.stagePhase 偏移 phaseWeights（stagePhase↑ → 怪群阶段↑）
-  const pw = rule.phaseWeights;
+  // G.stagePhase 直接驱动阶段（0=初期,1=中期,2+=后期），±10%混合保持多样性
   const sp = G.stagePhase || 0;
-  let ew = pw.early, mw = pw.mid, lw = pw.late;
-  if(sp>=1){ ew=Math.max(0,ew*0.5); mw=mw+ew*0.5; lw=lw+ew*0.5; } // phase1: 前期减半→转中期
-  if(sp>=2){ ew=0; mw=Math.max(0,mw*0.3); lw=lw+mw*0.7; }        // phase2+: 仅留中后期
-  const totalW = ew + mw + lw;
-  let rp = Math.random() * (totalW||1);
+  let earlyW, midW, lateW;
+  if(sp===0)      { earlyW=85; midW=15; lateW=0; }
+  else if(sp===1) { earlyW=10; midW=80; lateW=10; }
+  else            { earlyW=0;  midW=10; lateW=90; }
+  const totalW = earlyW+midW+lateW;
+  let rp = Math.random()*totalW;
   let chosenPhase = 'early';
-  if(rp < ew){ chosenPhase = 'early'; }
-  else if(rp < ew + mw){ chosenPhase = 'mid'; }
-  else { chosenPhase = 'late'; }
+  if(rp<earlyW){ chosenPhase='early'; }
+  else if(rp<earlyW+midW){ chosenPhase='mid'; }
+  else { chosenPhase='late'; }
 
   // 在 pool 内按权重随机选取
   const baseW = {
