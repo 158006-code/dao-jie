@@ -73,7 +73,7 @@ function spawnEnemyAt(G, typeKey, x, y, enemyPhase){
     devourCount:0, enrageTimer:0,
     overloadStacks:0, hivebuff:0,
     _hitShake:0, _hitCount:0,
-    _bubble: def.quotes && Math.random()<({'roller':1,'berserker':1,'rich':1,'lazy':1,'brute':1}[def.key]?0.90:0.15) ? { text: def.quotes[Math.floor(Math.random()*def.quotes.length)], timer: 180 } : null,
+    _bubble: def.quotes && Math.random()<({'roller':1,'berserker':1,'rich':1,'lazy':1,'brute':1}[def.key]?0.30:0.05) ? { text: def.quotes[Math.floor(Math.random()*def.quotes.length)], timer: 180 } : null,
   });
 }
 function spawnEnemy(G){
