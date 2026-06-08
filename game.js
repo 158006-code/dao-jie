@@ -1902,19 +1902,328 @@ function draw(){
     ctx.restore();
   }
 
-  // ── Boss ──
-  if(G.boss){
-    const b=G.boss,pct=b.hp/b.maxhp,pulse=Math.sin(G.elapsed*0.1)*2.5;
-    ctx.save();ctx.fillStyle='rgba(0,0,0,0.4)';ctx.beginPath();ctx.ellipse(b.x,b.y+b.sz*0.55,b.sz*0.75,b.sz*0.28,0,0,Math.PI*2);ctx.fill();ctx.restore();
-    ctx.save();ctx.shadowColor=b.col;ctx.shadowBlur=32+pulse*3;ctx.fillStyle=b.col;ctx.beginPath();ctx.arc(b.x,b.y,b.sz/2+pulse,0,Math.PI*2);ctx.fill();ctx.restore();
-    if(b._phase>=1){ctx.save();ctx.strokeStyle=b._phase>=2?'#ff2200':'#EF9F27';ctx.lineWidth=2;ctx.globalAlpha=0.5;ctx.beginPath();ctx.arc(b.x,b.y,b.sz/2+8+pulse*0.5,0,Math.PI*2);ctx.stroke();ctx.restore();}
-    ctx.fillStyle='rgba(0,0,0,0.55)';ctx.fillRect(b.x-b.sz/2,b.y-b.sz/2-14,b.sz,6);
-    ctx.fillStyle=pct>0.5?'#EF9F27':'#E24B4A';ctx.fillRect(b.x-b.sz/2,b.y-b.sz/2-14,b.sz*pct,6);
-    // 壕气护甲层数
-    if(b.armorStack>0){ctx.font='bold 11px Arial';ctx.textAlign='center';ctx.fillStyle='#FFD700';ctx.fillText('🛡×'+b.armorStack,b.x,b.y-b.sz/2-20);}
-    // vlogger录像机
-    if(b.key==='vlogger'&&b.vlogging>0){ctx.save();ctx.translate(b.x+b.sz/2+8,b.y-b.sz/2-8);ctx.fillStyle='#333';ctx.fillRect(-6,-5,12,10);ctx.strokeStyle='#888';ctx.lineWidth=1.5;ctx.strokeRect(-6,-5,12,10);ctx.fillStyle='#111';ctx.fillRect(-4,-3,8,6);ctx.fillStyle='#666';ctx.beginPath();ctx.arc(0,0,3,0,Math.PI*2);ctx.fill();ctx.fillStyle='#555';ctx.fillRect(-8,-3,3,6);if(G.elapsed%30<15){ctx.fillStyle='#ff0000';ctx.beginPath();ctx.arc(8,-4,2,0,Math.PI*2);ctx.fill();}ctx.restore();}
+  // ══════ Boss 人形绘制系统 ══════
+  function drawBossFigure(ctx, b, G){
+    const sz=b.sz, pct=b.hp/b.maxhp, pulse=Math.sin(G.elapsed*0.1)*2;
+    const bx=b.x, by=b.y;
+    // 脚下阴影
+    ctx.save();ctx.fillStyle='rgba(0,0,0,0.45)';
+    ctx.beginPath();ctx.ellipse(bx,by+sz*0.45,sz*0.55,sz*0.18,0,0,Math.PI*2);ctx.fill();ctx.restore();
+    // 派发
+    switch(b.key){
+      case'fake_zhuji':    drawBoss_fakeZhuji(ctx,bx,by,sz,pct,pulse,G.elapsed);break;
+      case'fake_skill':    drawBoss_fakeSkill(ctx,bx,by,sz,pct,pulse,G.elapsed);break;
+      case'old_teeth':     drawBoss_oldTeeth(ctx,bx,by,sz,pct,pulse,G.elapsed);break;
+      case'has_treasure':  drawBoss_hasTreasure(ctx,bx,by,sz,pct,pulse,G.elapsed);break;
+      case'has_backing':   drawBoss_hasBacking(ctx,bx,by,sz,pct,pulse,G.elapsed);break;
+      case'always_eat':    drawBoss_alwaysEat(ctx,bx,by,sz,pct,pulse,G.elapsed);break;
+      case'dainty':        drawBoss_dainty(ctx,bx,by,sz,pct,pulse,G.elapsed);break;
+      case'dad_zifu':      drawBoss_dadZifu(ctx,bx,by,sz,pct,pulse,G.elapsed);break;
+      case'vlogger':       drawBoss_vlogger(ctx,bx,by,sz,pct,pulse,G.elapsed);break;
+      case'dominator':     drawBoss_dominator(ctx,bx,by,sz,pct,pulse,G.elapsed);break;
+      case'rich_armor':    drawBoss_richArmor(ctx,bx,by,sz,pct,pulse,G.elapsed);break;
+      case'tyrant':        drawBoss_tyrant(ctx,bx,by,sz,pct,pulse,G.elapsed);break;
+      default:{ctx.save();ctx.shadowColor=b.col;ctx.shadowBlur=24;ctx.fillStyle=b.col;ctx.beginPath();ctx.arc(bx,by,sz/2,0,Math.PI*2);ctx.fill();ctx.restore();}
+    }
+    // 共通：阶段光环 + 血条
+    if(b._phase>=1){ctx.save();ctx.strokeStyle=b._phase>=2?'#ff2200':'#EF9F27';ctx.lineWidth=2.5;ctx.globalAlpha=0.45+Math.sin(G.elapsed*0.08)*0.15;ctx.beginPath();ctx.arc(bx,by,sz/2+6+pulse*0.4,0,Math.PI*2);ctx.stroke();ctx.restore();}
+    ctx.fillStyle='rgba(0,0,0,0.55)';ctx.fillRect(bx-sz/2,by-sz/2-14,sz,6);
+    ctx.fillStyle=pct>0.5?'#EF9F27':'#E24B4A';ctx.fillRect(bx-sz/2,by-sz/2-14,sz*pct,6);
+    // 特殊覆盖层
+    if(b.armorStack>0){ctx.font='bold 12px Arial';ctx.textAlign='center';ctx.fillStyle='#FFD700';ctx.fillText('🛡×'+b.armorStack,bx,by-sz/2-22);}
+    if(b.key==='vlogger'&&b.vlogging>0){ctx.save();ctx.translate(bx+sz/2+8,by-sz/2-8);ctx.fillStyle='#333';ctx.fillRect(-6,-5,12,10);ctx.strokeStyle='#888';ctx.lineWidth=1.5;ctx.strokeRect(-6,-5,12,10);ctx.fillStyle='#111';ctx.fillRect(-4,-3,8,6);ctx.fillStyle='#666';ctx.beginPath();ctx.arc(0,0,3,0,Math.PI*2);ctx.fill();ctx.fillStyle='#555';ctx.fillRect(-8,-3,3,6);if(G.elapsed%30<15){ctx.fillStyle='#ff0000';ctx.beginPath();ctx.arc(8,-4,2,0,Math.PI*2);ctx.fill();}ctx.restore();}
   }
+
+  // ── Boss#1 假筑基：破旧道袍+假灵气光圈+装死闭眼 ──
+  function drawBoss_fakeZhuji(ctx,x,y,sz,pct,pulse,t){
+    const col='#C97B3A',headR=sz*0.28,bodyW=sz*0.22,bodyH=sz*0.30;
+    // 假灵气光圈（外扩呼吸）
+    ctx.save();ctx.globalAlpha=0.18+Math.sin(t*0.06)*0.08;ctx.strokeStyle='#FFD700';ctx.lineWidth=3;ctx.shadowBlur=16;ctx.shadowColor='#FFD700';
+    ctx.beginPath();ctx.arc(x,y,sz*0.55+pulse,0,Math.PI*2);ctx.stroke();ctx.restore();
+    // 身体（破袍）
+    ctx.fillStyle='#5a3a1a';ctx.shadowBlur=0;
+    ctx.beginPath();ctx.ellipse(x,y+sz*0.02,bodyW,bodyH,0.05,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#4a2a10';ctx.beginPath();ctx.ellipse(x-3,y+sz*0.06,bodyW*0.4,bodyH*0.55,-0.1,0,Math.PI*2);ctx.fill(); // 补丁
+    // 头部
+    ctx.fillStyle=col;ctx.beginPath();ctx.arc(x,y-bodyH-headR+sz*0.04,headR,0,Math.PI*2);ctx.fill();
+    // 假筑基光环（头顶）
+    ctx.strokeStyle='rgba(255,200,50,0.4)';ctx.lineWidth=2;ctx.setLineDash([3,4]);
+    ctx.beginPath();ctx.arc(x,y-bodyH-headR+sz*0.04,headR+6,0.2,Math.PI-0.2);ctx.stroke();ctx.setLineDash([]);
+    // 眼睛（装死时闭眼×）
+    ctx.fillStyle='#fff';
+    ctx.beginPath();ctx.arc(x-headR*0.35,y-bodyH-headR+sz*0.02,headR*0.28,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(x+headR*0.35,y-bodyH-headR+sz*0.02,headR*0.28,0,Math.PI*2);ctx.fill();
+    if(pct<0.05){ // 假死闭眼×
+      ctx.strokeStyle='#111';ctx.lineWidth=2;
+      ctx.beginPath();ctx.moveTo(x-headR*0.5,y-bodyH-headR+sz*0.02-headR*0.15);ctx.lineTo(x-headR*0.2,y-bodyH-headR+sz*0.02+headR*0.15);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(x+headR*0.5,y-bodyH-headR+sz*0.02-headR*0.15);ctx.lineTo(x+headR*0.2,y-bodyH-headR+sz*0.02+headR*0.15);ctx.stroke();
+    } else {
+      ctx.fillStyle='#440000';ctx.shadowBlur=4;ctx.shadowColor='#ff4400';
+      ctx.beginPath();ctx.arc(x-headR*0.35,y-bodyH-headR+sz*0.02,headR*0.14,0,Math.PI*2);ctx.fill();
+      ctx.beginPath();ctx.arc(x+headR*0.35,y-bodyH-headR+sz*0.02,headR*0.14,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
+    }
+  }
+
+  // ── Boss#2 伪筑基：法术书+失败烟雾 ──
+  function drawBoss_fakeSkill(ctx,x,y,sz,pct,pulse,t){
+    const col='#8040A8',headR=sz*0.26,bodyW=sz*0.20,bodyH=sz*0.28;
+    // 失败烟雾
+    for(let i=0;i<5;i++){ctx.save();ctx.globalAlpha=0.12+0.04*i;ctx.fillStyle='#aa88ff';ctx.beginPath();ctx.arc(x+(Math.sin(t*0.05+i*1.3))*18,y-bodyH-headR-i*4,4+i*1.5,0,Math.PI*2);ctx.fill();ctx.restore();}
+    // 身体（法袍）
+    ctx.fillStyle='#3a1858';ctx.beginPath();ctx.ellipse(x,y+sz*0.02,bodyW,bodyH,0,0,Math.PI*2);ctx.fill();
+    // 法术书（左手）
+    ctx.fillStyle='#2a1a3a';ctx.fillRect(x-bodyW-2,y-bodyH*0.5,sz*0.16,sz*0.22);
+    ctx.strokeStyle='#cc88ff';ctx.lineWidth=1;ctx.strokeRect(x-bodyW-2,y-bodyH*0.5,sz*0.16,sz*0.22);
+    ctx.fillStyle='#aa88ff';ctx.font='bold 8px Arial';ctx.textAlign='center';ctx.fillText('咒',x-bodyW+sz*0.08,y-bodyH*0.2);
+    // 头部
+    ctx.fillStyle=col;ctx.beginPath();ctx.arc(x,y-bodyH-headR+sz*0.04,headR,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(x-4,y-bodyH-headR+sz*0.02,headR*0.25,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(x+4,y-bodyH-headR+sz*0.02,headR*0.25,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#300';ctx.beginPath();ctx.arc(x-4,y-bodyH-headR+sz*0.02,headR*0.13,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(x+4,y-bodyH-headR+sz*0.02,headR*0.13,0,Math.PI*2);ctx.fill();
+  }
+
+  // ── Boss#3 老掉牙：白发长须+拐杖+缺牙 ──
+  function drawBoss_oldTeeth(ctx,x,y,sz,pct,pulse,t){
+    const col='#888870',headR=sz*0.27,bodyW=sz*0.18,bodyH=sz*0.32;
+    // 身体（旧袍）
+    ctx.fillStyle='#5a5a48';ctx.beginPath();ctx.ellipse(x,y+sz*0.02,bodyW,bodyH,0.02,0,Math.PI*2);ctx.fill();
+    // 拐杖
+    ctx.strokeStyle='#6a5a3a';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(x+bodyW+2,y-bodyH);ctx.lineTo(x+bodyW+2,y+bodyH*0.8);ctx.stroke();
+    ctx.strokeStyle='#8a7a5a';ctx.lineWidth=2;ctx.beginPath();ctx.arc(x+bodyW+2,y-bodyH-2,4,0.8,2.3);ctx.stroke();
+    // 白发
+    ctx.fillStyle='#ddd';ctx.beginPath();ctx.arc(x,y-bodyH-headR+sz*0.04,headR+2,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle=col;ctx.beginPath();ctx.arc(x,y-bodyH-headR+sz*0.04,headR,0,Math.PI*2);ctx.fill();
+    // 长须
+    ctx.strokeStyle='#ddd';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x-headR*0.3,y-bodyH-headR+headR+sz*0.02);ctx.lineTo(x-headR*0.5,y-bodyH-headR+headR+sz*0.18);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(x+headR*0.3,y-bodyH-headR+headR+sz*0.02);ctx.lineTo(x+headR*0.5,y-bodyH-headR+headR+sz*0.18);ctx.stroke();
+    // 缺牙（嘴部缺口）
+    ctx.fillStyle='#111';ctx.fillRect(x-3,y-bodyH-headR+headR*0.5+sz*0.04,6,2);
+    ctx.fillStyle='#fff';ctx.fillRect(x-3,y-bodyH-headR+headR*0.5+sz*0.04,6,2); // 牙齿
+    ctx.fillStyle='#111';ctx.fillRect(x-1,y-bodyH-headR+headR*0.5+sz*0.04,2,2); // 缺一颗
+    // 眼睛（眯缝）
+    ctx.fillStyle='#fff';ctx.beginPath();ctx.ellipse(x-headR*0.35,y-bodyH-headR+0,headR*0.22,headR*0.12,0,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.ellipse(x+headR*0.35,y-bodyH-headR+0,headR*0.22,headR*0.12,0,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#333';ctx.beginPath();ctx.arc(x-headR*0.35,y-bodyH-headR+0,headR*0.1,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(x+headR*0.35,y-bodyH-headR+0,headR*0.1,0,Math.PI*2);ctx.fill();
+  }
+
+  // ── Boss#4 带法宝：华丽法袍+环绕法宝 ──
+  function drawBoss_hasTreasure(ctx,x,y,sz,pct,pulse,t){
+    const col='#C0901A',headR=sz*0.26,bodyW=sz*0.21,bodyH=sz*0.28;
+    // 华丽法袍
+    const robeGrad=ctx.createLinearGradient(x-bodyW,y,x+bodyW,y);
+    robeGrad.addColorStop(0,'#5a3a0a');robeGrad.addColorStop(0.5,'#9a6a1a');robeGrad.addColorStop(1,'#5a3a0a');
+    ctx.fillStyle=robeGrad;ctx.beginPath();ctx.ellipse(x,y+sz*0.02,bodyW,bodyH,0,0,Math.PI*2);ctx.fill();
+    // 环绕法宝（3颗）
+    for(let i=0;i<3;i++){const a=t*0.04+i*2.09,r=sz*0.65;ctx.save();ctx.fillStyle=['#ff6644','#44ccff','#ccff44'][i];ctx.shadowBlur=8;ctx.shadowColor=ctx.fillStyle;ctx.globalAlpha=0.8+Math.sin(t*0.08+i)*0.2;ctx.beginPath();ctx.arc(x+Math.cos(a)*r,y+Math.sin(a)*r,5,0,Math.PI*2);ctx.fill();ctx.restore();}
+    // 头部
+    ctx.fillStyle=col;ctx.shadowBlur=0;ctx.beginPath();ctx.arc(x,y-bodyH-headR+sz*0.04,headR,0,Math.PI*2);ctx.fill();
+    // 金冠
+    ctx.fillStyle='#E8D44D';ctx.beginPath();ctx.moveTo(x-headR+2,y-bodyH-headR-headR*0.5+sz*0.04);ctx.lineTo(x-headR+2,y-bodyH-headR-headR*0.1+sz*0.04);ctx.lineTo(x+headR-2,y-bodyH-headR-headR*0.1+sz*0.04);ctx.lineTo(x+headR-2,y-bodyH-headR-headR*0.5+sz*0.04);ctx.fill();
+    ctx.fillRect(x-2,y-bodyH-headR-headR*0.8+sz*0.04,4,headR*0.5);
+    // 眼睛
+    ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(x-4,y-bodyH-headR+sz*0.02,headR*0.25,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(x+4,y-bodyH-headR+sz*0.02,headR*0.25,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#300';ctx.beginPath();ctx.arc(x-4,y-bodyH-headR+sz*0.02,headR*0.13,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(x+4,y-bodyH-headR+sz*0.02,headR*0.13,0,Math.PI*2);ctx.fill();
+  }
+
+  // ── Boss#5 有后台：官服+令牌 ──
+  function drawBoss_hasBacking(ctx,x,y,sz,pct,pulse,t){
+    const col='#4060A0',headR=sz*0.27,bodyW=sz*0.22,bodyH=sz*0.30;
+    // 官服
+    ctx.fillStyle='#1a2850';ctx.beginPath();ctx.ellipse(x,y+sz*0.02,bodyW,bodyH,0,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#2a4080';ctx.beginPath();ctx.ellipse(x,y,bodyW*0.85,bodyH*0.7,0,0,Math.PI*2);ctx.fill();
+    // 令牌（右手）
+    ctx.fillStyle='#c8a040';ctx.fillRect(x+bodyW-2,y-bodyH*0.3,sz*0.12,sz*0.2);
+    ctx.fillStyle='#000';ctx.font='bold 7px Arial';ctx.textAlign='center';ctx.fillText('令',x+bodyW+sz*0.06-2,y-bodyH*0.15);
+    // 靠山虚影（半透明大圆）
+    ctx.save();ctx.globalAlpha=0.08+Math.sin(t*0.04)*0.04;ctx.strokeStyle='#6080c0';ctx.lineWidth=4;ctx.shadowBlur=20;ctx.shadowColor='#4060A0';
+    ctx.beginPath();ctx.arc(x,y,sz*0.8,0,Math.PI*2);ctx.stroke();ctx.restore();
+    // 头部
+    ctx.fillStyle=col;ctx.shadowBlur=0;ctx.beginPath();ctx.arc(x,y-bodyH-headR+sz*0.04,headR,0,Math.PI*2);ctx.fill();
+    // 官帽
+    ctx.fillStyle='#111';ctx.fillRect(x-headR*1.1,y-bodyH-headR-headR*0.4+sz*0.04,headR*2.2,headR*0.35);
+    ctx.fillStyle='#c8a040';ctx.fillRect(x-2,y-bodyH-headR-headR*0.7+sz*0.04,4,headR*0.4);
+    ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(x-4,y-bodyH-headR+sz*0.02,headR*0.23,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(x+4,y-bodyH-headR+sz*0.02,headR*0.23,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#111';ctx.beginPath();ctx.arc(x-4,y-bodyH-headR+sz*0.02,headR*0.12,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(x+4,y-bodyH-headR+sz*0.02,headR*0.12,0,Math.PI*2);ctx.fill();
+  }
+
+  // ── Boss#6 吃不停：大肚子+围兜 ──
+  function drawBoss_alwaysEat(ctx,x,y,sz,pct,pulse,t){
+    const col='#A05828',headR=sz*0.24,bodyW=sz*0.24,bodyH=sz*0.33;
+    const bellyScale=1+(1-pct)*0.35; // 血越少肚子越大
+    // 大肚子
+    ctx.fillStyle='#7a4020';ctx.beginPath();ctx.ellipse(x,y+sz*0.04,bodyW*bellyScale,bodyH*bellyScale,0,0,Math.PI*2);ctx.fill();
+    // 围兜
+    ctx.fillStyle='#fff';ctx.beginPath();ctx.ellipse(x,y+sz*0.02,bodyW*0.7*bellyScale,bodyH*0.5*bellyScale,0,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#e0c0a0';ctx.font='bold 8px Arial';ctx.textAlign='center';ctx.fillText('吃',x,y+sz*0.04);
+    // 食物残渣粒子
+    for(let i=0;i<3;i++){ctx.fillStyle=['#ffcc00','#ff8844','#88cc44'][i];ctx.beginPath();ctx.arc(x+(Math.sin(t*0.07+i*2))*bodyW,y-bodyH*0.2+i*4,3,0,Math.PI*2);ctx.fill();}
+    // 头部
+    ctx.fillStyle=col;ctx.beginPath();ctx.arc(x,y-bodyH*bellyScale-headR+sz*0.04,headR,0,Math.PI*2);ctx.fill();
+    // 大嘴
+    ctx.fillStyle='#300';ctx.beginPath();ctx.arc(x,y-bodyH*bellyScale-headR+headR*0.35+sz*0.04,headR*0.4,0,Math.PI);ctx.fill();
+    ctx.fillStyle='#fff';ctx.fillRect(x-headR*0.25,y-bodyH*bellyScale-headR+headR*0.3+sz*0.04,headR*0.5,2);
+    ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(x-headR*0.35,y-bodyH*bellyScale-headR+0,headR*0.2,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(x+headR*0.35,y-bodyH*bellyScale-headR+0,headR*0.2,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#111';ctx.beginPath();ctx.arc(x-headR*0.35,y-bodyH*bellyScale-headR+0,headR*0.1,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(x+headR*0.35,y-bodyH*bellyScale-headR+0,headR*0.1,0,Math.PI*2);ctx.fill();
+  }
+
+  // ── Boss#7 娇滴滴：华丽长裙+蝴蝶结+香水 ──
+  function drawBoss_dainty(ctx,x,y,sz,pct,pulse,t){
+    const col='#E060A0',headR=sz*0.25,bodyW=sz*0.18,bodyH=sz*0.28;
+    // 华丽长裙（三角大裙摆）
+    ctx.fillStyle='#d04080';ctx.beginPath();ctx.moveTo(x-bodyW*1.2,y+bodyH*0.2);ctx.lineTo(x,y+bodyH*1.5);ctx.lineTo(x+bodyW*1.2,y+bodyH*0.2);ctx.closePath();ctx.fill();
+    ctx.fillStyle='#e06090';ctx.beginPath();ctx.ellipse(x,y,bodyW*1.05,bodyH*0.6,0,0,Math.PI*2);ctx.fill();
+    // 上身
+    ctx.fillStyle='#f0a0c0';ctx.beginPath();ctx.ellipse(x,y-bodyH*0.3,bodyW*0.7,bodyH*0.4,0,0,Math.PI*2);ctx.fill();
+    // 头部
+    ctx.fillStyle='#fce0d0';ctx.beginPath();ctx.arc(x,y-bodyH*0.5-headR+sz*0.02,headR,0,Math.PI*2);ctx.fill();
+    // 蝴蝶结
+    ctx.fillStyle='#ff4488';ctx.beginPath();ctx.moveTo(x-headR*0.8,y-bodyH*0.5-headR-headR*0.3+sz*0.02);ctx.lineTo(x,y-bodyH*0.5-headR+sz*0.02);ctx.lineTo(x-headR*0.8,y-bodyH*0.5-headR+headR*0.3+sz*0.02);ctx.closePath();ctx.fill();
+    ctx.beginPath();ctx.moveTo(x+headR*0.8,y-bodyH*0.5-headR-headR*0.3+sz*0.02);ctx.lineTo(x,y-bodyH*0.5-headR+sz*0.02);ctx.lineTo(x+headR*0.8,y-bodyH*0.5-headR+headR*0.3+sz*0.02);ctx.closePath();ctx.fill();
+    ctx.fillStyle='#ff88aa';ctx.beginPath();ctx.arc(x,y-bodyH*0.5-headR+sz*0.02,headR*0.3,0,Math.PI*2);ctx.fill();
+    // 香水瓶（右手）
+    ctx.fillStyle='#cc88ff';ctx.fillRect(x+bodyW+2,y-bodyH*0.6,5,8);
+    ctx.fillStyle='#ff88cc';ctx.beginPath();ctx.arc(x+bodyW+4.5,y-bodyH*0.6-2,3,0,Math.PI*2);ctx.fill();
+    // 眼睛（大眼+长睫毛）
+    ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(x-headR*0.35,y-bodyH*0.5-headR+sz*0.02,headR*0.28,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(x+headR*0.35,y-bodyH*0.5-headR+sz*0.02,headR*0.28,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#4080cc';ctx.beginPath();ctx.arc(x-headR*0.35,y-bodyH*0.5-headR+sz*0.02,headR*0.14,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(x+headR*0.35,y-bodyH*0.5-headR+sz*0.02,headR*0.14,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='#333';ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.moveTo(x-headR*0.6,y-bodyH*0.5-headR-headR*0.2+sz*0.02);ctx.lineTo(x-headR*0.45,y-bodyH*0.5-headR-headR*0.05+sz*0.02);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(x+headR*0.6,y-bodyH*0.5-headR-headR*0.2+sz*0.02);ctx.lineTo(x+headR*0.45,y-bodyH*0.5-headR-headR*0.05+sz*0.02);ctx.stroke();
+  }
+
+  // ── Boss#8 我爸是紫府：豪华衣袍+护盾+傲慢 ──
+  function drawBoss_dadZifu(ctx,x,y,sz,pct,pulse,t){
+    const col='#6030C0',headR=sz*0.27,bodyW=sz*0.22,bodyH=sz*0.30;
+    // 豪华衣袍
+    const robeGrad=ctx.createLinearGradient(x-bodyW,y,x+bodyW,y);
+    robeGrad.addColorStop(0,'#2a1060');robeGrad.addColorStop(0.5,'#5a30a0');robeGrad.addColorStop(1,'#2a1060');
+    ctx.fillStyle=robeGrad;ctx.beginPath();ctx.ellipse(x,y+sz*0.02,bodyW,bodyH,0,0,Math.PI*2);ctx.fill();
+    // 紫府家徽
+    ctx.fillStyle='#c8a0ff';ctx.beginPath();ctx.arc(x,y-sz*0.04,sz*0.08,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='#fff';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x,y-sz*0.12);ctx.lineTo(x,y+sz*0.04);ctx.moveTo(x-sz*0.08,y-sz*0.04);ctx.lineTo(x+sz*0.08,y-sz*0.04);ctx.stroke();
+    // 护盾（如激活）
+    if(b.shield){ctx.save();ctx.globalAlpha=0.25;ctx.strokeStyle='#c8a0ff';ctx.lineWidth=4;ctx.shadowBlur=18;ctx.shadowColor='#c8a0ff';ctx.beginPath();ctx.arc(x,y,sz*0.7,0,Math.PI*2);ctx.stroke();ctx.restore();}
+    // 头部+傲慢表情
+    ctx.fillStyle=col;ctx.shadowBlur=0;ctx.beginPath();ctx.arc(x,y-bodyH-headR+sz*0.04,headR,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#ffcc00';ctx.beginPath();ctx.moveTo(x-headR+2,y-bodyH-headR-headR*0.4+sz*0.04);ctx.lineTo(x+headR-2,y-bodyH-headR-headR*0.4+sz*0.04);ctx.lineTo(x,y-bodyH-headR-headR*1.1+sz*0.04);ctx.closePath();ctx.fill();
+    ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(x-4,y-bodyH-headR+0,headR*0.22,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(x+4,y-bodyH-headR+0,headR*0.22,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#300';ctx.beginPath();ctx.arc(x-3,y-bodyH-headR-1,headR*0.11,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(x+5,y-bodyH-headR-1,headR*0.11,0,Math.PI*2);ctx.fill(); // 白眼
+    // 傲慢嘴角
+    ctx.strokeStyle='#300';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(x-headR*0.2,y-bodyH-headR+headR*0.35+0);ctx.lineTo(x+headR*0.2,y-bodyH-headR+headR*0.45+0);ctx.stroke();
+  }
+
+  // ── Boss#9 vlogger：摄像机+现代发型+环形灯 ──
+  function drawBoss_vlogger(ctx,x,y,sz,pct,pulse,t){
+    const col='#E04020',headR=sz*0.25,bodyW=sz*0.19,bodyH=sz*0.27;
+    // 环形打光灯
+    ctx.save();ctx.globalAlpha=0.2+Math.sin(t*0.1)*0.1;ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.shadowBlur=14;ctx.shadowColor='#ffffff';
+    ctx.beginPath();ctx.arc(x,y-bodyH-headR+sz*0.04,headR+10,0,Math.PI*2);ctx.stroke();ctx.restore();
+    // 身体（现代卫衣）
+    ctx.fillStyle='#2a2a3a';ctx.beginPath();ctx.ellipse(x,y+sz*0.02,bodyW,bodyH,0,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#3a5a8a';ctx.fillRect(x-bodyW*0.6,y-bodyH*0.3,bodyW*1.2,bodyH*0.25); // 领口
+    // 现代发型
+    ctx.fillStyle='#1a1a2a';ctx.beginPath();ctx.arc(x,y-bodyH-headR+sz*0.02,headR+3,Math.PI,0);ctx.fill();
+    ctx.fillStyle='#2a2a3a';ctx.fillRect(x-headR,y-bodyH-headR-headR*0.15+sz*0.02,headR*2,headR*0.4);
+    // 脸部
+    ctx.fillStyle='#f5d5a0';ctx.beginPath();ctx.arc(x,y-bodyH-headR+sz*0.04,headR,0,Math.PI*2);ctx.fill();
+    // 墨镜
+    ctx.fillStyle='#111';ctx.fillRect(x-headR*0.65,y-bodyH-headR-headR*0.1+sz*0.02,headR*1.3,headR*0.35);
+    ctx.strokeStyle='#444';ctx.lineWidth=1;ctx.strokeRect(x-headR*0.65,y-bodyH-headR-headR*0.1+sz*0.02,headR*1.3,headR*0.35);
+    // 直播红点
+    if(t%30<15){ctx.fillStyle='#ff0000';ctx.shadowBlur=6;ctx.shadowColor='#ff0000';ctx.beginPath();ctx.arc(x+headR+4,y-bodyH-headR-headR*0.2+sz*0.02,2.5,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;}
+    ctx.fillStyle='#fff';ctx.font='bold 6px Arial';ctx.textAlign='center';ctx.fillText('LIVE',x+headR+4,y-bodyH-headR-headR*0.5+sz*0.02);
+  }
+
+  // ── Boss#10 功法霸道：卷轴+霸气光环 ──
+  function drawBoss_dominator(ctx,x,y,sz,pct,pulse,t){
+    const col='#203080',headR=sz*0.28,bodyW=sz*0.22,bodyH=sz*0.31;
+    // 霸气光环
+    ctx.save();ctx.globalAlpha=0.12+Math.sin(t*0.05)*0.06;
+    const auraGrad=ctx.createRadialGradient(x,y,sz*0.3,x,y,sz*0.8);
+    auraGrad.addColorStop(0,'rgba(40,60,160,0)');auraGrad.addColorStop(1,'rgba(40,60,200,0.5)');
+    ctx.fillStyle=auraGrad;ctx.beginPath();ctx.arc(x,y,sz*0.8,0,Math.PI*2);ctx.fill();ctx.restore();
+    // 功法卷轴（展开在身前）
+    ctx.fillStyle='#c8b878';ctx.fillRect(x-bodyW*0.8,y-bodyH*0.5,bodyW*1.6,bodyH*0.35);
+    ctx.strokeStyle='#8a7a3a';ctx.lineWidth=1.5;ctx.strokeRect(x-bodyW*0.8,y-bodyH*0.5,bodyW*1.6,bodyH*0.35);
+    // 被炽怒破防后裂纹
+    if(pct<0.5){ctx.strokeStyle='rgba(255,100,50,0.7)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x-bodyW*0.6,y-bodyH*0.4);ctx.lineTo(x,y-bodyH*0.3);ctx.lineTo(x+bodyW*0.3,y-bodyH*0.45);ctx.stroke();}
+    // 身体（深蓝袍）
+    ctx.fillStyle='#102050';ctx.beginPath();ctx.ellipse(x,y+sz*0.02,bodyW,bodyH,0,0,Math.PI*2);ctx.fill();
+    // 头部
+    ctx.fillStyle=col;ctx.beginPath();ctx.arc(x,y-bodyH-headR+sz*0.04,headR,0,Math.PI*2);ctx.fill();
+    // 发光眼（功法运转）
+    ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(x-4,y-bodyH-headR+sz*0.02,headR*0.26,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(x+4,y-bodyH-headR+sz*0.02,headR*0.26,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#4488ff';ctx.shadowBlur=10;ctx.shadowColor='#4488ff';
+    ctx.beginPath();ctx.arc(x-4,y-bodyH-headR+sz*0.02,headR*0.13,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(x+4,y-bodyH-headR+sz*0.02,headR*0.13,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
+  }
+
+  // ── Boss#11 壕气冲天：金甲+钱袋+钻石 ──
+  function drawBoss_richArmor(ctx,x,y,sz,pct,pulse,t){
+    const col='#C8A000',headR=sz*0.26,bodyW=sz*0.22,bodyH=sz*0.29;
+    // 金甲
+    const goldGrad=ctx.createLinearGradient(x-bodyW,y,x+bodyW,y);
+    goldGrad.addColorStop(0,'#7a6000');goldGrad.addColorStop(0.5,'#e0c040');goldGrad.addColorStop(1,'#7a6000');
+    ctx.fillStyle=goldGrad;ctx.beginPath();ctx.ellipse(x,y+sz*0.02,bodyW,bodyH,0,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='#ffe080';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(x-bodyW*0.6,y-bodyH*0.5);ctx.lineTo(x+bodyW*0.6,y-bodyH*0.5);ctx.stroke(); // 甲纹
+    // 钱袋（腰间）
+    ctx.fillStyle='#8a6a20';ctx.beginPath();ctx.arc(x+bodyW+2,y+bodyH*0.2,sz*0.12,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#ffcc00';ctx.font='bold 7px Arial';ctx.textAlign='center';ctx.fillText('$',x+bodyW+2,y+bodyH*0.22);
+    // 钻石戒指（右手闪光）
+    ctx.fillStyle='#fff';ctx.shadowBlur=8;ctx.shadowColor='#aaddff';ctx.beginPath();ctx.arc(x-bodyW-3,y-bodyH*0.1,3,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
+    ctx.strokeStyle='#aaddff';ctx.lineWidth=1;ctx.strokeStyle='#c0e0ff';ctx.beginPath();ctx.arc(x-bodyW-3,y-bodyH*0.1,3,0,Math.PI*2);ctx.stroke();
+    // 头部
+    ctx.fillStyle=col;ctx.beginPath();ctx.arc(x,y-bodyH-headR+sz*0.04,headR,0,Math.PI*2);ctx.fill();
+    // 金链项链（简化为横线）
+    ctx.strokeStyle='#ffcc00';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x-headR,y-bodyH-headR-headR*0.3+sz*0.04);ctx.lineTo(x+headR,y-bodyH-headR-headR*0.3+sz*0.04);ctx.stroke();
+    // 墨镜
+    ctx.fillStyle='#000';ctx.fillRect(x-headR*0.7,y-bodyH-headR-headR*0.15+sz*0.02,headR*1.4,headR*0.3);
+    // 金币粒子
+    for(let i=0;i<4;i++){ctx.fillStyle='#ffcc00';ctx.beginPath();ctx.arc(x+(Math.sin(t*0.06+i*1.5))*bodyW*1.1,y-bodyH*0.3+i*6,2,0,Math.PI*2);ctx.fill();}
+  }
+
+  // ── Boss#12 终Boss 半步紫府：紫袍+王冠+威压 ──
+  function drawBoss_tyrant(ctx,x,y,sz,pct,pulse,t){
+    const col='#802010',headR=sz*0.29,bodyW=sz*0.24,bodyH=sz*0.33;
+    // 威压光环（三层）
+    for(let i=0;i<3;i++){ctx.save();ctx.globalAlpha=0.08+0.03*i+Math.sin(t*0.04+i)*0.04;ctx.strokeStyle='#ff2200';ctx.lineWidth=2+i*2;ctx.shadowBlur=15+i*10;ctx.shadowColor='#ff2200';ctx.beginPath();ctx.arc(x,y,sz*0.55+i*sz*0.15+pulse*(i+1)*0.3,0,Math.PI*2);ctx.stroke();ctx.restore();}
+    // 紫袍
+    const robeGrad=ctx.createLinearGradient(x-bodyW,y,x+bodyW,y);
+    robeGrad.addColorStop(0,'#3a0808');robeGrad.addColorStop(0.5,'#6a1810');robeGrad.addColorStop(1,'#3a0808');
+    ctx.fillStyle=robeGrad;ctx.beginPath();ctx.ellipse(x,y+sz*0.02,bodyW,bodyH,0,0,Math.PI*2);ctx.fill();
+    // 披风（背后）
+    ctx.fillStyle='#200808';ctx.beginPath();ctx.moveTo(x-bodyW,y-bodyH*0.3);ctx.lineTo(x-bodyW*1.8,y+bodyH*0.5);ctx.lineTo(x+bodyW*1.8,y+bodyH*0.5);ctx.lineTo(x+bodyW,y-bodyH*0.3);ctx.closePath();ctx.fill();
+    // 头部
+    ctx.fillStyle='#f5c8a0';ctx.beginPath();ctx.arc(x,y-bodyH-headR+sz*0.04,headR,0,Math.PI*2);ctx.fill();
+    // 王冠
+    ctx.fillStyle='#E8D44D';ctx.beginPath();ctx.moveTo(x-headR+2,y-bodyH-headR-headR*0.3+sz*0.04);ctx.lineTo(x-headR+2,y-bodyH-headR+headR*0.1+sz*0.04);ctx.lineTo(x+headR-2,y-bodyH-headR+headR*0.1+sz*0.04);ctx.lineTo(x+headR-2,y-bodyH-headR-headR*0.3+sz*0.04);ctx.closePath();ctx.fill();
+    for(let i=-1;i<=1;i++){ctx.fillStyle='#ff4422';ctx.beginPath();ctx.arc(x+i*headR*0.3,y-bodyH-headR-headR*0.6+sz*0.04,headR*0.15,0,Math.PI*2);ctx.fill();} // 王冠宝石
+    // 愤怒红眼+发光
+    ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(x-headR*0.35,y-bodyH-headR+sz*0.02,headR*0.28,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(x+headR*0.35,y-bodyH-headR+sz*0.02,headR*0.28,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#ff2200';ctx.shadowBlur=12;ctx.shadowColor='#ff0000';
+    ctx.beginPath();ctx.arc(x-headR*0.35,y-bodyH-headR+sz*0.02,headR*0.15,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(x+headR*0.35,y-bodyH-headR+sz*0.02,headR*0.15,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
+    // 愤怒倒眉
+    ctx.strokeStyle='#ff2200';ctx.lineWidth=3;ctx.shadowBlur=6;ctx.shadowColor='#ff2200';
+    ctx.beginPath();ctx.moveTo(x-headR*0.8,y-bodyH-headR-headR*0.2+sz*0.02);ctx.lineTo(x-headR*0.2,y-bodyH-headR+sz*0.02);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(x+headR*0.8,y-bodyH-headR-headR*0.2+sz*0.02);ctx.lineTo(x+headR*0.2,y-bodyH-headR+sz*0.02);ctx.stroke();ctx.shadowBlur=0;
+  }
+  // ── Boss（人形绘制）──
+  if(G.boss){ drawBossFigure(ctx, G.boss, G); }
 
   // 环绕武器
   G.slots.forEach(sl=>{
