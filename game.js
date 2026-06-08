@@ -1911,18 +1911,18 @@ function draw(){
     ctx.beginPath();ctx.ellipse(bx,by+sz*0.45,sz*0.55,sz*0.18,0,0,Math.PI*2);ctx.fill();ctx.restore();
     // 派发
     switch(b.key){
-      case'fake_zhuji':    drawBoss_fakeZhuji(ctx,bx,by,sz,pct,pulse,G.elapsed);break;
-      case'fake_skill':    drawBoss_fakeSkill(ctx,bx,by,sz,pct,pulse,G.elapsed);break;
-      case'old_teeth':     drawBoss_oldTeeth(ctx,bx,by,sz,pct,pulse,G.elapsed);break;
-      case'has_treasure':  drawBoss_hasTreasure(ctx,bx,by,sz,pct,pulse,G.elapsed);break;
-      case'has_backing':   drawBoss_hasBacking(ctx,bx,by,sz,pct,pulse,G.elapsed);break;
-      case'always_eat':    drawBoss_alwaysEat(ctx,bx,by,sz,pct,pulse,G.elapsed);break;
-      case'dainty':        drawBoss_dainty(ctx,bx,by,sz,pct,pulse,G.elapsed);break;
-      case'dad_zifu':      drawBoss_dadZifu(ctx,bx,by,sz,pct,pulse,G.elapsed);break;
-      case'vlogger':       drawBoss_vlogger(ctx,bx,by,sz,pct,pulse,G.elapsed);break;
-      case'dominator':     drawBoss_dominator(ctx,bx,by,sz,pct,pulse,G.elapsed);break;
-      case'rich_armor':    drawBoss_richArmor(ctx,bx,by,sz,pct,pulse,G.elapsed);break;
-      case'tyrant':        drawBoss_tyrant(ctx,bx,by,sz,pct,pulse,G.elapsed);break;
+      case'fake_zhuji':    drawBoss_fakeZhuji(ctx,b,bx,by,sz,pct,pulse,G.elapsed);break;
+      case'fake_skill':    drawBoss_fakeSkill(ctx,b,bx,by,sz,pct,pulse,G.elapsed);break;
+      case'old_teeth':     drawBoss_oldTeeth(ctx,b,bx,by,sz,pct,pulse,G.elapsed);break;
+      case'has_treasure':  drawBoss_hasTreasure(ctx,b,bx,by,sz,pct,pulse,G.elapsed);break;
+      case'has_backing':   drawBoss_hasBacking(ctx,b,bx,by,sz,pct,pulse,G.elapsed);break;
+      case'always_eat':    drawBoss_alwaysEat(ctx,b,bx,by,sz,pct,pulse,G.elapsed);break;
+      case'dainty':        drawBoss_dainty(ctx,b,bx,by,sz,pct,pulse,G.elapsed);break;
+      case'dad_zifu':      drawBoss_dadZifu(ctx,b,bx,by,sz,pct,pulse,G.elapsed);break;
+      case'vlogger':       drawBoss_vlogger(ctx,b,bx,by,sz,pct,pulse,G.elapsed);break;
+      case'dominator':     drawBoss_dominator(ctx,b,bx,by,sz,pct,pulse,G.elapsed);break;
+      case'rich_armor':    drawBoss_richArmor(ctx,b,bx,by,sz,pct,pulse,G.elapsed);break;
+      case'tyrant':        drawBoss_tyrant(ctx,b,bx,by,sz,pct,pulse,G.elapsed);break;
       default:{ctx.save();ctx.shadowColor=b.col;ctx.shadowBlur=24;ctx.fillStyle=b.col;ctx.beginPath();ctx.arc(bx,by,sz/2,0,Math.PI*2);ctx.fill();ctx.restore();}
     }
     // 共通：阶段光环 + 血条
@@ -1935,7 +1935,7 @@ function draw(){
   }
 
   // ── Boss#1 假筑基：破旧道袍+假灵气光圈+装死闭眼 ──
-  function drawBoss_fakeZhuji(ctx,x,y,sz,pct,pulse,t){
+  function drawBoss_fakeZhuji(ctx,b,x,y,sz,pct,pulse,t){
     const col='#C97B3A',headR=sz*0.28,bodyW=sz*0.22,bodyH=sz*0.30;
     // 假灵气光圈（外扩呼吸）
     ctx.save();ctx.globalAlpha=0.18+Math.sin(t*0.06)*0.08;ctx.strokeStyle='#FFD700';ctx.lineWidth=3;ctx.shadowBlur=16;ctx.shadowColor='#FFD700';
@@ -1965,7 +1965,7 @@ function draw(){
   }
 
   // ── Boss#2 伪筑基：法术书+失败烟雾 ──
-  function drawBoss_fakeSkill(ctx,x,y,sz,pct,pulse,t){
+  function drawBoss_fakeSkill(ctx,b,x,y,sz,pct,pulse,t){
     const col='#8040A8',headR=sz*0.26,bodyW=sz*0.20,bodyH=sz*0.28;
     // 失败烟雾
     for(let i=0;i<5;i++){ctx.save();ctx.globalAlpha=0.12+0.04*i;ctx.fillStyle='#aa88ff';ctx.beginPath();ctx.arc(x+(Math.sin(t*0.05+i*1.3))*18,y-bodyH-headR-i*4,4+i*1.5,0,Math.PI*2);ctx.fill();ctx.restore();}
@@ -1984,7 +1984,7 @@ function draw(){
   }
 
   // ── Boss#3 老掉牙：白发长须+拐杖+缺牙 ──
-  function drawBoss_oldTeeth(ctx,x,y,sz,pct,pulse,t){
+  function drawBoss_oldTeeth(ctx,b,x,y,sz,pct,pulse,t){
     const col='#888870',headR=sz*0.27,bodyW=sz*0.18,bodyH=sz*0.32;
     // 身体（旧袍）
     ctx.fillStyle='#5a5a48';ctx.beginPath();ctx.ellipse(x,y+sz*0.02,bodyW,bodyH,0.02,0,Math.PI*2);ctx.fill();
@@ -2009,7 +2009,7 @@ function draw(){
   }
 
   // ── Boss#4 带法宝：华丽法袍+环绕法宝 ──
-  function drawBoss_hasTreasure(ctx,x,y,sz,pct,pulse,t){
+  function drawBoss_hasTreasure(ctx,b,x,y,sz,pct,pulse,t){
     const col='#C0901A',headR=sz*0.26,bodyW=sz*0.21,bodyH=sz*0.28;
     // 华丽法袍
     const robeGrad=ctx.createLinearGradient(x-bodyW,y,x+bodyW,y);
@@ -2030,7 +2030,7 @@ function draw(){
   }
 
   // ── Boss#5 有后台：官服+令牌 ──
-  function drawBoss_hasBacking(ctx,x,y,sz,pct,pulse,t){
+  function drawBoss_hasBacking(ctx,b,x,y,sz,pct,pulse,t){
     const col='#4060A0',headR=sz*0.27,bodyW=sz*0.22,bodyH=sz*0.30;
     // 官服
     ctx.fillStyle='#1a2850';ctx.beginPath();ctx.ellipse(x,y+sz*0.02,bodyW,bodyH,0,0,Math.PI*2);ctx.fill();
@@ -2053,7 +2053,7 @@ function draw(){
   }
 
   // ── Boss#6 吃不停：大肚子+围兜 ──
-  function drawBoss_alwaysEat(ctx,x,y,sz,pct,pulse,t){
+  function drawBoss_alwaysEat(ctx,b,x,y,sz,pct,pulse,t){
     const col='#A05828',headR=sz*0.24,bodyW=sz*0.24,bodyH=sz*0.33;
     const bellyScale=1+(1-pct)*0.35; // 血越少肚子越大
     // 大肚子
@@ -2075,7 +2075,7 @@ function draw(){
   }
 
   // ── Boss#7 娇滴滴：华丽长裙+蝴蝶结+香水 ──
-  function drawBoss_dainty(ctx,x,y,sz,pct,pulse,t){
+  function drawBoss_dainty(ctx,b,x,y,sz,pct,pulse,t){
     const col='#E060A0',headR=sz*0.25,bodyW=sz*0.18,bodyH=sz*0.28;
     // 华丽长裙（三角大裙摆）
     ctx.fillStyle='#d04080';ctx.beginPath();ctx.moveTo(x-bodyW*1.2,y+bodyH*0.2);ctx.lineTo(x,y+bodyH*1.5);ctx.lineTo(x+bodyW*1.2,y+bodyH*0.2);ctx.closePath();ctx.fill();
@@ -2102,7 +2102,7 @@ function draw(){
   }
 
   // ── Boss#8 我爸是紫府：豪华衣袍+护盾+傲慢 ──
-  function drawBoss_dadZifu(ctx,x,y,sz,pct,pulse,t){
+  function drawBoss_dadZifu(ctx,b,x,y,sz,pct,pulse,t){
     const col='#6030C0',headR=sz*0.27,bodyW=sz*0.22,bodyH=sz*0.30;
     // 豪华衣袍
     const robeGrad=ctx.createLinearGradient(x-bodyW,y,x+bodyW,y);
@@ -2125,7 +2125,7 @@ function draw(){
   }
 
   // ── Boss#9 vlogger：摄像机+现代发型+环形灯 ──
-  function drawBoss_vlogger(ctx,x,y,sz,pct,pulse,t){
+  function drawBoss_vlogger(ctx,b,x,y,sz,pct,pulse,t){
     const col='#E04020',headR=sz*0.25,bodyW=sz*0.19,bodyH=sz*0.27;
     // 环形打光灯
     ctx.save();ctx.globalAlpha=0.2+Math.sin(t*0.1)*0.1;ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.shadowBlur=14;ctx.shadowColor='#ffffff';
@@ -2147,7 +2147,7 @@ function draw(){
   }
 
   // ── Boss#10 功法霸道：卷轴+霸气光环 ──
-  function drawBoss_dominator(ctx,x,y,sz,pct,pulse,t){
+  function drawBoss_dominator(ctx,b,x,y,sz,pct,pulse,t){
     const col='#203080',headR=sz*0.28,bodyW=sz*0.22,bodyH=sz*0.31;
     // 霸气光环
     ctx.save();ctx.globalAlpha=0.12+Math.sin(t*0.05)*0.06;
@@ -2172,7 +2172,7 @@ function draw(){
   }
 
   // ── Boss#11 壕气冲天：金甲+钱袋+钻石 ──
-  function drawBoss_richArmor(ctx,x,y,sz,pct,pulse,t){
+  function drawBoss_richArmor(ctx,b,x,y,sz,pct,pulse,t){
     const col='#C8A000',headR=sz*0.26,bodyW=sz*0.22,bodyH=sz*0.29;
     // 金甲
     const goldGrad=ctx.createLinearGradient(x-bodyW,y,x+bodyW,y);
@@ -2184,7 +2184,7 @@ function draw(){
     ctx.fillStyle='#ffcc00';ctx.font='bold 7px Arial';ctx.textAlign='center';ctx.fillText('$',x+bodyW+2,y+bodyH*0.22);
     // 钻石戒指（右手闪光）
     ctx.fillStyle='#fff';ctx.shadowBlur=8;ctx.shadowColor='#aaddff';ctx.beginPath();ctx.arc(x-bodyW-3,y-bodyH*0.1,3,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
-    ctx.strokeStyle='#aaddff';ctx.lineWidth=1;ctx.strokeStyle='#c0e0ff';ctx.beginPath();ctx.arc(x-bodyW-3,y-bodyH*0.1,3,0,Math.PI*2);ctx.stroke();
+    ctx.strokeStyle='#aaddff';ctx.lineWidth=1;ctx.beginPath();ctx.arc(x-bodyW-3,y-bodyH*0.1,3,0,Math.PI*2);ctx.stroke();
     // 头部
     ctx.fillStyle=col;ctx.beginPath();ctx.arc(x,y-bodyH-headR+sz*0.04,headR,0,Math.PI*2);ctx.fill();
     // 金链项链（简化为横线）
@@ -2196,7 +2196,7 @@ function draw(){
   }
 
   // ── Boss#12 终Boss 半步紫府：紫袍+王冠+威压 ──
-  function drawBoss_tyrant(ctx,x,y,sz,pct,pulse,t){
+  function drawBoss_tyrant(ctx,b,x,y,sz,pct,pulse,t){
     const col='#802010',headR=sz*0.29,bodyW=sz*0.24,bodyH=sz*0.33;
     // 威压光环（三层）
     for(let i=0;i<3;i++){ctx.save();ctx.globalAlpha=0.08+0.03*i+Math.sin(t*0.04+i)*0.04;ctx.strokeStyle='#ff2200';ctx.lineWidth=2+i*2;ctx.shadowBlur=15+i*10;ctx.shadowColor='#ff2200';ctx.beginPath();ctx.arc(x,y,sz*0.55+i*sz*0.15+pulse*(i+1)*0.3,0,Math.PI*2);ctx.stroke();ctx.restore();}
