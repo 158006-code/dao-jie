@@ -82,13 +82,12 @@ function updateBoss(G){
   boss.x+=boss.vx;boss.y+=boss.vy;
   boss.x=Math.max(-boss.sz,Math.min(W+boss.sz,boss.x));boss.y=Math.max(-boss.sz,Math.min(H+boss.sz,boss.y));
   if(boss.update)boss.update(G,boss);
-  // Boss 100%周期性台词
+  // Boss 100%周期性台词（安全过滤）
   boss._bubTimer=(boss._bubTimer||0)+1;
-  const bubKeys=Object.keys(boss.taunts||{});
-  if(boss._bubTimer>=240&&bubKeys.length>0){
+  if(boss._bubTimer>=240&&boss.taunts){
     boss._bubTimer=0;
-    const rk=bubKeys[Math.floor(Math.random()*bubKeys.length)];
-    if(rk!=='death'&&rk!=='spawn')bossTaunt(boss,rk,G);
+    const bubKeys=Object.keys(boss.taunts).filter(function(k){return k!=='death'&&k!=='spawn'&&Array.isArray(boss.taunts[k]);});
+    if(bubKeys.length>0){const rk=bubKeys[Math.floor(Math.random()*bubKeys.length)];bossTaunt(boss,rk,G);}
   }
   const phaseDots=boss.phaseDesc||[];const currentPhase=boss._phase||0;
   document.getElementById('boss-phase-dots').textContent=phaseDots.map((p,i)=>i===currentPhase?`[${p}]`:p).join(' → ');
@@ -2257,7 +2256,7 @@ function draw(){
     if(pct<0.6){ctx.save();ctx.globalAlpha=0.12+Math.sin(t*0.04)*0.06;ctx.fillStyle='#ff2200';ctx.font='bold '+Math.round(sz*0.15)+'px Arial';ctx.textAlign='center';ctx.fillText('威压',x,y-sz*0.45);ctx.restore();}
   }
   // ── Boss（人形绘制）──
-  if(G.boss){ drawBossFigure(ctx, G.boss, G); }
+  if(G.boss){ try{ drawBossFigure(ctx, G.boss, G); }catch(e){ ctx.save();ctx.shadowColor=G.boss.col;ctx.shadowBlur=24;ctx.fillStyle=G.boss.col;ctx.beginPath();ctx.arc(G.boss.x,G.boss.y,G.boss.sz/2,0,Math.PI*2);ctx.fill();ctx.restore(); } }
 
   // 环绕武器
   G.slots.forEach(sl=>{
