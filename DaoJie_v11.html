@@ -439,6 +439,66 @@ canvas{display:block;background:#04060f;touch-action:none;width:100%;flex:1;min-
 #h-sync-disp.rage-phase-burn    { animation: rage-burn    0.8s ease-in-out infinite; }
 #h-sync-disp.rage-phase-flicker { animation: rage-flicker 0.4s linear infinite; }
 #h-sync-disp.rage-phase-shatter { animation: rage-shatter 0.25s ease-in-out infinite; }
+/* ══════ 大厅顶部信息栏 ══════ */
+#mh-main{width:100%;height:100%;display:flex;flex-direction:column;background:linear-gradient(180deg,#04060f 0%,#0a0418 35%,#040a04 100%);overflow:hidden}
+#mh-topbar{display:flex;align-items:center;justify-content:space-between;width:100%;padding:8px 10px;flex-shrink:0;background:rgba(4,6,15,0.95);border-bottom:1px solid rgba(239,159,39,0.3);gap:6px}
+#mh-player-left{display:flex;align-items:center;gap:8px;flex-shrink:0}
+#mh-avatar-wrap{position:relative;width:44px;height:44px;flex-shrink:0}
+#mh-avatar-canvas{border-radius:50%;border:2px solid #9B59B6;box-shadow:0 0 10px rgba(155,89,182,0.5)}
+#mh-lv{position:absolute;bottom:-4px;right:-4px;background:#EF9F27;color:#000;font-size:9px;font-weight:800;border-radius:10px;padding:1px 4px;border:1px solid #04060f;white-space:nowrap}
+#mh-player-info{display:flex;flex-direction:column;gap:2px}
+#mh-nickname{font-size:12px;font-weight:700;color:#E8D44D;letter-spacing:0.04em;white-space:nowrap}
+#mh-power{font-size:10px;color:#E24B4A;font-weight:600}
+#mh-currencies{display:flex;align-items:center;gap:0;flex:1;background:rgba(0,0,0,0.4);border-radius:8px;border:1px solid rgba(120,80,200,0.2);padding:4px 8px;margin:0 6px}
+.mh-currency{display:flex;flex-direction:column;align-items:center;flex:1;gap:1px}
+.mh-cur-icon{font-size:14px;line-height:1}
+.mh-cur-val{font-size:11px;font-weight:700;color:#eee}
+.mh-cur-label{font-size:8px;color:#666}
+.mh-cur-divider{width:1px;height:30px;background:rgba(120,80,200,0.25);flex-shrink:0}
+#mh-setting{background:rgba(0,0,0,0.5);border:1px solid rgba(120,80,200,0.3);border-radius:8px;color:#9B59B6;font-size:18px;width:36px;height:36px;cursor:pointer;flex-shrink:0}
+/* ══════ 关卡选择区 ══════ */
+#mh-stage-section{padding:10px 0 4px;flex-shrink:0}
+#mh-stage-wrap{position:relative;overflow:hidden;width:100%}
+#mh-stage-slider{display:flex;gap:16px;padding:4px 10vw;transition:transform 0.35s cubic-bezier(0.25,0.46,0.45,0.94);will-change:transform}
+.mh-stage-card{flex-shrink:0;width:80vw;border-radius:12px;overflow:hidden;border:1.5px solid #1a2a1a;background:#080e08;cursor:pointer;transition:transform 0.15s,border-color 0.2s;position:relative}
+.mh-stage-card:active{transform:scale(0.97)}
+.mh-stage-card.cleared{border-color:#EF9F2766;animation:mh-cleared-glow 2.5s ease-in-out infinite}
+@keyframes mh-cleared-glow{0%,100%{box-shadow:0 0 8px #EF9F2744,0 0 0 1px #EF9F2733}50%{box-shadow:0 0 24px #EF9F27aa,0 0 0 2px #EF9F2755}}
+.mh-stage-card.current{border-color:#E8D44D;animation:mh-current-pulse 1.8s ease-in-out infinite}
+@keyframes mh-current-pulse{0%,100%{box-shadow:0 0 12px #E8D44D55}50%{box-shadow:0 0 28px #E8D44Dcc}}
+.mh-stage-card.locked{filter:brightness(0.4) grayscale(0.5);pointer-events:none}
+.mh-card-scene{height:110px;position:relative;display:flex;align-items:center;justify-content:center}
+.mh-card-icon{font-size:40px;line-height:1}
+.mh-card-num{position:absolute;top:6px;left:8px;font-size:10px;font-weight:700;color:rgba(255,255,255,0.8);background:rgba(0,0,0,0.6);border-radius:4px;padding:2px 6px}
+.mh-card-type{position:absolute;top:6px;right:8px;font-size:9px;font-weight:700;background:rgba(0,0,0,0.7);border-radius:4px;padding:2px 6px;color:#E8D44D}
+.mh-cleared-badge{position:absolute;top:6px;left:50%;transform:translateX(-50%);background:rgba(29,158,117,0.9);color:#fff;font-size:9px;font-weight:700;border-radius:10px;padding:2px 8px;z-index:2;pointer-events:none}
+.mh-card-info{padding:8px 12px 10px}
+.mh-card-name{font-size:12px;font-weight:700;color:#ddd;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mh-card-drop{font-size:9px;color:#9B59B6;margin-top:2px}
+.mh-arrow{position:absolute;top:50%;transform:translateY(-50%);width:28px;height:48px;background:rgba(0,0,0,0.6);border:1px solid rgba(120,80,200,0.3);color:#9B59B6;font-size:14px;cursor:pointer;z-index:2;display:flex;align-items:center;justify-content:center}
+.mh-arrow-left{left:0;border-radius:0 8px 8px 0}
+.mh-arrow-right{right:0;border-radius:8px 0 0 8px}
+#mh-stage-dots{display:flex;justify-content:center;gap:5px;padding:6px 0 0}
+.mh-dot{width:6px;height:6px;border-radius:50%;background:#2a2a3a;transition:background 0.2s,transform 0.2s}
+.mh-dot.active{background:#EF9F27;transform:scale(1.3);box-shadow:0 0 6px #EF9F2766}
+/* ══════ 玩家形象区 ══════ */
+#mh-hero-wrap{flex:1;display:flex;align-items:flex-end;width:100%;overflow:hidden;min-height:100px}
+#home-hero-canvas{width:100%;display:block}
+/* ══════ 底部三按钮 ══════ */
+#mh-bottom-bar{display:flex;align-items:flex-end;width:100%;padding:6px 8px 10px;background:rgba(4,6,15,0.96);border-top:1px solid rgba(239,159,39,0.25);flex-shrink:0;gap:6px}
+.mh-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;border:none;cursor:pointer;border-radius:12px;gap:3px;transition:transform 0.12s;font-family:inherit}
+.mh-btn:active{transform:scale(0.94)}
+.mh-btn-icon{font-size:22px;line-height:1}
+.mh-btn-label{font-size:11px;font-weight:700;color:#ddd;letter-spacing:0.05em}
+.mh-btn-side{flex:0 0 28%;padding:10px 8px;background:rgba(15,8,25,0.9);border:1px solid rgba(155,89,182,0.4)}
+.mh-btn-battle{flex:0 0 40%;padding:14px 8px;margin-top:-12px;background:linear-gradient(135deg,#5a0000,#cc1a00);border:2px solid #E24B4A88;box-shadow:0 4px 20px rgba(226,75,74,0.4);animation:mh-battle-breath 2s ease-in-out infinite}
+@keyframes mh-battle-breath{0%,100%{box-shadow:0 4px 20px rgba(226,75,74,0.4)}50%{box-shadow:0 4px 40px rgba(226,75,74,0.8),0 0 60px rgba(226,75,74,0.2)}}
+.mh-btn-battle .mh-btn-label{font-size:16px;letter-spacing:0.15em;color:#fff}
+/* ══════ 垂钓子页顶栏 ══════ */
+#mh-fishing{display:none;position:absolute;inset:0;z-index:10;background:#04060f;flex-direction:column;align-items:center}
+#mh-fishing-topbar{position:relative;z-index:11;width:100%;display:flex;align-items:center;padding:12px 16px;background:rgba(4,6,15,0.88);border-bottom:1px solid rgba(120,80,200,0.2);flex-shrink:0}
+#mh-fishing-topbar button{background:rgba(0,0,0,0.6);border:1px solid rgba(120,80,200,0.3);border-radius:6px;color:#D4B8FF;font-size:13px;padding:5px 12px;cursor:pointer}
+#mh-fishing-title{flex:1;text-align:center;font-size:14px;font-weight:700;color:#E8D44D;text-shadow:0 0 12px #E8D44D66}
 </style>
 </head>
 <body>
@@ -564,38 +624,118 @@ canvas{display:block;background:#04060f;touch-action:none;width:100%;flex:1;min-
   <div class="ad-skip" onclick="onAdSkip()">✕ 跳过（调试用）</div>
 </div>
 
-<!-- ══ 灵河垂钓主页 ══ -->
+<!-- ══ 首页大厅 ══ -->
 <div class="home-overlay" id="home-overlay">
-  <canvas id="fishing-canvas"></canvas>
-  <div class="fish-tap-zone" id="fish-tap-zone"></div>
-  <div class="home-ui">
-    <div class="home-top">
-      <div class="home-title-block">
-        <div class="home-game-title">灵河垂钓</div>
-        <div class="home-game-sub">寻道大千 · 法宝天降</div>
+
+  <!-- ── 主大厅页面 ── -->
+  <div id="mh-main" style="width:100%;height:100%;display:flex;flex-direction:column;
+       background:linear-gradient(180deg,#04060f 0%,#0a0418 35%,#040a04 100%);overflow:hidden">
+
+    <!-- 顶部玩家信息栏 -->
+    <div id="mh-topbar">
+      <!-- 左：头像+信息 -->
+      <div id="mh-player-left">
+        <div id="mh-avatar-wrap">
+          <canvas id="mh-avatar-canvas" width="44" height="44"></canvas>
+          <div id="mh-lv">境1</div>
+        </div>
+        <div id="mh-player-info">
+          <div id="mh-nickname">初出茅庐的勇士</div>
+          <div id="mh-power">战力 0</div>
+        </div>
       </div>
-      <button class="home-char-btn" id="home-char-btn" onclick="showCharPage()">修士档案 ›<span class="char-vault-dot" id="char-vault-dot"></span></button>
-      <button class="home-char-btn" onclick="showVaultPage()" style="margin-left:8px">🏺 仓库 ›</button>
+      <!-- 中：三栏货币 -->
+      <div id="mh-currencies">
+        <div class="mh-currency">
+          <span class="mh-cur-icon">☠</span>
+          <span class="mh-cur-val" id="mh-kills">0</span>
+          <span class="mh-cur-label">击杀</span>
+        </div>
+        <div class="mh-cur-divider"></div>
+        <div class="mh-currency">
+          <span class="mh-cur-icon">🏺</span>
+          <span class="mh-cur-val" id="mh-vault">0</span>
+          <span class="mh-cur-label">法宝</span>
+        </div>
+        <div class="mh-cur-divider"></div>
+        <div class="mh-currency">
+          <span class="mh-cur-icon">⚡</span>
+          <span class="mh-cur-val" id="mh-runs">今日 0次</span>
+          <span class="mh-cur-label">渡劫</span>
+        </div>
+      </div>
+      <!-- 右：设置 -->
+      <button id="mh-setting" onclick="alert('设置开发中')">⚙</button>
     </div>
-    <div class="home-center">
+
+    <!-- 中间：关卡选择区 -->
+    <div id="mh-stage-section">
+      <div id="mh-stage-wrap">
+        <button class="mh-arrow mh-arrow-left" onclick="prevStage()">◀</button>
+        <div id="mh-stage-slider">
+          <!-- 由 renderMainHallStages() 动态生成 -->
+        </div>
+        <button class="mh-arrow mh-arrow-right" onclick="nextStage()">▶</button>
+      </div>
+      <div id="mh-stage-dots">
+        <!-- 由 renderStageDots() 动态生成 -->
+      </div>
+    </div>
+
+    <!-- 玩家形象 Canvas -->
+    <div id="mh-hero-wrap">
+      <canvas id="home-hero-canvas"></canvas>
+    </div>
+
+    <!-- 底部三按钮 -->
+    <div id="mh-bottom-bar">
+      <button class="mh-btn mh-btn-side" onclick="showCharPage()">
+        <span class="mh-btn-icon">⚔</span>
+        <span class="mh-btn-label">修士档案</span>
+      </button>
+      <button class="mh-btn mh-btn-battle" onclick="startBattle()">
+        <span class="mh-btn-icon">🔥</span>
+        <span class="mh-btn-label">渡　劫</span>
+      </button>
+      <button class="mh-btn mh-btn-side" onclick="showFishingSubpage()">
+        <span class="mh-btn-icon">🎣</span>
+        <span class="mh-btn-label">灵河垂钓</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── 垂钓子页面（默认隐藏）── -->
+  <div id="mh-fishing" style="display:none;position:absolute;inset:0;z-index:10;
+       background:#04060f;flex-direction:column;align-items:center">
+    <div id="mh-fishing-topbar">
+      <button onclick="hideFishingSubpage()">‹ 返回大厅</button>
+      <div id="mh-fishing-title">灵河垂钓 · 法宝天降</div>
+    </div>
+    <canvas id="fishing-canvas" style="position:absolute;inset:0;width:100%;height:100%"></canvas>
+    <div class="fish-tap-zone" id="fish-tap-zone"></div>
+    <div class="home-center" style="position:relative;z-index:2;width:100%;height:100%;
+         display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:30%">
       <div class="fish-hint" id="fish-hint">☝ 点击灵河，垂钓法宝</div>
     </div>
-  </div>
-  <!-- 钓起法宝弹窗 -->
-  <div class="catch-panel" id="catch-panel">
-    <div class="catch-label">🎣 钓得法宝！</div>
-    <div class="catch-card" id="catch-card">
-      <div class="catch-quality" id="catch-quality"></div>
-      <div class="catch-icon" id="catch-icon"></div>
-      <div class="catch-name" id="catch-name"></div>
-      <div class="catch-effect" id="catch-effect"></div>
-      <div class="catch-bonus" id="catch-bonus"></div>
+    <!-- 钓起法宝弹窗（保留原有完整结构）-->
+    <div class="catch-panel" id="catch-panel">
+      <div class="catch-label">🎣 钓得法宝！</div>
+      <div class="catch-card" id="catch-card">
+        <div class="catch-quality" id="catch-quality"></div>
+        <div class="catch-icon" id="catch-icon"></div>
+        <div class="catch-name" id="catch-name"></div>
+        <div class="catch-effect" id="catch-effect"></div>
+        <div class="catch-bonus" id="catch-bonus"></div>
+      </div>
+      <div class="catch-btns">
+        <button class="catch-keep-btn" id="catch-keep-btn" onclick="keepCatch()">收入囊中</button>
+        <button class="catch-skip-btn" onclick="discardCatch()">放归灵河</button>
+      </div>
     </div>
-    <div class="catch-btns">
-      <button class="catch-keep-btn" id="catch-keep-btn" onclick="keepCatch()">收入囊中</button>
-      <button class="catch-skip-btn" onclick="discardCatch()">放归灵河</button>
-    </div>
   </div>
+
+  <!-- 保留旧按钮（隐藏，updateVaultDot 需要） -->
+  <button class="home-char-btn" id="home-char-btn" onclick="showCharPage()" style="display:none">修士档案 ›<span class="char-vault-dot" id="char-vault-dot"></span></button>
 </div>
 
 <!-- ══ 角色主线页 ══ -->
@@ -1168,20 +1308,15 @@ function showIntroText(){
 function showHomePage(){
   document.getElementById('home-overlay').classList.add('show');
   document.getElementById('char-overlay').classList.remove('show');
-  initFishingCanvas();
+  // 默认显示主大厅，隐藏垂钓子页
+  const mainEl=document.getElementById('mh-main');
+  const fishEl=document.getElementById('mh-fishing');
+  if(mainEl)mainEl.style.display='flex';
+  if(fishEl)fishEl.style.display='none';
+  if(fishingAnim){cancelAnimationFrame(fishingAnim);fishingAnim=null;}
   updateVaultDot();
   if(_firstVisit){_firstVisit=false;/*showIntroText();*/}
-  // 主页显示当前进度
-  const p=getProgress();
-  const realm=REALMS[Math.min(p.realmIdx,REALMS.length-1)];
-  const stageName=realm.stageNames[Math.min(p.stageCleared||0,realm.stages-1)];
-  const aCnt=getAchievements().length;
-  document.getElementById('home-char-btn').innerHTML=`修士档案 ›<span class="char-vault-dot" id="char-vault-dot"></span><br><span style="font-size:8px;color:#665">${realm.icon} ${realm.name}·${p.stageCleared}/${realm.stages}</span><br><span style="font-size:7px;color:#EF9F27" id="achieve-count">🏆${aCnt}</span>`;
-  // 每日签到检测（暂时关闭）
-  // const ds=getDailySignin();
-  // if(ds.lastDate!==todayStr()){
-  //   setTimeout(()=>showDailySignin(),600);
-  // }
+  initMainHall();
 }
 function updateVaultDot(){
   const vault=getVault();
@@ -1794,8 +1929,16 @@ let pendingEquip=null;
 let pendingEquip2=null;
 
 function startBattle(){
+  // 追踪每日渡劫次数
+  const dk='daojie_daily_runs_'+todayStr();
+  localStorage.setItem(dk, (parseInt(localStorage.getItem(dk)||'0')+1).toString());
+  // 更新总渡劫次数（非每日）
+  const totalRuns=parseInt(localStorage.getItem('daojie_total_runs')||'0');
+  localStorage.setItem('daojie_total_runs', (totalRuns+1).toString());
+
   hideHomePage();
   closeCharPage();
+  if(_homeHeroRaf){cancelAnimationFrame(_homeHeroRaf);_homeHeroRaf=null;}
   pendingEquip=getSelectedEquipItem();
   pendingEquip2=getSelectedEquipItem2();
   // 重打关卡：临时设置进度
@@ -1805,6 +1948,318 @@ function startBattle(){
     _replayStageId=null;
   }
   initGame();
+}
+
+// ══════ 首页大厅系统 ══════
+
+function initMainHall(){
+  const p=getProgress();
+  const ri=Math.min(p.realmIdx, REALMS.length-1);
+  const realm=REALMS[ri];
+
+  // 更新顶部信息
+  const totalKills=parseInt(localStorage.getItem('daojie_total_kills')||'0');
+  const vaultCount=getVault().length;
+  const nickname=localStorage.getItem('daojie_nickname')||'初出茅庐的勇士';
+  const power=ri*1000+(p.totalWins||0)*200;
+  const dailyRunsKey='daojie_daily_runs_'+todayStr();
+  const dailyRuns=parseInt(localStorage.getItem(dailyRunsKey)||'0');
+
+  const lvEl=document.getElementById('mh-lv');
+  const nickEl=document.getElementById('mh-nickname');
+  const powEl=document.getElementById('mh-power');
+  if(lvEl)lvEl.textContent='境'+(ri+1);
+  if(nickEl)nickEl.textContent=nickname;
+  if(powEl)powEl.textContent='战力 '+power.toLocaleString();
+
+  const killsEl=document.getElementById('mh-kills');
+  const vaultEl=document.getElementById('mh-vault');
+  const runsEl=document.getElementById('mh-runs');
+  if(killsEl)killsEl.textContent=totalKills.toLocaleString();
+  if(vaultEl)vaultEl.textContent=vaultCount;
+  if(runsEl)runsEl.textContent='今日 '+dailyRuns+'次';
+
+  // 画头像
+  drawHomeAvatar();
+
+  // 渲染关卡滑动列表
+  renderMainHallStages(p);
+  // 启动英雄动画
+  startHomeHeroAnim();
+}
+
+function drawHomeAvatar(){
+  const cv=document.getElementById('mh-avatar-canvas');
+  if(!cv)return;
+  const ctx=cv.getContext('2d');
+  ctx.clearRect(0,0,cv.width,cv.height);
+  const cx=cv.width/2,cy=cv.height/2;
+  // 底色
+  ctx.fillStyle='#1a0a2e';
+  ctx.beginPath();ctx.arc(cx,cy,22,0,Math.PI*2);ctx.fill();
+  // 脸
+  ctx.fillStyle='#F4C786';
+  ctx.beginPath();ctx.arc(cx,cy+2,13,0,Math.PI*2);ctx.fill();
+  // 头发
+  ctx.fillStyle='#2c2c3e';
+  ctx.beginPath();ctx.arc(cx,cy-4,13,Math.PI,0);ctx.fill();
+  ctx.fillRect(cx-2,cy-18,4,8);
+  // 怒眼
+  ctx.fillStyle='#fff';
+  ctx.beginPath();ctx.arc(cx-4,cy,3,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.arc(cx+4,cy,3,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#cc2200';ctx.shadowColor='#ff0000';ctx.shadowBlur=3;
+  ctx.beginPath();ctx.arc(cx-4,cy,1.5,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.arc(cx+4,cy,1.5,0,Math.PI*2);ctx.fill();
+  ctx.shadowBlur=0;
+  // 怒眉
+  ctx.strokeStyle='#3a1a1a';ctx.lineWidth=1.8;
+  ctx.beginPath();ctx.moveTo(cx-8,cy-6);ctx.lineTo(cx-3,cy-3);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(cx+8,cy-6);ctx.lineTo(cx+3,cy-3);ctx.stroke();
+}
+
+let _currentStageIdx=0;
+
+function renderMainHallStages(p){
+  const slider=document.getElementById('mh-stage-slider');
+  if(!slider)return;
+  const currentRealm=Math.min(p.realmIdx, REALMS.length-1);
+  const GRADIENTS=[
+    'linear-gradient(135deg,#1a1a2e,#4a1942)',
+    'linear-gradient(135deg,#0f3460,#16213e)',
+    'linear-gradient(135deg,#2d5016,#1a3a10)',
+    'linear-gradient(135deg,#3d2b1f,#5c3d1e)',
+    'linear-gradient(135deg,#1a0a2e,#3d1a5c)',
+    'linear-gradient(135deg,#2e1a00,#5c3300)',
+    'linear-gradient(135deg,#1a0a1a,#4a0a4a)',
+    'linear-gradient(135deg,#1a1a00,#3d3d00)',
+    'linear-gradient(135deg,#0a1a2e,#1a3a5c)',
+    'linear-gradient(135deg,#2e0000,#5c0000)',
+  ];
+  const TYPE_LABEL={normal:'普通',elite:'精英',boss:'👑Boss',special:'✨特殊'};
+  const DROP_TEXT={normal:'凡/灵品掉落',elite:'玄品概率',boss:'地品保底',special:'天品概率'};
+
+  slider.innerHTML=STAGE_MAP.map((node, i)=>{
+    const realm=REALMS[node.realm];
+    let status='locked';
+    if(node.realm<currentRealm)status='cleared';
+    else if(node.realm===currentRealm)status='current';
+    const clearedBadge=status==='cleared'?'<div class="mh-cleared-badge">✓ 已通关</div>':'';
+    return '<div class="mh-stage-card '+status+'" onclick="selectHomeStage('+i+')">'+
+      clearedBadge+
+      '<div class="mh-card-scene" style="background:'+GRADIENTS[node.realm]+'">'+
+      '<div class="mh-card-icon">'+realm.icon+'</div>'+
+      '<div class="mh-card-num">第'+(i+1)+'关</div>'+
+      '<div class="mh-card-type">'+TYPE_LABEL[node.type]+'</div>'+
+      '</div>'+
+      '<div class="mh-card-info">'+
+      '<div class="mh-card-name">'+realm.name+'</div>'+
+      '<div class="mh-card-drop">'+DROP_TEXT[node.type]+'</div>'+
+      '</div></div>';
+  }).join('');
+
+  // 默认滚动到当前关
+  _currentStageIdx=currentRealm;
+  setTimeout(()=>scrollToStageCard(_currentStageIdx),50);
+  renderStageDots(_currentStageIdx);
+}
+
+function scrollToStageCard(idx){
+  _currentStageIdx=Math.max(0, Math.min(idx, STAGE_MAP.length-1));
+  const slider=document.getElementById('mh-stage-slider');
+  if(!slider)return;
+  const cardEl=slider.querySelector('.mh-stage-card');
+  const cardW=cardEl?cardEl.offsetWidth:window.innerWidth*0.8;
+  const gap=16;
+  const offset=_currentStageIdx*(cardW+gap)-(window.innerWidth-cardW)/2;
+  slider.style.transform='translateX('+Math.round(-Math.max(0,offset))+'px)';
+  renderStageDots(_currentStageIdx);
+}
+
+function renderStageDots(activeIdx){
+  const dots=document.getElementById('mh-stage-dots');
+  if(!dots)return;
+  dots.innerHTML=STAGE_MAP.map(function(_, i){
+    return '<span class="mh-dot'+(i===activeIdx?' active':'')+'"></span>';
+  }).join('');
+}
+
+function selectHomeStage(idx){scrollToStageCard(idx);}
+function prevStage(){scrollToStageCard(_currentStageIdx-1);}
+function nextStage(){scrollToStageCard(_currentStageIdx+1);}
+
+// ── 触摸滑动支持 ──
+(function initStageTouchSlide(){
+  setTimeout(function(){
+    const wrap=document.getElementById('mh-stage-wrap');
+    if(!wrap)return;
+    let startX=0;
+    wrap.addEventListener('touchstart',function(e){startX=e.touches[0].clientX;},{passive:true});
+    wrap.addEventListener('touchend',function(e){
+      var dx=e.changedTouches[0].clientX-startX;
+      if(Math.abs(dx)>45)dx<0?nextStage():prevStage();
+    },{passive:true});
+  },200);
+})();
+
+// ── 主页英雄动画 ──
+let _homeHeroRaf=null;
+let _homeHeroT=0;
+let _homeAnimState=0;
+let _homeAnimTimer=0;
+const HOME_STATE_DURATION=200;
+
+function startHomeHeroAnim(){
+  const cv=document.getElementById('home-hero-canvas');
+  if(!cv)return;
+  cv.width=window.innerWidth;
+  cv.height=130;
+  if(_homeHeroRaf)cancelAnimationFrame(_homeHeroRaf);
+  _homeHeroT=0;_homeAnimState=0;_homeAnimTimer=0;
+  const ctx=cv.getContext('2d');
+
+  function drawHomeHero(){
+    _homeHeroT++;
+    _homeAnimTimer++;
+    if(_homeAnimTimer>=HOME_STATE_DURATION+Math.random()*120){
+      _homeAnimState=1-_homeAnimState;
+      _homeAnimTimer=0;
+    }
+    ctx.clearRect(0,0,cv.width,cv.height);
+    const cx=cv.width/2;
+    const baseY=95;
+    let yOff=0;
+
+    if(_homeAnimState===0){
+      yOff=Math.sin(_homeHeroT*0.04)*2;
+    } else {
+      yOff=-Math.abs(Math.sin(_homeHeroT*0.07))*38;
+    }
+    const cy=baseY+yOff;
+
+    // 脚下阴影
+    const shadowScale=_homeAnimState===1?Math.max(0.3,1-Math.abs(yOff)/38):1;
+    ctx.save();
+    ctx.globalAlpha=0.25*shadowScale;
+    ctx.fillStyle='#000';
+    ctx.beginPath();
+    ctx.ellipse(cx,baseY+4,18*shadowScale,5*shadowScale,0,0,Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+
+    // 身体（紫色长袍）
+    ctx.fillStyle='#5B2C8D';
+    ctx.beginPath();
+    ctx.roundRect(cx-14,cy-44,28,40,4);
+    ctx.fill();
+
+    // 腰带
+    ctx.fillStyle='#EF9F27';
+    ctx.fillRect(cx-14,cy-16,28,6);
+
+    // 头部
+    ctx.fillStyle='#F4C786';
+    ctx.beginPath();
+    ctx.arc(cx,cy-58,16,0,Math.PI*2);
+    ctx.fill();
+
+    // 头盔
+    ctx.fillStyle='#2c2c3e';
+    ctx.beginPath();
+    ctx.arc(cx,cy-58,16,Math.PI,0);
+    ctx.fill();
+    ctx.fillStyle='#9B59B6';
+    ctx.fillRect(cx-2,cy-78,4,12);
+
+    // 眼睛
+    ctx.fillStyle='#fff';
+    ctx.beginPath();ctx.arc(cx-5,cy-57,3,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(cx+5,cy-57,3,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#cc2200';
+    ctx.shadowColor='#ff0000';ctx.shadowBlur=6;
+    ctx.beginPath();ctx.arc(cx-5,cy-57,1.5,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(cx+5,cy-57,1.5,0,Math.PI*2);ctx.fill();
+    ctx.shadowBlur=0;
+
+    // 眉毛
+    ctx.strokeStyle='#3a1a1a';
+    ctx.lineWidth=2.5;
+    if(_homeAnimState===0){
+      ctx.beginPath();ctx.moveTo(cx-10,cy-66);ctx.lineTo(cx-4,cy-63);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(cx+10,cy-66);ctx.lineTo(cx+4,cy-63);ctx.stroke();
+    } else {
+      const brow=Math.sin(_homeHeroT*0.15)*1.5;
+      ctx.beginPath();ctx.moveTo(cx-10,cy-67+brow);ctx.lineTo(cx-4,cy-63);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(cx+10,cy-67+brow);ctx.lineTo(cx+4,cy-63);ctx.stroke();
+    }
+
+    // 武器
+    ctx.save();
+    if(_homeAnimState===1){
+      const weaponAngle=Math.sin(_homeHeroT*0.12)*0.6-0.5;
+      ctx.translate(cx+12,cy-30);
+      ctx.rotate(weaponAngle);
+      ctx.strokeStyle='#8B6914';
+      ctx.lineWidth=4;
+      ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(0,-55);ctx.stroke();
+      ctx.fillStyle='#C0C0C0';
+      ctx.beginPath();ctx.moveTo(-5,-55);ctx.lineTo(5,-55);ctx.lineTo(0,-70);ctx.fill();
+    } else {
+      ctx.strokeStyle='#8B6914';
+      ctx.lineWidth=3;
+      ctx.beginPath();
+      ctx.moveTo(cx+14,cy-35);
+      ctx.lineTo(cx+50,cy-80+Math.sin(_homeHeroT*0.04)*2);
+      ctx.stroke();
+      ctx.fillStyle='#C0C0C0';
+      ctx.beginPath();
+      ctx.moveTo(cx+44,cy-85+Math.sin(_homeHeroT*0.04)*2);
+      ctx.lineTo(cx+57,cy-77+Math.sin(_homeHeroT*0.04)*2);
+      ctx.lineTo(cx+50,cy-90+Math.sin(_homeHeroT*0.04)*2);
+      ctx.fill();
+    }
+    ctx.restore();
+
+    // 落地涟漪
+    if(_homeAnimState===1&&Math.abs(yOff)<5&&_homeAnimTimer>10){
+      ctx.save();
+      ctx.globalAlpha=0.4;
+      ctx.strokeStyle='#9B59B6';
+      ctx.lineWidth=1.5;
+      ctx.beginPath();
+      ctx.ellipse(cx,baseY+4,22,6,0,0,Math.PI*2);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // 头顶漂浮粒子
+    if(_homeHeroT%8===0){
+      ctx.save();
+      ctx.globalAlpha=0.5;
+      ctx.fillStyle=Math.random()<0.5?'#9B59B6':'#E8D44D';
+      const px=cx+(Math.random()-0.5)*20;
+      const py=cy-72-Math.random()*10;
+      ctx.shadowBlur=8;ctx.shadowColor=ctx.fillStyle;
+      ctx.beginPath();ctx.arc(px,py,2,0,Math.PI*2);ctx.fill();
+      ctx.restore();
+    }
+
+    _homeHeroRaf=requestAnimationFrame(drawHomeHero);
+  }
+  drawHomeHero();
+}
+
+// ── 垂钓子页面切换 ──
+function showFishingSubpage(){
+  document.getElementById('mh-main').style.display='none';
+  document.getElementById('mh-fishing').style.display='flex';
+  initFishingCanvas();
+}
+
+function hideFishingSubpage(){
+  document.getElementById('mh-fishing').style.display='none';
+  document.getElementById('mh-main').style.display='flex';
+  if(fishingAnim){cancelAnimationFrame(fishingAnim);fishingAnim=null;}
 }
 
 // 页面加载入口
