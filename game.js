@@ -82,6 +82,14 @@ function updateBoss(G){
   boss.x+=boss.vx;boss.y+=boss.vy;
   boss.x=Math.max(-boss.sz,Math.min(W+boss.sz,boss.x));boss.y=Math.max(-boss.sz,Math.min(H+boss.sz,boss.y));
   if(boss.update)boss.update(G,boss);
+  // Boss 100%周期性台词
+  boss._bubTimer=(boss._bubTimer||0)+1;
+  const bubKeys=Object.keys(boss.taunts||{});
+  if(boss._bubTimer>=240&&bubKeys.length>0){
+    boss._bubTimer=0;
+    const rk=bubKeys[Math.floor(Math.random()*bubKeys.length)];
+    if(rk!=='death'&&rk!=='spawn')bossTaunt(boss,rk,G);
+  }
   const phaseDots=boss.phaseDesc||[];const currentPhase=boss._phase||0;
   document.getElementById('boss-phase-dots').textContent=phaseDots.map((p,i)=>i===currentPhase?`[${p}]`:p).join(' → ');
   const bd=Math.hypot(G.mx-boss.x,G.my-boss.y);
@@ -1903,12 +1911,22 @@ function draw(){
   }
 
   // ══════ Boss 人形绘制系统 ══════
+  // 通用Boss面部细节（鼻+嘴）
+  function _bossFace(ctx,x,y,hR,expr){
+    // 鼻
+    ctx.fillStyle='rgba(0,0,0,0.25)';ctx.beginPath();ctx.arc(x,y-hR*0.05,hR*0.12,0,Math.PI*2);ctx.fill();
+    // 嘴
+    ctx.strokeStyle='rgba(0,0,0,0.5)';ctx.lineWidth=hR*0.1;
+    if(expr==='angry'){ctx.beginPath();ctx.moveTo(x-hR*0.25,y+hR*0.35);ctx.lineTo(x+hR*0.25,y+hR*0.3);ctx.stroke();}
+    else if(expr==='smirk'){ctx.beginPath();ctx.moveTo(x-hR*0.2,y+hR*0.3);ctx.lineTo(x+hR*0.25,y+hR*0.35);ctx.stroke();}
+    else{ctx.beginPath();ctx.moveTo(x-hR*0.15,y+hR*0.3);ctx.lineTo(x+hR*0.15,y+hR*0.3);ctx.stroke();}
+  }
   function drawBossFigure(ctx, b, G){
     const sz=b.sz, pct=b.hp/b.maxhp, pulse=Math.sin(G.elapsed*0.1)*2;
     const bx=b.x, by=b.y;
-    // 脚下阴影
-    ctx.save();ctx.fillStyle='rgba(0,0,0,0.45)';
-    ctx.beginPath();ctx.ellipse(bx,by+sz*0.45,sz*0.55,sz*0.18,0,0,Math.PI*2);ctx.fill();ctx.restore();
+    // 脚下阴影（加深+更大）
+    ctx.save();ctx.fillStyle='rgba(0,0,0,0.55)';
+    ctx.beginPath();ctx.ellipse(bx,by+sz*0.42,sz*0.60,sz*0.22,0,0,Math.PI*2);ctx.fill();ctx.restore();
     // 派发
     switch(b.key){
       case'fake_zhuji':    drawBoss_fakeZhuji(ctx,b,bx,by,sz,pct,pulse,G.elapsed);break;
@@ -1937,30 +1955,34 @@ function draw(){
   // ── Boss#1 假筑基：破旧道袍+假灵气光圈+装死闭眼 ──
   function drawBoss_fakeZhuji(ctx,b,x,y,sz,pct,pulse,t){
     const col='#C97B3A',headR=sz*0.28,bodyW=sz*0.22,bodyH=sz*0.30;
-    // 假灵气光圈（外扩呼吸）
-    ctx.save();ctx.globalAlpha=0.18+Math.sin(t*0.06)*0.08;ctx.strokeStyle='#FFD700';ctx.lineWidth=3;ctx.shadowBlur=16;ctx.shadowColor='#FFD700';
-    ctx.beginPath();ctx.arc(x,y,sz*0.55+pulse,0,Math.PI*2);ctx.stroke();ctx.restore();
-    // 身体（破袍）
+    const headY=y-bodyH-headR+sz*0.04;
+    // 假灵气光圈（三层外扩呼吸）
+    for(let i=0;i<3;i++){ctx.save();ctx.globalAlpha=(0.06+0.04*i)+Math.sin(t*0.06+i)*0.03;ctx.strokeStyle='#FFD700';ctx.lineWidth=1.5+i;ctx.shadowBlur=8+i*6;ctx.shadowColor='#FFD700';ctx.beginPath();ctx.arc(x,y,sz*0.5+i*sz*0.08+pulse*(i+1)*0.3,0,Math.PI*2);ctx.stroke();ctx.restore();}
+    // 身体（破袍+腰带）
     ctx.fillStyle='#5a3a1a';ctx.shadowBlur=0;
     ctx.beginPath();ctx.ellipse(x,y+sz*0.02,bodyW,bodyH,0.05,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle='#4a2a10';ctx.beginPath();ctx.ellipse(x-3,y+sz*0.06,bodyW*0.4,bodyH*0.55,-0.1,0,Math.PI*2);ctx.fill(); // 补丁
+    ctx.fillStyle='#3a1a0a';ctx.fillRect(x-bodyW*0.9,y-bodyH*0.15,bodyW*1.8,bodyH*0.18); // 腰带
+    ctx.fillStyle='#4a2a10';ctx.beginPath();ctx.ellipse(x-bodyW*0.3,y+sz*0.06,bodyW*0.4,bodyH*0.55,-0.1,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.ellipse(x+bodyW*0.3,y-sz*0.04,bodyW*0.35,bodyH*0.45,0.1,0,Math.PI*2);ctx.fill();
     // 头部
-    ctx.fillStyle=col;ctx.beginPath();ctx.arc(x,y-bodyH-headR+sz*0.04,headR,0,Math.PI*2);ctx.fill();
-    // 假筑基光环（头顶）
-    ctx.strokeStyle='rgba(255,200,50,0.4)';ctx.lineWidth=2;ctx.setLineDash([3,4]);
-    ctx.beginPath();ctx.arc(x,y-bodyH-headR+sz*0.04,headR+6,0.2,Math.PI-0.2);ctx.stroke();ctx.setLineDash([]);
-    // 眼睛（装死时闭眼×）
+    ctx.fillStyle=col;ctx.beginPath();ctx.arc(x,headY,headR,0,Math.PI*2);ctx.fill();
+    // 假筑基光环（头顶虚线弧）
+    ctx.strokeStyle='rgba(255,200,50,0.5)';ctx.lineWidth=2.5;ctx.setLineDash([4,5]);
+    ctx.beginPath();ctx.arc(x,headY,headR+8,0.15,Math.PI-0.15);ctx.stroke();ctx.setLineDash([]);
+    // 面部细节
+    _bossFace(ctx,x,headY,headR,'angry');
+    // 眼睛
     ctx.fillStyle='#fff';
-    ctx.beginPath();ctx.arc(x-headR*0.35,y-bodyH-headR+sz*0.02,headR*0.28,0,Math.PI*2);ctx.fill();
-    ctx.beginPath();ctx.arc(x+headR*0.35,y-bodyH-headR+sz*0.02,headR*0.28,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(x-headR*0.35,headY+sz*0.02,headR*0.28,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(x+headR*0.35,headY+sz*0.02,headR*0.28,0,Math.PI*2);ctx.fill();
     if(pct<0.05){ // 假死闭眼×
-      ctx.strokeStyle='#111';ctx.lineWidth=2;
-      ctx.beginPath();ctx.moveTo(x-headR*0.5,y-bodyH-headR+sz*0.02-headR*0.15);ctx.lineTo(x-headR*0.2,y-bodyH-headR+sz*0.02+headR*0.15);ctx.stroke();
-      ctx.beginPath();ctx.moveTo(x+headR*0.5,y-bodyH-headR+sz*0.02-headR*0.15);ctx.lineTo(x+headR*0.2,y-bodyH-headR+sz*0.02+headR*0.15);ctx.stroke();
+      ctx.strokeStyle='#111';ctx.lineWidth=2.5;
+      ctx.beginPath();ctx.moveTo(x-headR*0.5,headY-headR*0.15);ctx.lineTo(x-headR*0.2,headY+headR*0.15);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(x+headR*0.5,headY-headR*0.15);ctx.lineTo(x+headR*0.2,headY+headR*0.15);ctx.stroke();
     } else {
-      ctx.fillStyle='#440000';ctx.shadowBlur=4;ctx.shadowColor='#ff4400';
-      ctx.beginPath();ctx.arc(x-headR*0.35,y-bodyH-headR+sz*0.02,headR*0.14,0,Math.PI*2);ctx.fill();
-      ctx.beginPath();ctx.arc(x+headR*0.35,y-bodyH-headR+sz*0.02,headR*0.14,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
+      ctx.fillStyle='#440000';ctx.shadowBlur=6;ctx.shadowColor='#ff4400';
+      ctx.beginPath();ctx.arc(x-headR*0.35,headY,headR*0.14,0,Math.PI*2);ctx.fill();
+      ctx.beginPath();ctx.arc(x+headR*0.35,headY,headR*0.14,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
     }
   }
 
@@ -2061,8 +2083,8 @@ function draw(){
     // 围兜
     ctx.fillStyle='#fff';ctx.beginPath();ctx.ellipse(x,y+sz*0.02,bodyW*0.7*bellyScale,bodyH*0.5*bellyScale,0,0,Math.PI*2);ctx.fill();
     ctx.fillStyle='#e0c0a0';ctx.font='bold 8px Arial';ctx.textAlign='center';ctx.fillText('吃',x,y+sz*0.04);
-    // 食物残渣粒子
-    for(let i=0;i<3;i++){ctx.fillStyle=['#ffcc00','#ff8844','#88cc44'][i];ctx.beginPath();ctx.arc(x+(Math.sin(t*0.07+i*2))*bodyW,y-bodyH*0.2+i*4,3,0,Math.PI*2);ctx.fill();}
+    // 食物残渣粒子（增强）
+    for(let i=0;i<5;i++){ctx.fillStyle=['#ffcc00','#ff8844','#88cc44','#ff6644','#ffaa22'][i];ctx.shadowBlur=4;ctx.shadowColor=ctx.fillStyle;ctx.beginPath();ctx.arc(x+(Math.sin(t*0.07+i*2))*bodyW*1.2,y-bodyH*0.2+i*5,3+Math.random()*2,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;}
     // 头部
     ctx.fillStyle=col;ctx.beginPath();ctx.arc(x,y-bodyH*bellyScale-headR+sz*0.04,headR,0,Math.PI*2);ctx.fill();
     // 大嘴
@@ -2072,6 +2094,7 @@ function draw(){
     ctx.beginPath();ctx.arc(x+headR*0.35,y-bodyH*bellyScale-headR+0,headR*0.2,0,Math.PI*2);ctx.fill();
     ctx.fillStyle='#111';ctx.beginPath();ctx.arc(x-headR*0.35,y-bodyH*bellyScale-headR+0,headR*0.1,0,Math.PI*2);ctx.fill();
     ctx.beginPath();ctx.arc(x+headR*0.35,y-bodyH*bellyScale-headR+0,headR*0.1,0,Math.PI*2);ctx.fill();
+    _bossFace(ctx,x,y-bodyH*bellyScale-headR+sz*0.04,headR,'smirk');
   }
 
   // ── Boss#7 娇滴滴：华丽长裙+蝴蝶结+香水 ──
@@ -2166,9 +2189,13 @@ function draw(){
     // 发光眼（功法运转）
     ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(x-4,y-bodyH-headR+sz*0.02,headR*0.26,0,Math.PI*2);ctx.fill();
     ctx.beginPath();ctx.arc(x+4,y-bodyH-headR+sz*0.02,headR*0.26,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle='#4488ff';ctx.shadowBlur=10;ctx.shadowColor='#4488ff';
-    ctx.beginPath();ctx.arc(x-4,y-bodyH-headR+sz*0.02,headR*0.13,0,Math.PI*2);ctx.fill();
-    ctx.beginPath();ctx.arc(x+4,y-bodyH-headR+sz*0.02,headR*0.13,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
+    const dHeadY=y-bodyH-headR+sz*0.04;
+    ctx.fillStyle='#4488ff';ctx.shadowBlur=12;ctx.shadowColor='#4488ff';
+    ctx.beginPath();ctx.arc(x-4,dHeadY,headR*0.13,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(x+4,dHeadY,headR*0.13,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
+    _bossFace(ctx,x,dHeadY,headR,'angry');
+    // 功法运转文字
+    ctx.save();ctx.globalAlpha=0.15+Math.sin(t*0.05)*0.08;ctx.fillStyle='#4488ff';ctx.font='bold '+Math.round(sz*0.12)+'px Arial';ctx.textAlign='center';ctx.fillText('霸',x,y-sz*0.4);ctx.restore();
   }
 
   // ── Boss#11 壕气冲天：金甲+钱袋+钻石 ──
@@ -2189,8 +2216,10 @@ function draw(){
     ctx.fillStyle=col;ctx.beginPath();ctx.arc(x,y-bodyH-headR+sz*0.04,headR,0,Math.PI*2);ctx.fill();
     // 金链项链（简化为横线）
     ctx.strokeStyle='#ffcc00';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x-headR,y-bodyH-headR-headR*0.3+sz*0.04);ctx.lineTo(x+headR,y-bodyH-headR-headR*0.3+sz*0.04);ctx.stroke();
-    // 墨镜
-    ctx.fillStyle='#000';ctx.fillRect(x-headR*0.7,y-bodyH-headR-headR*0.15+sz*0.02,headR*1.4,headR*0.3);
+    // 墨镜+嘴角
+    const rHeadY=y-bodyH-headR+sz*0.04;
+    ctx.fillStyle='#000';ctx.fillRect(x-headR*0.7,rHeadY-headR*0.15,headR*1.4,headR*0.3);
+    _bossFace(ctx,x,rHeadY,headR,'smirk');
     // 金币粒子
     for(let i=0;i<4;i++){ctx.fillStyle='#ffcc00';ctx.beginPath();ctx.arc(x+(Math.sin(t*0.06+i*1.5))*bodyW*1.1,y-bodyH*0.3+i*6,2,0,Math.PI*2);ctx.fill();}
   }
@@ -2212,15 +2241,20 @@ function draw(){
     ctx.fillStyle='#E8D44D';ctx.beginPath();ctx.moveTo(x-headR+2,y-bodyH-headR-headR*0.3+sz*0.04);ctx.lineTo(x-headR+2,y-bodyH-headR+headR*0.1+sz*0.04);ctx.lineTo(x+headR-2,y-bodyH-headR+headR*0.1+sz*0.04);ctx.lineTo(x+headR-2,y-bodyH-headR-headR*0.3+sz*0.04);ctx.closePath();ctx.fill();
     for(let i=-1;i<=1;i++){ctx.fillStyle='#ff4422';ctx.beginPath();ctx.arc(x+i*headR*0.3,y-bodyH-headR-headR*0.6+sz*0.04,headR*0.15,0,Math.PI*2);ctx.fill();} // 王冠宝石
     // 愤怒红眼+发光
-    ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(x-headR*0.35,y-bodyH-headR+sz*0.02,headR*0.28,0,Math.PI*2);ctx.fill();
-    ctx.beginPath();ctx.arc(x+headR*0.35,y-bodyH-headR+sz*0.02,headR*0.28,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle='#ff2200';ctx.shadowBlur=12;ctx.shadowColor='#ff0000';
-    ctx.beginPath();ctx.arc(x-headR*0.35,y-bodyH-headR+sz*0.02,headR*0.15,0,Math.PI*2);ctx.fill();
-    ctx.beginPath();ctx.arc(x+headR*0.35,y-bodyH-headR+sz*0.02,headR*0.15,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
+    const tHeadY=y-bodyH-headR+sz*0.04;
+    ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(x-headR*0.35,tHeadY,headR*0.28,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(x+headR*0.35,tHeadY,headR*0.28,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#ff2200';ctx.shadowBlur=14;ctx.shadowColor='#ff0000';
+    ctx.beginPath();ctx.arc(x-headR*0.35,tHeadY,headR*0.15,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(x+headR*0.35,tHeadY,headR*0.15,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
+    // 面部
+    _bossFace(ctx,x,tHeadY,headR,'angry');
     // 愤怒倒眉
-    ctx.strokeStyle='#ff2200';ctx.lineWidth=3;ctx.shadowBlur=6;ctx.shadowColor='#ff2200';
-    ctx.beginPath();ctx.moveTo(x-headR*0.8,y-bodyH-headR-headR*0.2+sz*0.02);ctx.lineTo(x-headR*0.2,y-bodyH-headR+sz*0.02);ctx.stroke();
-    ctx.beginPath();ctx.moveTo(x+headR*0.8,y-bodyH-headR-headR*0.2+sz*0.02);ctx.lineTo(x+headR*0.2,y-bodyH-headR+sz*0.02);ctx.stroke();ctx.shadowBlur=0;
+    ctx.strokeStyle='#ff2200';ctx.lineWidth=3.5;ctx.shadowBlur=8;ctx.shadowColor='#ff2200';
+    ctx.beginPath();ctx.moveTo(x-headR*0.8,tHeadY-headR*0.2);ctx.lineTo(x-headR*0.2,tHeadY);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(x+headR*0.8,tHeadY-headR*0.2);ctx.lineTo(x+headR*0.2,tHeadY);ctx.stroke();ctx.shadowBlur=0;
+    // 威压文字
+    if(pct<0.6){ctx.save();ctx.globalAlpha=0.12+Math.sin(t*0.04)*0.06;ctx.fillStyle='#ff2200';ctx.font='bold '+Math.round(sz*0.15)+'px Arial';ctx.textAlign='center';ctx.fillText('威压',x,y-sz*0.45);ctx.restore();}
   }
   // ── Boss（人形绘制）──
   if(G.boss){ drawBossFigure(ctx, G.boss, G); }
