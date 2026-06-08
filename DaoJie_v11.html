@@ -1941,7 +1941,16 @@ function startBattle(){
   if(_homeHeroRaf){cancelAnimationFrame(_homeHeroRaf);_homeHeroRaf=null;}
   pendingEquip=getSelectedEquipItem();
   pendingEquip2=getSelectedEquipItem2();
-  // 重打关卡：临时设置进度
+  // 关卡选择联动：若选中关卡与当前进度不同，设为重打
+  if(_selectedStageNode){
+    const p=getProgress();
+    const curRealm=Math.min(p.realmIdx, REALMS.length-1);
+    const curStage=p.stageCleared||0;
+    if(_selectedStageNode.realm!==curRealm||_selectedStageNode.stage!==curStage){
+      _pendingReplayProgress={realmIdx:_selectedStageNode.realm,stageCleared:_selectedStageNode.stage};
+    }
+  }
+  // 重打关卡：临时设置进度（修士档案重打入口）
   if(_replayStageId){
     const node=STAGE_MAP.find(s=>s.id===_replayStageId);
     if(node){_pendingReplayProgress={realmIdx:node.realm,stageCleared:node.stage};}
@@ -2023,7 +2032,7 @@ let _currentStageIdx=0;
 function renderMainHallStages(p){
   const slider=document.getElementById('mh-stage-slider');
   if(!slider)return;
-  const currentRealm=Math.min(p.realmIdx, REALMS.length-1);
+  const currentRealm=p.realmIdx, currentStage=p.stageCleared||0;
   const GRADIENTS=[
     'linear-gradient(135deg,#1a1a2e,#4a1942)',
     'linear-gradient(135deg,#0f3460,#16213e)',
@@ -2042,8 +2051,8 @@ function renderMainHallStages(p){
   slider.innerHTML=STAGE_MAP.map((node, i)=>{
     const realm=REALMS[node.realm];
     let status='locked';
-    if(node.realm<currentRealm)status='cleared';
-    else if(node.realm===currentRealm)status='current';
+    if(node.realm<currentRealm||(node.realm===currentRealm&&node.stage<currentStage))status='cleared';
+    else if(node.realm===currentRealm&&node.stage===currentStage)status='current';
     const clearedBadge=status==='cleared'?'<div class="mh-cleared-badge">✓ 已通关</div>':'';
     return '<div class="mh-stage-card '+status+'" onclick="selectHomeStage('+i+')">'+
       clearedBadge+
@@ -2058,14 +2067,19 @@ function renderMainHallStages(p){
       '</div></div>';
   }).join('');
 
-  // 默认滚动到当前关
-  _currentStageIdx=currentRealm;
-  setTimeout(()=>scrollToStageCard(_currentStageIdx),50);
+  // 默认滚动到当前关（查找第一个 current 的下标）
+  const currentIdx=STAGE_MAP.findIndex(function(n){return n.realm===currentRealm&&n.stage===currentStage;});
+  _currentStageIdx=currentIdx>=0?currentIdx:Math.min(currentRealm, STAGE_MAP.length-1);
+  setTimeout(function(){scrollToStageCard(_currentStageIdx);},50);
   renderStageDots(_currentStageIdx);
 }
 
+let _selectedStageNode=null;
+
 function scrollToStageCard(idx){
   _currentStageIdx=Math.max(0, Math.min(idx, STAGE_MAP.length-1));
+  // 将选中关卡记录为待战关卡
+  _selectedStageNode=STAGE_MAP[_currentStageIdx];
   const slider=document.getElementById('mh-stage-slider');
   if(!slider)return;
   const cardEl=slider.querySelector('.mh-stage-card');
@@ -2108,6 +2122,7 @@ let _homeHeroT=0;
 let _homeAnimState=0;
 let _homeAnimTimer=0;
 const HOME_STATE_DURATION=200;
+const _homeParticles=[];
 
 function startHomeHeroAnim(){
   const cv=document.getElementById('home-hero-canvas');
@@ -2116,6 +2131,7 @@ function startHomeHeroAnim(){
   cv.height=130;
   if(_homeHeroRaf)cancelAnimationFrame(_homeHeroRaf);
   _homeHeroT=0;_homeAnimState=0;_homeAnimTimer=0;
+  _homeParticles.length=0;
   const ctx=cv.getContext('2d');
 
   function drawHomeHero(){
@@ -2232,15 +2248,27 @@ function startHomeHeroAnim(){
       ctx.restore();
     }
 
-    // 头顶漂浮粒子
-    if(_homeHeroT%8===0){
+    // 粒子系统：每3帧产一个，持续漂浮上升渐隐
+    if(_homeHeroT%3===0){
+      _homeParticles.push({
+        x:cx+(Math.random()-0.5)*28,
+        y:cy-68,
+        vx:(Math.random()-0.5)*0.5,
+        vy:-0.4-Math.random()*0.8,
+        life:1.0,
+        color:Math.random()<0.5?'#9B59B6':'#E8D44D',
+        r:1.5+Math.random()*2
+      });
+    }
+    for(var pi=_homeParticles.length-1;pi>=0;pi--){
+      var p=_homeParticles[pi];
+      p.x+=p.vx;p.y+=p.vy;p.life-=0.012;
+      if(p.life<=0){_homeParticles.splice(pi,1);continue;}
       ctx.save();
-      ctx.globalAlpha=0.5;
-      ctx.fillStyle=Math.random()<0.5?'#9B59B6':'#E8D44D';
-      const px=cx+(Math.random()-0.5)*20;
-      const py=cy-72-Math.random()*10;
-      ctx.shadowBlur=8;ctx.shadowColor=ctx.fillStyle;
-      ctx.beginPath();ctx.arc(px,py,2,0,Math.PI*2);ctx.fill();
+      ctx.globalAlpha=p.life*0.6;
+      ctx.fillStyle=p.color;
+      ctx.shadowBlur=6;ctx.shadowColor=p.color;
+      ctx.beginPath();ctx.arc(p.x,p.y,p.r*p.life,0,Math.PI*2);ctx.fill();
       ctx.restore();
     }
 
