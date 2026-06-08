@@ -352,6 +352,7 @@ function _update(){
   if(G.arcs){G.arcs.forEach(a=>a.life--);G.arcs=G.arcs.filter(a=>a.life>0);}
   G.pts.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vx*=0.9;p.vy*=0.9;p.life-=0.022;p.r*=0.96;});
   G.pts=G.pts.filter(p=>{if(p.life<=0){recyclePt(p);return false;}return true;});
+  updateQiParticles(G);
 
   if(G.xp>=G.xpNext){G.xp-=G.xpNext;G.xpNext=Math.floor(G.xpNext*1.38/(G.xpBoost||1));G.lv++;screenShake(4);playSound('levelup');showUpgrade();return;}
   if(G.elapsed/FPS>=G.totalTime){G.won=false;doGameover();return;}
@@ -776,13 +777,29 @@ function draw(){
   if(G.arcs){G.arcs.forEach(a=>{ctx.save();ctx.globalAlpha=a.life/30*0.8;ctx.strokeStyle='#C9E054';ctx.lineWidth=1.5;
     ctx.beginPath();let cx=a.x,cy=a.y;for(let i=0;i<4;i++){const nx=cx+(Math.random()-0.5)*20,ny=cy+(Math.random()-0.5)*20;ctx.moveTo(cx,cy);ctx.lineTo(nx,ny);cx=nx;cy=ny;}ctx.stroke();ctx.restore();});}
 
-  // 粒子
+  // 粒子（形状多样性）
   G.pts.forEach((p,i)=>{
     if(G.comboTier<4&&i%2===0)return;
     if(G.comboTier>=4&&i%3!==0)return;
-    ctx.globalAlpha=p.life*0.65;ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,Math.max(0.5,p.r),0,Math.PI*2);ctx.fill();
+    ctx.save();
+    ctx.globalAlpha=p.life*0.65;ctx.fillStyle=p.color;
+    const r=Math.max(0.5,p.r);
+    if(p.shape==='diamond'){
+      ctx.beginPath();ctx.moveTo(p.x,p.y-r);ctx.lineTo(p.x+r,p.y);ctx.lineTo(p.x,p.y+r);ctx.lineTo(p.x-r,p.y);ctx.closePath();ctx.fill();
+    } else if(p.shape==='line'){
+      ctx.strokeStyle=p.color;ctx.lineWidth=r*0.7;ctx.globalAlpha=p.life*0.5;
+      const ang=Math.atan2(p.vy,p.vx);ctx.beginPath();
+      ctx.moveTo(p.x-Math.cos(ang)*r*2,p.y-Math.sin(ang)*r*2);
+      ctx.lineTo(p.x+Math.cos(ang)*r*2,p.y+Math.sin(ang)*r*2);ctx.stroke();
+    } else {
+      ctx.beginPath();ctx.arc(p.x,p.y,r,0,Math.PI*2);ctx.fill();
+    }
+    ctx.restore();
   });
   ctx.globalAlpha=1;
+
+  // 灵气粒子
+  drawQiParticles(ctx, G);
 
   // ── 敌人 ──
   G.enemies.forEach(e=>{

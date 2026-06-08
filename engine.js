@@ -100,16 +100,90 @@ function recycleProj(p){if(ProjPool.length<100)ProjPool.push(p);}
 function recycleDmg(d){if(DmgPool.length<100)DmgPool.push(d);}
 
 // ── 粒子/投射物/伤害字 ──
-function addPt(G,x,y,color,n,spd){
+function addPt(G,x,y,color,n,spd,shape){
   const maxN=G.comboTier>=6?Math.ceil(n*0.5):n;
   for(let i=0;i<maxN;i++){
     const p=getPt();const a=Math.random()*Math.PI*2,s=(0.4+Math.random())*spd;
     p.x=x;p.y=y;p.vx=Math.cos(a)*s;p.vy=Math.sin(a)*s;p.life=1;p.color=color;p.r=1.5+Math.random()*1.5;
+    p.shape=shape||(Math.random()<0.3?'diamond':Math.random()<0.2?'line':'circle');
     G.pts.push(p);
   }
 }
+
+// ── 灵气汇聚粒子 ──
+function addQiParticle(G, x, y, targetX, targetY, color, n){
+  n=n||8;
+  for(let i=0;i<n;i++){
+    const startR=55+Math.random()*45;
+    const startA=Math.random()*Math.PI*2;
+    G.qiParticles=G.qiParticles||[];
+    G.qiParticles.push({
+      x:x+Math.cos(startA)*startR,
+      y:y+Math.sin(startA)*startR,
+      sx:x, sy:y,       // 玩家位置（汇聚点）
+      tx:targetX, ty:targetY,
+      phase:'gather',    // gather → release
+      color:color||'#E8D44D',
+      life:42,
+      size:2+Math.random()*2.5,
+      vx:0, vy:0
+    });
+  }
+}
+
+function updateQiParticles(G){
+  if(!G.qiParticles||!G.qiParticles.length)return;
+  for(let i=G.qiParticles.length-1;i>=0;i--){
+    const p=G.qiParticles[i];
+    p.life--;
+    if(p.phase==='gather'){
+      // 涌向玩家
+      const dx=p.sx-p.x, dy=p.sy-p.y, d=Math.hypot(dx,dy)||1;
+      p.vx=p.vx*0.82+(dx/d)*2.8*0.18;
+      p.vy=p.vy*0.82+(dy/d)*2.8*0.18;
+      p.x+=p.vx; p.y+=p.vy;
+      if(d<12){p.phase='release';p.vx=0;p.vy=0;}
+    } else {
+      // 射向目标
+      const dx2=p.tx-p.x, dy2=p.ty-p.y, d2=Math.hypot(dx2,dy2)||1;
+      p.vx=p.vx*0.85+(dx2/d2)*5.5*0.15;
+      p.vy=p.vy*0.85+(dy2/d2)*5.5*0.15;
+      p.x+=p.vx; p.y+=p.vy;
+    }
+    if(p.life<=0)G.qiParticles.splice(i,1);
+  }
+}
+
+function drawQiParticles(ctx, G){
+  if(!G.qiParticles||!G.qiParticles.length)return;
+  G.qiParticles.forEach(p=>{
+    ctx.save();
+    const alpha=p.phase==='gather'?p.life/42*0.7:p.life/42*0.55;
+    ctx.globalAlpha=alpha;
+    ctx.fillStyle=p.color;
+    ctx.shadowBlur=p.phase==='gather'?6:10;
+    ctx.shadowColor=p.color;
+    // gather阶段画小光点，release阶段画拖尾线
+    if(p.phase==='gather'){
+      ctx.beginPath();ctx.arc(p.x,p.y,p.size*1.2,0,Math.PI*2);ctx.fill();
+    } else {
+      ctx.beginPath();ctx.arc(p.x,p.y,p.size*0.7,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle=p.color;ctx.lineWidth=1;ctx.globalAlpha=alpha*0.35;
+      ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(p.x-p.vx*2,p.y-p.vy*2);ctx.stroke();
+    }
+    ctx.restore();
+  });
+}
 function addProj(G,x,y,vx,vy,opts){
   const p=getProj();Object.assign(p,{x,y,vx,vy,age:0,...opts});G.projs.push(p);
+  // 玩家投射物触发灵气汇聚效果
+  if(!opts.isBossBullet&&!opts.isEnemyBullet&&!opts.isBugShot){
+    const tgt=nearestEnemy(G);
+    if(tgt&&G._lastQiBurst+15<G.elapsed){
+      G._lastQiBurst=G.elapsed;
+      addQiParticle(G,x,y,tgt.x,tgt.y,opts.color||'#E8D44D',6+Math.floor(Math.random()*4));
+    }
+  }
 }
 function addDamageText(G,x,y,text,color,size=16){
   const d=getDmg();d.x=x;d.y=y;d.text=text;d.color=color;d.size=size;d.life=40;d.vy=-0.7;
