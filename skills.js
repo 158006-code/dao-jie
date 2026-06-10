@@ -120,7 +120,7 @@ function finishGameStart(){
   applyBuildBonus(G);
   spawnBug(3);
   for(let i=0;i<3;i++)setTimeout(()=>{if(G&&!G.dead&&!G.won)spawnEnemy(G);},i*300);
-  setTimeout(()=>{if(G&&!G.dead&&!G.won)showUpgrade();},700);
+  // 首次升级由击杀累积XP自然触发，不提前弹出
 }
 
 function dismissBuildInfo(){

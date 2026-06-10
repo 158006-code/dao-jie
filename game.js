@@ -101,7 +101,7 @@ function updateBoss(G){
     addExplosionWave(G,boss.x,boss.y,40,'#ff0000');
     addDamageText(G,boss.x,boss.y,'天道审判','#ff3300',34);
     addPt(G,boss.x,boss.y,'#EF9F27',25,4);addPt(G,boss.x,boss.y,'#E24B4A',15,3);
-    G.kills+=boss.reward;G.xp+=boss.reward*8;
+    G.kills+=boss.reward;G.xp+=boss.reward*8*(G.xpBoost||1);
     if(G.leechLv>0){G.mhp=Math.min(G.mmaxhp,G.mhp+boss.reward*2);triggerTreasureFlash();}
     const bi=G.bossPhase-1;G.boss=null;G.bossMode=false;
     document.getElementById('boss-wrap').classList.remove('show');
@@ -323,7 +323,7 @@ function _update(){
   const de=[];
   G.enemies.forEach((e,i)=>{
     if(e.hp<=0){
-      de.push(i);G.kills++;G.xp+=2+G.phase*2;
+      de.push(i);G.kills++;G.xp+=(2+G.phase*2)*(G.xpBoost||1);
       // 吃不停Boss吞噬计数
       if(G.boss&&G.boss.key==='always_eat'){G.boss._devour=(G.boss._devour||0)+1;if(G.boss._devour%5===1)bossTaunt(G.boss,'devour',G);}
       if(G.comboTimer>0){G.combo++;}else{G.combo=1;}
@@ -361,7 +361,7 @@ function _update(){
   G.pts=G.pts.filter(p=>{if(p.life<=0){recyclePt(p);return false;}return true;});
   updateQiParticles(G);
 
-  if(G.xp>=G.xpNext){G.xp-=G.xpNext;G.xpNext=Math.floor(G.xpNext*1.38/(G.xpBoost||1));G.lv++;screenShake(4);playSound('levelup');showUpgrade();return;}
+  if(G.xp>=G.xpNext){G.xp-=G.xpNext;G.xpNext=Math.floor(G.xpNext*1.38);G.lv++;screenShake(4);playSound('levelup');showUpgrade();return;}
   if(G.elapsed/FPS>=G.totalTime){G.won=false;doGameover();return;}
   if(G.mhp<=0){doGameover();return;}
   if(G.bugs.length===0&&G.enemies.length>10&&G.elapsed%90===0){applyPlayerDamage(G,0.06*90);if(G.elapsed%450===0)showEcoAlert('⚠ 灵虫已灭·天道侵蚀！');}
