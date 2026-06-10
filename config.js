@@ -23,7 +23,7 @@ const RAGE_DROP_IMMUNITY = 120;  // 掉级保护帧数
 
 // ── 游戏常量 ──
 const FPS=60,TOTAL=360; // 1-9关6分钟，第10关9分钟(由G.totalTime覆写)
-const BOSS_AT=[180,330];
+const BOSS_AT=[180,360];
 const STAGE_10_BOSS_AT=[180,360,540];
 const SPEEDS=[1,1.5,2,3];
 
