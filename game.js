@@ -93,7 +93,7 @@ function updateBoss(G){
   document.getElementById('boss-phase-dots').textContent=phaseDots.map((p,i)=>i===currentPhase?`[${p}]`:p).join(' → ');
   const bd=Math.hypot(G.mx-boss.x,G.my-boss.y);
   G.bossHitCd=(G.bossHitCd||0);if(G.bossHitCd>0)G.bossHitCd--;
-  if(bd<boss.sz/2+12&&!boss.charging&&!boss._charging&&!boss._down&&G.bossHitCd<=0){G.bossHitCd=25;applyPlayerDamage(G,0.5);applyReflect(G,0.5);addPt(G,G.mx,G.my,'#E24B4A',3,2);}
+  if(bd<boss.sz/2+12&&!boss.charging&&!boss._charging&&!boss._down&&G.bossHitCd<=0){G.bossHitCd=Math.floor(25*boss.sz/30);applyPlayerDamage(G,0.5*30/Math.max(30,boss.sz));applyReflect(G,0.5);addPt(G,G.mx,G.my,'#E24B4A',3,2);}
   document.getElementById('boss-bar').style.width=Math.max(0,boss.hp/boss.maxhp*100)+'%';
   if(boss.hp<=0&&!boss._down){
     bossTaunt(boss,'death',G);
