@@ -74,7 +74,7 @@ function triggerBoss(i){
 // ── Boss更新（提取自_update）──
 function updateBoss(G){
   const boss=G.boss;
-  if(boss.poison>0){boss.poison--;if(boss.poison%18===0){boss.hp-=0.35;addPt(G,boss.x,boss.y,'#639922',2,0.8);}}
+  if(boss.poison>0){boss.poison--;if(boss.poison%18===0){boss.hp-=5.0;addPt(G,boss.x,boss.y,'#639922',3,1.5);}}
   if(boss.frostDot>0){boss.frostDot--;if(G.elapsed%30===0&&boss._frostDmg>0)boss.hp-=boss._frostDmg;}
   boss.vx*=0.9;boss.vy*=0.9;
   if(!boss.charging&&!boss._charging&&!boss._down){const dx=G.mx-boss.x,dy=G.my-boss.y,d=Math.hypot(dx,dy)||1;boss.vx+=(dx/d)*boss.spd*0.07;boss.vy+=(dy/d)*boss.spd*0.07;}
