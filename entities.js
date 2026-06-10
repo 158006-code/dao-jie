@@ -339,7 +339,7 @@ function updateEnemyAI(G,sec){
     if(e.poison>0&&!e.immuneDot){e.poison--;if(e.poison%16===0){e.hp-=0.6/e.defMult;addPt(G,e.x,e.y,'#639922',2,0.7);}}
     if(e.kbCd>0)e.kbCd--;if(e.slowTimer>0)e.slowTimer--;if(e.freezeTimer>0)e.freezeTimer--;
     if(e.frostDot>0){e.frostDot--;if(G.elapsed%30===0&&e._frostDmg>0){e.hp-=e._frostDmg;if(G.elapsed%60===0)addPt(G,e.x,e.y,'#88CCFF',2,0.8);}}
-    const spdMult=e.slowTimer>0?0.3:1;
+    let spdMult=e.slowTimer>0?0.3:1;
     if(e.freezeTimer>0){e.vx*=0.3;e.vy*=0.3;}else{e.vx*=0.88;e.vy*=0.88;}
     if(e.rage&&e.rage>1){const maxSpd=(e._baseSpd||e.spd)*1.45;e.spd=Math.min(e.spd*1.0006,maxSpd);}
     // 娇der死亡群体狂暴
