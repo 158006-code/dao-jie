@@ -2296,13 +2296,38 @@ function hideFishingSubpage(){
   if(fishingAnim){cancelAnimationFrame(fishingAnim);fishingAnim=null;}
 }
 
+// ══════ 开发者面板 ══════
+function devUnlockStage(realmIdx){
+  var p=getProgress();
+  p.realmIdx=Math.max(0,Math.min(realmIdx,REALMS.length-1));
+  p.stageCleared=0;
+  saveProgress(p);
+  // 重置选中关卡
+  _selectedStageNode=null;
+  initMainHall();
+}
+
 // 页面加载入口
 function appStart(){
   resizeCanvas();
   showHomePage();
+  // 开发者模式激活
+  if(location.search.includes('dev=1')||localStorage.getItem('daojie_dev')==='1'){
+    var dp=document.getElementById('dev-panel');if(dp)dp.style.display='block';
+  }
 }
 
 appStart();
 </script>
+<!-- ══ 开发者面板 ══ -->
+<div id="dev-panel" style="display:none;position:fixed;bottom:10px;right:10px;
+     z-index:9999;background:rgba(10,10,20,0.94);padding:8px 10px;border-radius:8px;
+     border:1px solid #ffcc0055;font-family:monospace;min-width:100px">
+  <div style="color:#ffcc00;font-size:11px;font-weight:700;margin-bottom:6px">🛠 测试模式</div>
+  <button onclick="devUnlockStage(0)" style="display:block;width:100%;margin:2px 0;padding:4px 8px;background:#2a2a3a;border:1px solid #555;border-radius:4px;color:#ddd;font-size:10px;cursor:pointer">第1关·筑基失败</button>
+  <button onclick="devUnlockStage(3)" style="display:block;width:100%;margin:2px 0;padding:4px 8px;background:#2a2a3a;border:1px solid #555;border-radius:4px;color:#ddd;font-size:10px;cursor:pointer">第4关·法宝仓库</button>
+  <button onclick="devUnlockStage(6)" style="display:block;width:100%;margin:2px 0;padding:4px 8px;background:#2a2a3a;border:1px solid #555;border-radius:4px;color:#ddd;font-size:10px;cursor:pointer">第7关·美容内室</button>
+  <button onclick="devUnlockStage(9)" style="display:block;width:100%;margin:2px 0;padding:4px 8px;background:#3a1a1a;border:1px solid #c44;border-radius:4px;color:#faa;font-size:10px;cursor:pointer">终章·半步紫府</button>
+</div>
 </body>
 </html>
