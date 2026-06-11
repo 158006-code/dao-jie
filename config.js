@@ -265,9 +265,9 @@ const WEAPONS={
   hive_fortress:{name:'本命道宫',type:'evolvePassive',maxLv:3,sourceWeapon:'hive_expand',desc:['魔军上限大幅提升，精英灵虫比例+'],
     onEquip(G,lv,stars){G.swarmBonus=(G.swarmBonus||0)+16*(stars+1);G.eliteRate=(G.eliteRate||0.1)+0.1*(stars+1);}},
   iron_carapace:{name:'金刚真身',type:'evolvePassive',maxLv:3,sourceWeapon:'shell_armor',desc:['灵虫血量翻倍，减伤大幅提升'],
-    onEquip(G,lv,stars){G.bugHpMult=(G.bugHpMult||1)*2*(stars+1);G.dmgReduce=Math.min(0.6,(G.dmgReduce||0)+0.15*(stars+1));}},
+    onEquip(G,lv,stars){if(!G._ironCarapaceBase)G._ironCarapaceBase=G.bugHpMult||1;G.bugHpMult=G._ironCarapaceBase*(2+stars*2);G.dmgReduce=Math.min(0.6,(G.dmgReduce||0)+0.15*(stars+1));}},
   swarm_surge:{name:'万魂幡',type:'evolvePassive',maxLv:3,sourceWeapon:'rapid_spawn',desc:['万魂幡旗展开，斩杀大量孵化'],
-    onEquip(G,lv,stars){G.spawnMult=(G.spawnMult||1)*0.5;G.killSpawn=(G.killSpawn||0)+0.6*(stars+1);}},
+    onEquip(G,lv,stars){if(!G._swarmSurgeBase)G._swarmSurgeBase=G.spawnMult||1;G.spawnMult=G._swarmSurgeBase*0.5;G.killSpawn=(G.killSpawn||0)+0.6*(stars+1);}},
   life_drain:{name:'吞灵噬魄',type:'evolvePassive',maxLv:3,sourceWeapon:'bio_leech',desc:['大幅增强汲灵，每秒自动回灵'],
     onEquip(G,lv,stars){G.leechLv=(G.leechLv||0)+3*(stars+1);G.regenRate=(G.regenRate||0)+0.05*(stars+1);}},
   // ══════ 新武器 (v7.1) ══════
