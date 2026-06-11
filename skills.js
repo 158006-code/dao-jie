@@ -253,6 +253,7 @@ function initGame(){
   document.getElementById('eco-alert').classList.remove('show');
   document.getElementById('h-sync-disp').style.display='none';
   updateWeaponUI();
+  document.body.classList.add('battle');
   loop();
   dismissBuildInfo();
 }

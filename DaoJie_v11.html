@@ -9,6 +9,15 @@
 html,body{width:100%;height:100%;overflow:hidden;background:#04060f}
 body{display:flex;flex-direction:column;align-items:center;width:100%;height:100%;font-family:system-ui,sans-serif;color:#eee;user-select:none;touch-action:manipulation;position:relative}
 canvas{display:block;background:#04060f;touch-action:none;width:100%;flex:1;min-height:0}
+/* 默认隐藏战斗UI，initGame时显示 */
+body:not(.battle) #top-bar,
+body:not(.battle) #c,
+body:not(.battle) #corner-stats,
+body:not(.battle) #danger-indicator,
+body:not(.battle) .eco-alert,
+body:not(.battle) #boss-wrap,
+body:not(.battle) .weapon-row,
+body:not(.battle) .bottom-bar{display:none}
 :root{
   --bio-green:#9B59B6;--bio-acid:#E8D44D;--bio-red:#E24B4A;--bio-gold:#EF9F27;
   --bio-purple:#cc00ff;--bio-dark:#04060f;--bio-membrane:rgba(8,6,20,0.96);
@@ -1312,6 +1321,7 @@ function showIntroText(){
 }
 
 function showHomePage(){
+  document.body.classList.remove('battle');
   document.getElementById('home-overlay').classList.add('show');
   document.getElementById('char-overlay').classList.remove('show');
   // 默认显示主大厅，隐藏垂钓子页
