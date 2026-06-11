@@ -1942,6 +1942,24 @@ function draw(){
       case'tyrant':        drawBoss_tyrant(ctx,b,bx,by,sz,pct,pulse,G.elapsed);break;
       default:{ctx.save();ctx.shadowColor=b.col;ctx.shadowBlur=24;ctx.fillStyle=b.col;ctx.beginPath();ctx.arc(bx,by,sz/2,0,Math.PI*2);ctx.fill();ctx.restore();}
     }
+    // Boss#4 带法宝：绘制绕身护符
+    if(b.key==='has_treasure'&&b.treasures&&b.treasures.length){
+      b.treasures.forEach(function(t){
+        var tx=bx+Math.cos(t.angle)*t.r, ty=by+Math.sin(t.angle)*t.r;
+        var hpPct=t.hp/t.maxHp;
+        // 护符光晕
+        ctx.save();ctx.globalAlpha=0.3+0.1*Math.sin(G.elapsed*0.08+t.angle);ctx.fillStyle='#ffcc44';ctx.shadowBlur=10;ctx.shadowColor='#ffcc44';
+        ctx.beginPath();ctx.arc(tx,ty,8,0,Math.PI*2);ctx.fill();ctx.restore();
+        // 护符实体
+        ctx.fillStyle='#c8a040';ctx.strokeStyle='#ffe080';ctx.lineWidth=1.5;
+        ctx.beginPath();ctx.arc(tx,ty,6,0,Math.PI*2);ctx.fill();ctx.stroke();
+        // 符文
+        ctx.fillStyle='#fff';ctx.font='bold 7px Arial';ctx.textAlign='center';ctx.fillText('宝',tx,ty+2.5);
+        // HP条
+        ctx.fillStyle='rgba(0,0,0,0.6)';ctx.fillRect(tx-6,ty-12,12,2.5);
+        ctx.fillStyle=hpPct>0.5?'#4a4':'#a44';ctx.fillRect(tx-6,ty-12,12*hpPct,2.5);
+      });
+    }
     // 共通：阶段光环 + 血条
     if(b._phase>=1){ctx.save();ctx.strokeStyle=b._phase>=2?'#ff2200':'#EF9F27';ctx.lineWidth=2.5;ctx.globalAlpha=0.45+Math.sin(G.elapsed*0.08)*0.15;ctx.beginPath();ctx.arc(bx,by,sz/2+6+pulse*0.4,0,Math.PI*2);ctx.stroke();ctx.restore();}
     ctx.fillStyle='rgba(0,0,0,0.55)';ctx.fillRect(bx-sz/2,by-sz/2-14,sz,6);

@@ -416,6 +416,25 @@ function updateProjectiles(G){
       }
     };
     G.enemies.forEach(check);
+    // Boss#4 护符碰撞检测
+    if(G.boss&&G.boss.key==='has_treasure'&&G.boss.treasures){
+      for(var ti=G.boss.treasures.length-1;ti>=0;ti--){
+        var t=G.boss.treasures[ti];
+        var tx=G.boss.x+Math.cos(t.angle)*t.r;
+        var ty=G.boss.y+Math.sin(t.angle)*t.r;
+        if(Math.hypot(p.x-tx,p.y-ty)<14){
+          t.hp-=p.dmg;p.life=0;
+          addPt(G,tx,ty,'#ffcc44',5,2);
+          if(t.hp<=0){
+            G.boss.treasures.splice(ti,1);
+            bossTaunt(G.boss,'treasure_break',G);
+            screenShake(4);playSound('boss_armor_break');
+            addExplosionWave(G,tx,ty,30,'#ffcc44');
+          }
+          break;
+        }
+      }
+    }
     if(G.boss)check(G.boss);
   });
   for(let i=dp.length-1;i>=0;i--)G.projs.splice(dp[i],1);
