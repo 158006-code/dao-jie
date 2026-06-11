@@ -582,10 +582,12 @@ const BOSS_DEFS=[
       if(!boss._spawnTaunt){boss._spawnTaunt=true;bossTaunt(boss,'spawn',G);}
       if(pct<0.5&&!boss._halfTaunt){boss._halfTaunt=true;}
       if(boss.jiaoDun>0){boss.jiaoDun--;const dx2=G.mx-boss.x,dy2=G.my-boss.y,d2=Math.hypot(dx2,dy2)||1;boss.x-=dx2/d2*1.2;boss.y-=dy2/d2*1.2;}
+      // 娇气反击倒计时（帧计数，随游戏速度缩放）
+      if(boss._counterCd>0){boss._counterCd--;if(boss._counterCd===0){boss._counterTimer=180;bossTaunt(boss,'counter',G);}}
       if(boss._counterTimer>0){boss._counterTimer--;boss.spd=boss._baseSpd*2.0;}else{boss.spd=boss._baseSpd||0.62;boss._baseSpd=boss._baseSpd||boss.spd;}
       if(boss.jiaoDun<=0){boss._bulletT=(boss._bulletT||0)+1;if(boss._bulletT>=80){boss._bulletT=0;const n2=boss._counterTimer>0?8:4;for(let i2=0;i2<n2;i2++){const a3=i2/n2*Math.PI*2+G.elapsed*0.03;addProj(G,boss.x,boss.y,Math.cos(a3)*3,Math.sin(a3)*3,{dmg:6,r:5,color:'#E060A0',life:70,isBossBullet:true});}}}
     },
-    onDamage(G,boss,dmg){if(dmg>80&&boss.jiaoDun<=0){boss.jiaoDun=1200;bossTaunt(boss,'jiaoqi',G);showEcoAlert('💔 娇滴滴·护盾！用小伤害磨！');setTimeout(()=>{boss._counterTimer=180;bossTaunt(boss,'counter',G);},20000);}}
+    onDamage(G,boss,dmg){if(dmg>80&&boss.jiaoDun<=0){boss.jiaoDun=1200;bossTaunt(boss,'jiaoqi',G);showEcoAlert('💔 娇滴滴·护盾！用小伤害磨！');boss._counterCd=1200;}}
   },
   // ── Boss8：我爸是紫府 ──
   {
