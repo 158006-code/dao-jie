@@ -25,6 +25,19 @@ body.battle #page-equipment,
 body.battle #app-nav{display:none}
 /* 隐藏旧版UI */
 #home-overlay,#char-overlay,.home-overlay,.char-overlay,#dpad{display:none!important}
+/* 关卡选择 (非战斗时显示) */
+#stage-select{display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;padding:16px;gap:8px;overflow-y:auto;background:linear-gradient(180deg,#04060f,#0a0418)}
+body.battle #stage-select{display:none}
+.stage-sel-title{font-size:16px;font-weight:700;color:#EF9F27;text-shadow:0 0 12px rgba(239,159,39,0.4);margin-bottom:8px}
+.stage-sel-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;width:100%;max-width:360px}
+.stage-sel-card{background:rgba(10,15,10,0.9);border:2px solid #1e3018;border-radius:10px;padding:12px;text-align:center;cursor:pointer;transition:border-color 0.2s}
+.stage-sel-card:hover,.stage-sel-card:active{border-color:#EF9F27}
+.stage-sel-card.locked{opacity:0.35;pointer-events:none}
+.stage-sel-card.cleared{border-color:#1D9E75}
+.stage-sel-card .ssc-icon{font-size:28px;margin-bottom:4px}
+.stage-sel-card .ssc-name{font-size:11px;font-weight:700;color:#ccc}
+.stage-sel-card .ssc-realm{font-size:9px;color:#887;margin-top:2px}
+.stage-sel-card .ssc-status{font-size:8px;margin-top:2px}
 /* 战斗页激活时显示内部元素 */
 #page-battle.active{display:flex;flex-direction:column;flex:1;width:100%;min-height:0}
 :root{
@@ -582,6 +595,7 @@ body.battle #app-nav{display:none}
 </div>
 <!-- ══════ 战斗页 ══════ -->
 <div id="page-battle" class="page">
+<div id="stage-select"></div>
 <div class="top-bar" id="top-bar">
   <div class="top-time" id="h-time">9:00</div>
   <div style="font-size:10px;font-weight:700;color:#b899ff;white-space:nowrap;text-shadow:0 0 8px #9B59B6">境界：<span id="h-realm">练气期</span></div>
@@ -907,7 +921,7 @@ function switchTab(tab){
     if(i===1&&tab==='battle')t.classList.add('active');
     if(i===2&&tab==='equipment')t.classList.add('active');
   });
-  if(tab==='battle'){startBattle();return;}
+  if(tab==='battle'){document.body.classList.remove('battle');renderStageSelect();}
   else{document.body.classList.remove('battle');stopRiverAnimation();}
   if(tab==='cultivation'){renderEquipBar();updateTopBar();startRiverAnimation();}
   if(tab==='equipment'){renderEquipmentPage();updateTopBar();}
@@ -1002,6 +1016,29 @@ function openSynthesis(){
   // 复用现有合成overlay
   var sy=document.getElementById('synthesis-overlay');if(sy)sy.classList.add('show');
   if(typeof openSynthesisLegacy==='function')openSynthesisLegacy();
+}
+function renderStageSelect(){
+  var ss=document.getElementById('stage-select');if(!ss)return;
+  var p=typeof getProgress==='function'?getProgress():{realmIdx:0,stageCleared:0};
+  var ri=Math.min(p.realmIdx||0, typeof REALMS!=='undefined'?REALMS.length-1:9);
+  var html='<div class="stage-sel-title">⚔ 选择关卡</div><div class="stage-sel-grid">';
+  for(var i=0;i<10;i++){
+    var realm=typeof REALMS!=='undefined'?REALMS[i]:{name:'第'+(i+1)+'关',icon:'⚔'};
+    var stageNode=typeof STAGE_MAP!=='undefined'?STAGE_MAP[i]:{id:'s'+(i+1),realm:i,stage:0,type:'normal'};
+    var locked=i>ri+1;
+    var cleared=i<=ri&&(i<ri||(p.stageCleared||0)>0);
+    var current=i===ri;
+    var statusText=locked?'🔒 未解锁':cleared?'✅ 已通关':current?'📍 当前':'⚔ 挑战';
+    var cls='stage-sel-card'+(locked?' locked':'')+(cleared?' cleared':'');
+    html+='<div class="'+cls+'" onclick="selectStageBattle('+i+')"><div class="ssc-icon">'+realm.icon+'</div><div class="ssc-name">'+realm.name+'</div><div class="ssc-realm">'+(stageNode.type==='boss'?'👑Boss':stageNode.type==='elite'?'⭐精英':'普通')+'</div><div class="ssc-status" style="color:'+(current?'#EF9F27':cleared?'#1D9E75':locked?'#666':'#ff8844')+'">'+statusText+'</div></div>';
+  }
+  html+='</div>';
+  ss.innerHTML=html;
+}
+function selectStageBattle(idx){
+  if(typeof _selectedStageNode==='undefined')window._selectedStageNode=null;
+  if(typeof STAGE_MAP!=='undefined')_selectedStageNode=STAGE_MAP[idx];
+  startBattle();
 }
 // ══════ 旧版兼容 ══════
 var _firstVisit=true;

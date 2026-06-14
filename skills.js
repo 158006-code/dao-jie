@@ -110,7 +110,7 @@ function finishGameStart(){
 }
 
 function dismissBuildInfo(){
-  document.getElementById('build-overlay').classList.remove('show');
+  var bo=document.getElementById('build-overlay');if(bo)bo.classList.remove('show');
   if(G.vaultEquip){
     const t=TREASURE_POOL.find(x=>x.wid===G.vaultEquip.wid)||TREASURE_POOL[0];
     const qDef=QUALITY_DEFS.find(x=>x.id===G.vaultEquip.quality)||QUALITY_DEFS[0];
