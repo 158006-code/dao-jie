@@ -904,7 +904,7 @@ function switchTab(tab){
   document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
   var nt=document.querySelector('[onclick*="switchTab(\''+tab+'\')"]');
   if(nt)nt.classList.add('active');
-  if(tab==='battle'){document.body.classList.add('battle');}
+  if(tab==='battle'){startBattle();return;}
   else{document.body.classList.remove('battle');stopRiverAnimation();}
   if(tab==='cultivation'){renderEquipBar();updateTopBar();startRiverAnimation();}
   if(tab==='equipment'){renderEquipmentPage();updateTopBar();}
@@ -2128,16 +2128,25 @@ function startBattle(){
   // 追踪每日战斗次数
   const dk='daojie_daily_runs_'+todayStr();
   localStorage.setItem(dk, (parseInt(localStorage.getItem(dk)||'0')+1).toString());
-  // 更新总战斗次数（非每日）
   const totalRuns=parseInt(localStorage.getItem('daojie_total_runs')||'0');
   localStorage.setItem('daojie_total_runs', (totalRuns+1).toString());
 
-  hideHomePage();
-  closeCharPage();
-  if(_homeHeroRaf){cancelAnimationFrame(_homeHeroRaf);_homeHeroRaf=null;}
-  pendingEquip=getSelectedEquipItem();
-  pendingEquip2=getSelectedEquipItem2();
-  // 关卡选择联动：若选中关卡与当前进度不同，设为重打
+  // 停止修炼动画
+  stopRiverAnimation();
+  document.body.classList.add('battle');
+  document.getElementById('page-battle').classList.add('active');
+  document.getElementById('page-cultivation').classList.remove('active');
+  document.getElementById('page-equipment').classList.remove('active');
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  var bt=document.querySelector('[onclick*="switchTab(\'battle\'")]');
+  if(bt)bt.classList.add('active');
+
+  // 从新装备系统读取装备
+  var eq=getEquippedItems();
+  // 法宝槽用现有逻辑
+  pendingEquip=eq.treasure||null;
+  pendingEquip2=eq.bug||null;
+  // 关卡选择
   if(_selectedStageNode){
     const p=getProgress();
     const curRealm=Math.min(p.realmIdx, REALMS.length-1);
@@ -2146,7 +2155,6 @@ function startBattle(){
       _pendingReplayProgress={realmIdx:_selectedStageNode.realm,stageCleared:_selectedStageNode.stage};
     }
   }
-  // 重打关卡：临时设置进度（修士档案重打入口）
   if(_replayStageId){
     const node=STAGE_MAP.find(s=>s.id===_replayStageId);
     if(node){_pendingReplayProgress={realmIdx:node.realm,stageCleared:node.stage};}
