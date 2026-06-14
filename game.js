@@ -179,7 +179,7 @@ function doGameover(){
   const p=getProgress();p.bossStreak=0;saveProgress(p);
   const wlist=G.slots.filter(s=>s.id).map(s=>`${WEAPONS[s.id].name}${s.stars?starStr(s.stars):''}Lv.${s.lv}`).join(' ');
   const {realm}=getCurrentStageInfo();
-  document.getElementById('r-title').textContent='☠ 渡劫失败·道消魂散';
+  document.getElementById('r-title').textContent='☠ 战斗失败·道消魂散';
   document.getElementById('r-title').style.color='#E24B4A';
   document.getElementById('r-sub').textContent=`境界：${realm.name}\n消灭 ${G.kills} 个敌人 · Lv.${G.lv}\n最高连斩: ${G.combo||0}\n武器：${wlist||'无'}`;
   document.getElementById('drop-anim-stage').innerHTML='';
@@ -218,7 +218,7 @@ function doVictory(){
   const drops=generateVictoryDrops(firstRun);
   drops.forEach(d=>saveToVault(d.t,d.q,d.b));
   G.lastDrops=drops;
-  document.getElementById('r-title').textContent='🌟 渡劫成功·境界提升！';
+  document.getElementById('r-title').textContent='🌟 战斗胜利·境界提升！';
   document.getElementById('r-title').style.color='#1D9E75';
   document.getElementById('r-sub').textContent=`当前境界：${newRealm.name}\n消灭 ${G.kills} 个敌人 · Lv.${G.lv}\n最高连斩: ${G.combo||0}\n武器：${wlist||'无'}`;
   document.getElementById('btn-ad-save').style.display='none';
