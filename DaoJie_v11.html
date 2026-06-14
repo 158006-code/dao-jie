@@ -26,18 +26,29 @@ body.battle #app-nav{display:none}
 /* 隐藏旧版UI */
 #home-overlay,#char-overlay,.home-overlay,.char-overlay,#dpad{display:none!important}
 /* 关卡选择 (非战斗时显示) */
-#stage-select{display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;padding:16px;gap:8px;overflow-y:auto;background:linear-gradient(180deg,#04060f,#0a0418)}
+#stage-select{display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;background:linear-gradient(180deg,#04060f,#0a0418);gap:12px;position:relative;overflow:hidden}
 body.battle #stage-select{display:none}
-.stage-sel-title{font-size:16px;font-weight:700;color:#EF9F27;text-shadow:0 0 12px rgba(239,159,39,0.4);margin-bottom:8px}
-.stage-sel-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;width:100%;max-width:360px}
-.stage-sel-card{background:rgba(10,15,10,0.9);border:2px solid #1e3018;border-radius:10px;padding:12px;text-align:center;cursor:pointer;transition:border-color 0.2s}
-.stage-sel-card:hover,.stage-sel-card:active{border-color:#EF9F27}
-.stage-sel-card.locked{opacity:0.35;pointer-events:none}
-.stage-sel-card.cleared{border-color:#1D9E75}
-.stage-sel-card .ssc-icon{font-size:28px;margin-bottom:4px}
-.stage-sel-card .ssc-name{font-size:11px;font-weight:700;color:#ccc}
-.stage-sel-card .ssc-realm{font-size:9px;color:#887;margin-top:2px}
-.stage-sel-card .ssc-status{font-size:8px;margin-top:2px}
+.stage-sel-title{font-size:16px;font-weight:700;color:#EF9F27;text-shadow:0 0 12px rgba(239,159,39,0.4)}
+#stage-slider-wrap{display:flex;align-items:center;width:100%;gap:8px}
+#stage-slider{display:flex;gap:16px;padding:4px 10vw;transition:transform 0.35s cubic-bezier(0.25,0.46,0.45,0.94);will-change:transform;flex:1;overflow:hidden}
+.stage-card{flex-shrink:0;width:80vw;border-radius:12px;overflow:hidden;border:1.5px solid #1a2a1a;background:#080e08;cursor:pointer;transition:transform 0.15s,border-color 0.2s}
+.stage-card:active{transform:scale(0.97)}
+.stage-card.cleared{border-color:#EF9F2766;box-shadow:0 0 8px #EF9F2744}
+.stage-card.current{border-color:#E8D44D;box-shadow:0 0 12px #E8D44D55}
+.stage-card.locked{filter:brightness(0.4) grayscale(0.5);pointer-events:none}
+.stage-arrow{background:rgba(0,0,0,0.5);border:1px solid rgba(200,134,26,0.3);color:#EF9F27;font-size:20px;width:36px;height:36px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;z-index:2}
+.stage-arrow:active{background:rgba(200,134,26,0.2)}
+#stage-dots{display:flex;gap:6px}
+#stage-dots .dot{width:6px;height:6px;border-radius:50%;background:#333;transition:background 0.3s}
+#stage-dots .dot.active{background:#EF9F27;box-shadow:0 0 6px #EF9F2766}
+.stage-card .sc-top{height:80px;display:flex;align-items:center;justify-content:center;position:relative}
+.stage-card .sc-icon{font-size:36px}
+.stage-card .sc-num{position:absolute;top:6px;left:8px;font-size:10px;font-weight:700;color:#fff;background:rgba(0,0,0,0.6);border-radius:4px;padding:2px 6px}
+.stage-card .sc-type{position:absolute;top:6px;right:8px;font-size:9px;font-weight:700;background:rgba(0,0,0,0.7);border-radius:4px;padding:2px 6px;color:#E8D44D}
+.stage-card .sc-badge{position:absolute;top:4px;left:50%;transform:translateX(-50%);background:#1D9E75;color:#fff;font-size:9px;font-weight:700;border-radius:10px;padding:2px 8px}
+.stage-card .sc-info{padding:8px 12px 10px}
+.stage-card .sc-name{font-size:13px;font-weight:700;color:#ddd}
+.stage-card .sc-sub{font-size:9px;color:#887;margin-top:2px}
 /* 战斗页激活时显示内部元素 */
 #page-battle.active{display:flex;flex-direction:column;flex:1;width:100%;min-height:0}
 :root{
@@ -595,7 +606,15 @@ body.battle #stage-select{display:none}
 </div>
 <!-- ══════ 战斗页 ══════ -->
 <div id="page-battle" class="page">
-<div id="stage-select"></div>
+<div id="stage-select">
+  <div class="stage-sel-title">⚔ 选择关卡</div>
+  <div id="stage-slider-wrap">
+    <button class="stage-arrow" onclick="scrollStage(-1)">◀</button>
+    <div id="stage-slider"></div>
+    <button class="stage-arrow" onclick="scrollStage(1)">▶</button>
+  </div>
+  <div id="stage-dots"></div>
+</div>
 <div class="top-bar" id="top-bar">
   <div class="top-time" id="h-time">9:00</div>
   <div style="font-size:10px;font-weight:700;color:#b899ff;white-space:nowrap;text-shadow:0 0 8px #9B59B6">境界：<span id="h-realm">练气期</span></div>
@@ -1017,23 +1036,47 @@ function openSynthesis(){
   var sy=document.getElementById('synthesis-overlay');if(sy)sy.classList.add('show');
   if(typeof openSynthesisLegacy==='function')openSynthesisLegacy();
 }
+var _currentStageIdx=0;
 function renderStageSelect(){
-  var ss=document.getElementById('stage-select');if(!ss)return;
+  var slider=document.getElementById('stage-slider');if(!slider)return;
   var p=typeof getProgress==='function'?getProgress():{realmIdx:0,stageCleared:0};
   var ri=Math.min(p.realmIdx||0, typeof REALMS!=='undefined'?REALMS.length-1:9);
-  var html='<div class="stage-sel-title">⚔ 选择关卡</div><div class="stage-sel-grid">';
+  _currentStageIdx=ri;
+  var html='';
   for(var i=0;i<10;i++){
-    var realm=typeof REALMS!=='undefined'?REALMS[i]:{name:'第'+(i+1)+'关',icon:'⚔'};
-    var stageNode=typeof STAGE_MAP!=='undefined'?STAGE_MAP[i]:{id:'s'+(i+1),realm:i,stage:0,type:'normal'};
+    var realm=typeof REALMS!=='undefined'?REALMS[i]:{name:'第'+(i+1)+'关',icon:'⚔',sub:'未知'};
+    var sn=typeof STAGE_MAP!=='undefined'?STAGE_MAP[i]:{id:'s'+(i+1),type:'normal'};
     var locked=i>ri+1;
-    var cleared=i<=ri&&(i<ri||(p.stageCleared||0)>0);
-    var current=i===ri;
-    var statusText=locked?'🔒 未解锁':cleared?'✅ 已通关':current?'📍 当前':'⚔ 挑战';
-    var cls='stage-sel-card'+(locked?' locked':'')+(cleared?' cleared':'');
-    html+='<div class="'+cls+'" onclick="selectStageBattle('+i+')"><div class="ssc-icon">'+realm.icon+'</div><div class="ssc-name">'+realm.name+'</div><div class="ssc-realm">'+(stageNode.type==='boss'?'👑Boss':stageNode.type==='elite'?'⭐精英':'普通')+'</div><div class="ssc-status" style="color:'+(current?'#EF9F27':cleared?'#1D9E75':locked?'#666':'#ff8844')+'">'+statusText+'</div></div>';
+    var cleared=i<ri||(i===ri&&(p.stageCleared||0)>0);
+    var current=i===ri&&!cleared;
+    var cls='stage-card'+(locked?' locked':'')+(cleared?' cleared':'')+(current?' current':'');
+    var typeLabel=sn.type==='boss'?'👑 Boss':sn.type==='elite'?'⭐ 精英':sn.type==='special'?'✨ 特殊':'普通';
+    var badge=cleared?'<div class="sc-badge">✅ 已通关</div>':'';
+    html+='<div class="'+cls+'" onclick="selectStageBattle('+i+')"><div class="sc-top"><span class="sc-icon">'+realm.icon+'</span><span class="sc-num">第'+(i+1)+'关</span><span class="sc-type">'+typeLabel+'</span>'+badge+'</div><div class="sc-info"><div class="sc-name">'+realm.name+'</div><div class="sc-sub">'+realm.sub+'</div></div></div>';
   }
-  html+='</div>';
-  ss.innerHTML=html;
+  slider.innerHTML=html;
+  updateStageDots(ri);
+  scrollToStage(0);
+  // 触摸滑动
+  var startX=0;
+  slider.onpointerdown=function(e){startX=e.clientX;slider.setPointerCapture(e.pointerId);};
+  slider.onpointerup=function(e){var dx=e.clientX-startX;if(Math.abs(dx)>40)scrollStage(dx<0?1:-1);};
+}
+function scrollStage(dir){
+  var idx=_currentStageIdx+dir;
+  if(idx<0||idx>=10)return;
+  _currentStageIdx=idx;
+  var slider=document.getElementById('stage-slider');if(!slider)return;
+  var card=slider.querySelector('.stage-card');if(!card)return;
+  var cardW=card.offsetWidth+16;
+  slider.style.transform='translateX('+(-idx*cardW)+'px)';
+  updateStageDots(idx);
+}
+function updateStageDots(idx){
+  var dots=document.getElementById('stage-dots');if(!dots)return;
+  var html='';
+  for(var i=0;i<10;i++){html+='<span class="dot'+(i===idx?' active':'')+'"></span>';}
+  dots.innerHTML=html;
 }
 function selectStageBattle(idx){
   if(typeof _selectedStageNode==='undefined')window._selectedStageNode=null;
