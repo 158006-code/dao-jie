@@ -135,18 +135,17 @@ function spawnEnemy(G){
 // ── 灵虫生成 ──
 function spawnBug(n,x,y){
   n=n||1;
-  const cap=10+G.lv*2+G.swarmBonus;
+  const cap=10+G.lv*2;
   n=Math.min(n,Math.max(0,cap-G.bugs.length));
   for(let i=0;i<n;i++){
     const a=Math.random()*Math.PI*2,rr=16+Math.random()*12;
     const hp=(3+G.lv*0.25)*(G.bugHpMult||1);
-    const isSwarm=G.activeBuild==='swarm';
-    const role=isSwarm?(['fighter','bomber','guard'][Math.floor(Math.random()*3)]):'fighter';
+    const role='fighter';
     G.bugs.push({id:bugId++,
       x:x!=null?x+(Math.random()-0.5)*20:G.mx+Math.cos(a)*rr,
       y:y!=null?y+(Math.random()-0.5)*20:G.my+Math.sin(a)*rr,
       vx:0,vy:0,hp,maxhp:hp,atkTimer:0,age:0,targetId:null,
-      elite:Math.random()<(G.eliteRate||0.1),
+      elite:Math.random()<0.1,
       role,
     });
   }
@@ -211,7 +210,7 @@ function updateEnemySpawning(G,sec){
   if(G.bossMode)return;
   G.spawnTimer++;
   const comboMult=G.combo>=300?0.45:1;
-  const rate=Math.max(8,(75-G.phase*12-G.lv*1.5)*(G.spawnMult||1)/1.6*comboMult);
+  const rate=Math.max(8,(75-G.phase*12-G.lv*1.5)/1.6*comboMult);
   const spawnCap=sec<60?20:sec<120?30:45;
   if(G.spawnTimer>=rate&&G.enemies.length<spawnCap){
     G.spawnTimer=0;
@@ -226,8 +225,8 @@ function updateEnemySpawning(G,sec){
 // ── 灵虫生成调度（提取自_update）──
 function updateBugSpawning(G){
   G.bugTimer++;
-  const bugRate=Math.max(50,130*(G.spawnMult||1));
-  const cap=10+G.lv*2+G.swarmBonus;
+  const bugRate=Math.max(50,130);
+  const cap=10+G.lv*2;
   if(G.bugTimer>=bugRate&&G.bugs.length<cap){G.bugTimer=0;spawnBug(1);}
 }
 
@@ -257,8 +256,6 @@ function updateBugSubCannons(G){
             bulletOpts={dmg:(3.5+sl.lv*1.5)*atkMult*0.2,r:3,color:'#C9E054',life:50,isLightning:true,isBugShot:true};
           } else if(sl.id==='poison_spit'||sl.id==='poison_cloud'){
             bulletOpts={dmg:1.2*atkMult*0.2,r:4,color:'#639922',life:55,poison:120,isBugShot:true};
-          } else if(sl.id==='spore_cannon'||sl.id==='spore_storm'){
-            bulletOpts={dmg:(2.4+sl.lv)*atkMult*0.2,r:4,color:'#9FE1CB',life:60,isBugShot:true};
           } else {
             bulletOpts={dmg:2*atkMult*0.2,r:3,color:'#aaddff',life:50,isBugShot:true};
           }
@@ -302,7 +299,7 @@ function updateBugAI(G){
       b.vx=b.vx*0.80+(dx+(-dy)*wobble)*spd*0.20;
       b.vy=b.vy*0.80+(dy+(dx)*wobble)*spd*0.20;
       if(nd<20){b.atkTimer++;const atkCd=Math.max(8,22-G.comboTier*1.5);if(b.atkTimer>=atkCd){
-        b.atkTimer=0;const atkMult=G.buffs.atk*(G.activeBuild==='swarm'?(G.bugAtkMult||1.6):1);
+        b.atkTimer=0;const atkMult=G.buffs.atk;
         const dmg=(b.elite?3.0:1.6)*atkMult*comboScale*phaseScale/(tgt.defMult||1)/(tgt.shield?3:1)/(tgt.shieldBubble>0?2:1);
         tgt.hp-=dmg+(G.buffs.dmgFlat||0);
         if(tgt.shield>0&&!tgt.immuneDot)tgt.shield=Math.max(0,tgt.shield-0.15);

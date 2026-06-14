@@ -270,7 +270,7 @@ function updateDangerZones(G){
   G.dangerCircles=G.dangerCircles||[];
   const sec=Math.floor(G.elapsed/FPS);
   if(sec>=180&&G.elapsed%300===0&&G.dangerZones.length<3){
-    const types=['plasma','spore','corrosion'];
+    const types=['plasma','corrosion'];
     const t=types[Math.floor(Math.random()*types.length)];
     const x=60+Math.random()*(W-120),y=60+Math.random()*(H-120);
     G.dangerZones.push({x,y,r:45+Math.random()*30,type:t,life:600+Math.random()*300,warn:60,active:false});
@@ -284,23 +284,17 @@ function updateDangerZones(G){
     if(inZone){
       switch(z.type){
         case'plasma':applyPlayerDamage(G,0.035);if(G.elapsed%20===0)addPt(G,G.mx,G.my,'#7aadff',3,1.5);break;
-        case'spore':if(G.elapsed%40===0){applyPlayerDamage(G,0.025);addPt(G,G.mx,G.my,'#7fff44',2,1);}break;
         case'corrosion':applyPlayerDamage(G,0.04);break;
       }
-    }
-    if(z.type==='spore'&&z.active&&G.elapsed%90===0){
-      spawnEnemyAt(G,'normal',z.x+(Math.random()-0.5)*z.r,z.y+(Math.random()-0.5)*z.r,'late');
     }
   });
   G.dangerZones=G.dangerZones.filter(z=>z.life>0);
   G.dangerCircles.forEach(c=>c.life--);
   G.dangerCircles=G.dangerCircles.filter(c=>c.life>0);
   const hasPlasma=G.dangerZones.some(z=>z.type==='plasma'&&z.active);
-  const hasSpore=G.dangerZones.some(z=>z.type==='spore'&&z.active);
   const hasCorr=G.dangerZones.some(z=>z.type==='corrosion'&&z.active);
   const hasMycel=false;
   document.getElementById('di-plasma').classList.toggle('show',hasPlasma);
-  document.getElementById('di-spore').classList.toggle('show',hasSpore);
   document.getElementById('di-hatch').classList.toggle('show',hasCorr);
   document.getElementById('di-mycel').classList.toggle('show',hasMycel);
 }
@@ -388,10 +382,6 @@ function updateProjectiles(G){
         if(isBig)screenShake(3);
         if(p.poison&&!e.immuneDot){G.slimePools.push({x:p.x,y:p.y,r:18,life:220});e.poison=Math.max(e.poison||0,p.poison);}
         if(p.slowOnHit)e.slowTimer=Math.max(e.slowTimer||0,180);
-        if(p.sporeInfect&&!e.immuneDot){
-          e.poison=Math.max(e.poison||0,120);
-          G.enemies.forEach(e2=>{if(e2!==e&&!e2.immuneDot&&Math.hypot(e2.x-e.x,e2.y-e.y)<45){e2.poison=Math.max(e2.poison||0,60);}});
-        }
         if(p.overload){e.overloadStacks=(e.overloadStacks||0)+1;if(e.overloadStacks>=3){e.overloadStacks=0;addExplosionWave(G,e.x,e.y,40,'#7aadff');G.enemies.forEach(e2=>{if(Math.hypot(e2.x-e.x,e2.y-e.y)<40)e2.hp-=p.dmg*2;});addPt(G,e.x,e.y,'#7aadff',12,3);}}
         if(p.splash)[...G.enemies,G.boss].filter(Boolean).forEach(e2=>{if(e2!==e&&Math.hypot(e2.x-p.x,e2.y-p.y)<p.splash)e2.hp-=p.dmg*0.5/(e2.defMult||1);});
         else if(G.splashR>0)[...G.enemies,G.boss].filter(Boolean).forEach(e2=>{if(e2!==e&&Math.hypot(e2.x-e.x,e2.y-e.y)<G.splashR)e2.hp-=p.dmg*0.6/(e2.defMult||1);});

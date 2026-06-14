@@ -53,26 +53,6 @@ const TIME_ALERTS=[
   {at:420,text:'万道崩毁！！！', color:'#ff2200'},
 ];
 const WEAPONS={
-  spore_cannon:{
-    name:'蚀灵符',type:'attack',maxLv:3,
-    desc:['追踪蚀灵符感染','三连射穿透','满阶可突破→'],
-    evolve:'spore_storm',
-    onFire(G,lv,stars){
-      const t=nearestEnemy(G);if(!t)return;
-      playSound('shoot');
-      const atkMult=G.buffs.atk;
-      const baseDmg=(2.4+lv)*atkMult;
-      // v17 孢子流：sporeAtkMult倍伤害，感染范围扩大
-      const sporeBonus=G.activeBuild==='spore'?(G.sporeAtkMult||1.5):1;
-      const infRange=G.activeBuild==='spore'?(45*(G.infectionSpread||1.5)):45;
-      const n=lv>=2?3:1;
-      for(let i=0;i<n;i++){
-        const ang=Math.atan2(t.y-G.my,t.x-G.mx)+(i-Math.floor(n/2))*0.2;
-        addProj(G,G.mx,G.my,Math.cos(ang)*5.5,Math.sin(ang)*5.5,{dmg:baseDmg*sporeBonus,r:4,color:'#9FE1CB',life:70,homing:t,pierce:lv>=3,sporeInfect:G.activeBuild==='spore',sporeRange:infRange});
-      }
-    },
-    cd:[72,58,44],
-  },
   poison_spit:{
     name:'魔气吐息',type:'attack',maxLv:3,
     desc:['魔气侵蚀持续DOT','范围扩散','满阶可突破→'],
@@ -81,9 +61,7 @@ const WEAPONS={
       const t=nearestEnemy(G);if(!t)return;
       playSound('poison');const atkMult=G.buffs.atk;
       const n=lv>=2?3:2;
-      // v17 孢子流：毒液持续时间×poisonMult，伤害+sporeAtkMult
-      const poisonDur=G.activeBuild==='spore'?Math.round(280*(G.poisonMult||2.0)):240;
-      const poisonDmg=G.activeBuild==='spore'?(1.2*(G.sporeAtkMult||1.5)):1.2;
+      const poisonDur=240;const poisonDmg=1.2;
       for(let i=0;i<n;i++){
         const ang=Math.atan2(t.y-G.my,t.x-G.mx)+(i-Math.floor(n/2))*0.3;
         addProj(G,G.mx,G.my,Math.cos(ang)*4.5,Math.sin(ang)*4.5,{dmg:poisonDmg*atkMult,r:5,color:'#639922',life:65,poison:poisonDur,splash:lv>=2?25:0});
@@ -98,15 +76,12 @@ const WEAPONS={
     onFire(G,lv,stars){
       const t=nearestEnemy(G);if(!t)return;
       playSound('thunder');const atkMult=G.buffs.atk;
-      // v17 电浆流：plasmaAtkMult倍伤害，chainBonus额外连锁，plasmaSpeedMult攻速
-      const dmg=(6+lv*3)*atkMult*(G.activeBuild==='plasma'?(G.plasmaAtkMult||1.8):1);
-      const chainR=G.activeBuild==='plasma'?110:75;
-      const chainN=G.activeBuild==='plasma'?(lv+(G.chainBonus||4)):(lv+2);
+      const dmg=(6+lv*3)*atkMult;
+      const chainR=75;const chainN=lv+2;
       const ang=Math.atan2(t.y-G.my,t.x-G.mx);
-      addProj(G,G.mx,G.my,Math.cos(ang)*7,Math.sin(ang)*7,{dmg,r:3,color:'#C9E054',life:55,chain:chainN,chainR,isLightning:true,homing:t,overload:G.activeBuild==='plasma'});
+      addProj(G,G.mx,G.my,Math.cos(ang)*7,Math.sin(ang)*7,{dmg,r:3,color:'#C9E054',life:55,chain:chainN,chainR,isLightning:true,homing:t});
     },
     cd:[70,55,40],
-    cdMult(G){return G.activeBuild==='plasma'?1/(G.plasmaSpeedMult||1.4):1;},
   },
   orbit_bugs:{
     name:'御灵环',type:'orbit',maxLv:3,
@@ -159,27 +134,11 @@ const WEAPONS={
       });
     },
   },
-  hive_expand:{name:'洞府扩建',type:'passive',maxLv:3,desc:['魔军上限+8','再+8','精英魔率+30%'],evolve:'hive_fortress',
-    onEquip(G,lv){if(!G._hiveBase){G._hiveBase=G.swarmBonus||0;}G.swarmBonus=G._hiveBase+8*Math.min(lv,2);}},
   shell_armor:{name:'金刚护体',type:'passive',maxLv:3,desc:['灵虫血量+80%','再+80%','减伤20%'],evolve:'iron_carapace',
     onEquip(G,lv){if(!G._shellBugBase){G._shellBugBase=G.bugHpMult||1;}G.bugHpMult=G._shellBugBase*Math.pow(1.8,Math.min(lv,2));G.dmgReduce=(G.dmgReduce||0);if(lv>=3&&!G._shellDmgDone){G.dmgReduce=Math.min(0.6,G.dmgReduce+0.2);G._shellDmgDone=true;}}},
-  rapid_spawn:{name:'灵虫孵化',type:'passive',maxLv:3,desc:['孵化间隔-30%','再-25%','斩杀孵化+40%'],evolve:'swarm_surge',
-    onEquip(G,lv){if(!G._spawnSpawnBase){G._spawnSpawnBase=G.spawnMult||1;}G.spawnMult=G._spawnSpawnBase*(lv===1?0.7:lv>=2?0.525:1);if(lv>=3&&!G._spawnKillDone){G.killSpawn=(G.killSpawn||0)+0.4;G._spawnKillDone=true;}}},
   bio_leech:{name:'汲灵诀',type:'passive',maxLv:3,desc:['斩敌汲灵回血','汲灵翻倍','攻伐汲灵'],evolve:'life_drain',
     onEquip(G,lv){G.leechLv=(G.leechLv||0)+1;}},
-  // V13: 狂暴流专属被动
-  berserker_soul:{name:'狂道之魂',type:'passive',maxLv:3,desc:['无伤时道力+10%','再+10%','受伤暴怒'],evolve:'death_sync',
-    onEquip(G,lv){G.berserkerLv=(G.berserkerLv||0)+1;}},
   // 超武
-  spore_storm:{name:'灵气风暴',type:'evolve',maxLv:3,sourceWeapon:'spore_cannon',
-    desc:['全向爆射蚀灵符穿透'],
-    onFire(G,lv,stars){screenShake(8);playSound('ultra');
-      const n=8+(stars*6),dmg=5*(stars+1);
-      for(let i=0;i<n;i++){const a=i/n*Math.PI*2;const col=stars>=2?'#FF00FF':stars>=1?'#00FF88':'#00FFB3';
-        addProj(G,G.mx,G.my,Math.cos(a)*6,Math.sin(a)*6,{dmg,r:stars>=2?9:7,color:col,life:Math.floor(65*(G.evolveRangeBonus||1)),splash:stars>=2?70:50,sporeInfect:true});}
-      // 孢子流：顺带扩张领域
-      if(G.activeBuild==='spore'){G.infectionMap.push({x:G.mx,y:G.my,r:80+stars*20,life:600,pulse:0,hostile:false,fastGrow:true});}},
-    cd:[42,34,26],},
   poison_cloud:{name:'魔气领域',type:'evolve',maxLv:3,sourceWeapon:'poison_spit',
     desc:['魔气笼罩全场侵染众生'],
     onFire(G,lv,stars){screenShake(8);playSound('poison');const dur=Math.floor(300*(stars+1)*(G.evolveRangeBonus||1));
@@ -196,11 +155,7 @@ const WEAPONS={
       for(let i=0;i<bolts;i++){
         const t=targets[i%Math.max(1,targets.length)];if(!t)break;
         const ang=Math.atan2(t.y-G.my,t.x-G.mx)+(Math.random()-0.5)*0.3;
-        addProj(G,G.mx,G.my,Math.cos(ang)*7,Math.sin(ang)*7,{dmg,r:3,color:'#C9E054',life:55,chain:chainCount,chainR:Math.floor((55+stars*20)*(G.evolveRangeBonus||1)),slowOnHit:true,isLightning:true,overload:G.activeBuild==='plasma'});
-      }
-      // 电浆流：额外EMP波
-      if(G.activeBuild==='plasma'){
-        G.enemies.forEach(e=>{if(Math.hypot(e.x-G.mx,e.y-G.my)<120){e.slowTimer=Math.max(e.slowTimer||0,240);addPt(G,e.x,e.y,'#7aadff',3,1);}});
+        addProj(G,G.mx,G.my,Math.cos(ang)*7,Math.sin(ang)*7,{dmg,r:3,color:'#C9E054',life:55,chain:chainCount,chainR:Math.floor((55+stars*20)*(G.evolveRangeBonus||1)),slowOnHit:true,isLightning:true});
       }
       const arcN=3+stars*2;for(let i=0;i<arcN;i++){const t=targets[i%Math.max(1,targets.length)];if(t)addArc(G,t.x,t.y,stars);}},
     cd:[90,70,55],},
@@ -262,70 +217,10 @@ const WEAPONS={
         G.enemies.forEach(e=>{if(Math.hypot(e.x-G.mx,e.y-G.my)<r){e.hp-=dmg*atkMult+(G.buffs.dmgFlat||0);if(ws.ringTimer%12===0)addPt(G,e.x,e.y,'#E85D24',2,1.5);}});
         if(G.boss&&Math.hypot(G.boss.x-G.mx,G.boss.y-G.my)<r)G.boss.hp-=dmg*0.5+(G.buffs.dmgFlat||0);}
       ws.drawR=r;ws.stars=stars;},},
-  hive_fortress:{name:'本命道宫',type:'evolvePassive',maxLv:3,sourceWeapon:'hive_expand',desc:['魔军上限大幅提升，精英灵虫比例+'],
-    onEquip(G,lv,stars){G.swarmBonus=(G.swarmBonus||0)+16*(stars+1);G.eliteRate=(G.eliteRate||0.1)+0.1*(stars+1);}},
   iron_carapace:{name:'金刚真身',type:'evolvePassive',maxLv:3,sourceWeapon:'shell_armor',desc:['灵虫血量翻倍，减伤大幅提升'],
     onEquip(G,lv,stars){if(!G._ironCarapaceBase)G._ironCarapaceBase=G.bugHpMult||1;G.bugHpMult=G._ironCarapaceBase*(2+stars*2);G.dmgReduce=Math.min(0.6,(G.dmgReduce||0)+0.15*(stars+1));}},
-  swarm_surge:{name:'万魂幡',type:'evolvePassive',maxLv:3,sourceWeapon:'rapid_spawn',desc:['万魂幡旗展开，斩杀大量孵化'],
-    onEquip(G,lv,stars){if(!G._swarmSurgeBase)G._swarmSurgeBase=G.spawnMult||1;G.spawnMult=G._swarmSurgeBase*0.5;G.killSpawn=(G.killSpawn||0)+0.6*(stars+1);}},
   life_drain:{name:'吞灵噬魄',type:'evolvePassive',maxLv:3,sourceWeapon:'bio_leech',desc:['大幅增强汲灵，每秒自动回灵'],
     onEquip(G,lv,stars){G.leechLv=(G.leechLv||0)+3*(stars+1);G.regenRate=(G.regenRate||0)+0.05*(stars+1);}},
-  // ══════ 新武器 (v7.1) ══════
-  // —— 攻击·灵刃乱舞 ——
-  blade_storm:{name:'灵刃乱舞',type:'attack',maxLv:3,
-    desc:['每秒12道灵刃·高频切割'],
-    evolve:'blade_vortex',
-    onFire(G,lv,stars){playSound('hit');
-      const n=12,dmg=(0.9+lv*0.4)*(G.buffs.atk||1);
-      for(let i=0;i<n;i++){
-        const a=Math.random()*Math.PI*2;
-        addProj(G,G.mx,G.my,Math.cos(a)*4.5,Math.sin(a)*4.5,{dmg,r:2,color:'#cc88ff',life:25,pierce:false,isBlade:true});
-      }
-    },cd:[28,22,18],},
-  blade_vortex:{name:'旋涡灵刃',type:'evolve',maxLv:3,sourceWeapon:'blade_storm',
-    desc:['旋转刃环持续切割'],
-    update(G,lv,ws,stars){
-      const count=10+stars*5,dmg=(2.0+stars*1.5)*(G.buffs.atk||1),r=50+stars*20;
-      ws.vortexAng=(ws.vortexAng||0)+0.04+stars*0.02;
-      ws.blades=ws.blades||Array.from({length:count},(_,i)=>({a:i/count*Math.PI*2}));
-      ws.blades.length=count;
-      ws.blades.forEach((b,i)=>{
-        b.a=ws.vortexAng+i/count*Math.PI*2;
-        b.x=G.mx+Math.cos(b.a)*r;b.y=G.my+Math.sin(b.a)*r;
-        G.enemies.forEach(e=>{if(Math.hypot(e.x-b.x,e.y-b.y)<e.sz/2+6){e.hp-=dmg/(e.defMult||1);addPt(G,b.x,b.y,'#cc88ff',1,1);}});
-        if(G.boss&&Math.hypot(G.boss.x-b.x,G.boss.y-b.y)<G.boss.sz/2+6)G.boss.hp-=dmg*0.7;
-      });
-      ws.bladeR=r;ws.bladeCount=count;},},
-  // —— 攻击·魂弹术 ——
-  soul_bullet:{name:'魂弹术',type:'attack',maxLv:3,
-    desc:['慢速大魂弹·命中爆裂'],
-    evolve:'soul_burst',
-    onFire(G,lv,stars){playSound('sync');
-      const tgt=nearestEnemy(G);if(!tgt)return;
-      const ang=Math.atan2(tgt.y-G.my,tgt.x-G.mx)+(Math.random()-0.5)*0.4;
-      const dmg=(4+lv*2)*(G.buffs.atk||1);
-      addProj(G,G.mx,G.my,Math.cos(ang)*3.5,Math.sin(ang)*3.5,{dmg,r:8,color:'#ffdd88',life:80,isSoulBullet:true,soulBurstDmg:dmg*0.4});
-    },cd:[65,52,40],},
-  soul_burst:{name:'魂爆',type:'evolve',maxLv:3,sourceWeapon:'soul_bullet',
-    desc:['全场随机落雷魂爆'],
-    onFire(G,lv,stars){screenShake(10);playSound('thunder');
-      const bolts=16,dmg=(8+stars*4)*(G.buffs.atk||1),chainN=1+stars;
-      for(let i=0;i<bolts;i++){
-        const tx=Math.random()*W,ty=Math.random()*H;
-        addExplosionWave(G,tx,ty,25,'#ffdd44');
-        addPt(G,tx,ty,'#ffcc00',8,2);
-        G.enemies.forEach(e=>{if(Math.hypot(e.x-tx,e.y-ty)<40){e.hp-=dmg/(e.defMult||1);e.slowTimer=Math.max(e.slowTimer||0,60);}});
-        if(G.boss&&Math.hypot(G.boss.x-tx,G.boss.y-ty)<50)G.boss.hp-=dmg*0.8;
-      }
-      // Chain lightning between random pairs
-      if(G.enemies.length>=2){
-        for(let j=0;j<chainN*4;j++){
-          const e1=G.enemies[Math.floor(Math.random()*G.enemies.length)];
-          const e2=G.enemies[Math.floor(Math.random()*G.enemies.length)];
-          if(e1&&e2&&e1!==e2){addArc(G,e2.x,e2.y,stars);e2.hp-=dmg*0.3/(e2.defMult||1);}
-        }
-      }
-    },cd:[120,100,80],},
   // —— 攻击·虚空枪刺 ——
   void_lance:{name:'虚空枪刺',type:'attack',maxLv:3,
     desc:['超长穿透·Boss专克'],
@@ -386,53 +281,24 @@ const WEAPONS={
         if(G.boss&&Math.hypot(G.boss.x-o.x,G.boss.y-o.y)<G.boss.sz/2+8){G.boss.hp-=dmg*0.6;G.boss.slowTimer=Math.max(G.boss.slowTimer||0,60);}
       });
     },},
-  // —— 环绕·雷罡护体 ——
-  thunder_ring:{name:'雷罡护体',type:'orbit',maxLv:3,
-    desc:['闪电护体环·触链连诛'],
-    evolve:'storm_cage',
-    update(G,lv,ws,stars){
-      const count=4+lv*2,dmg=(1.0+lv*0.5)*(G.buffs.atk||1),r=35+lv*5;
-      ws.orbitAngle=(ws.orbitAngle||0)+0.06+lv*0.01;
-      ws.orbs=ws.orbs||Array.from({length:count},(_,i)=>({a:i/count*Math.PI*2}));
-      ws.orbs.length=count;
-      ws.orbs.forEach((o,i)=>{
-        o.a=ws.orbitAngle+i/count*Math.PI*2;
-        o.x=G.mx+Math.cos(o.a)*r;o.y=G.my+Math.sin(o.a)*r;
-        // 触碰跳链
-        G.enemies.forEach(e=>{if(Math.hypot(e.x-o.x,e.y-o.y)<e.sz/2+8){
-          e.hp-=dmg/(e.defMult||1);addPt(G,o.x,o.y,'#4488FF',3,2);
-          // 跳链到附近敌人
-          G.enemies.forEach(e2=>{if(e2!==e&&Math.hypot(e2.x-e.x,e2.y-e.y)<60){e2.hp-=dmg*0.6/(e2.defMult||1);addArc(G,e2.x,e2.y,0);}});
-        }});
-        if(G.boss&&Math.hypot(G.boss.x-o.x,G.boss.y-o.y)<G.boss.sz/2+8){G.boss.hp-=dmg*0.8;addPt(G,o.x,o.y,'#4488FF',3,2);}
-      });
-      ws.thunderOrbs=true;},},
-  storm_cage:{name:'雷狱',type:'evolve',maxLv:3,sourceWeapon:'thunder_ring',
-    desc:['呼吸式雷环·全场跳链'],
-    update(G,lv,ws,stars){
-      ws.cageTimer=(ws.cageTimer||0)+1;
-      const period=120-stars*15;
-      const phase=(ws.cageTimer%period)/period; // 0→1, 呼吸周期
-      const minR=20,maxR=80+stars*30;
-      const r=minR+(maxR-minR)*Math.sin(phase*Math.PI); // 正弦呼吸
-      ws.cageRadius=r;
-      // 每次呼吸完成（phase归零）触发全场跳链
-      if(ws.cageTimer%period===0&&ws.cageTimer>0){
-        playSound('thunder');screenShake(6);
-        const chainDmg=(3+stars*2)*(G.buffs.atk||1);
-        G.enemies.forEach(e=>{
-          e.hp-=chainDmg/(e.defMult||1);e.slowTimer=Math.max(e.slowTimer||0,60);
-          addPt(G,e.x,e.y,'#ffcc00',4,2);
-          // 跳链到附近
-          const near=G.enemies.filter(e2=>e2!==e&&Math.hypot(e2.x-e.x,e2.y-e.y)<80);
-          near.slice(0,3+stars).forEach(e2=>{
-            e2.hp-=chainDmg*0.5/(e2.defMult||1);addArc(G,e2.x,e2.y,stars);
-          });
-        });
-        if(G.boss){G.boss.hp-=chainDmg*1.5;addPt(G,G.boss.x,G.boss.y,'#ffcc00',6,3);}
-      }},},
-  death_sync:{name:'道心归一',type:'evolvePassive',maxLv:3,sourceWeapon:'berserker_soul',desc:['道心不灭，低血量暴怒自愈'],
-    onEquip(G,lv,stars){G.deathSync=true;G.berserkerLv=(G.berserkerLv||0)+2*(stars+1);}},
+  // —— 道法·怒道真意 ——
+  rage_might:{name:'怒道真意',type:'passive',maxLv:3,
+    desc:['攻击力+20%','攻击力+45%','攻击力+80%·满阶可突破→'],
+    evolve:'rage_apotheosis',
+    onEquip(G,lv){
+      if(!G._rageMightBase)G._rageMightBase=G.baseAtkMult||1;
+      const mults=[1.0,1.20,1.45,1.80];
+      G.baseAtkMult=G._rageMightBase*mults[Math.min(lv,3)];
+    },
+  },
+  rage_apotheosis:{name:'万怒归宗',type:'evolvePassive',maxLv:3,sourceWeapon:'rage_might',
+    desc:['攻击力大幅飙升'],
+    onEquip(G,lv,stars){
+      if(!G._rageApothBase)G._rageApothBase=G.baseAtkMult||1;
+      const mults=[1.0,2.20,2.80,3.60]; // ★120% ★★180% ★★★260% 叠加基础=1+bonus
+      G.baseAtkMult=G._rageApothBase*mults[Math.min(stars,3)];
+    },
+  },
 };
 
 const ENEMY_TYPES=[
@@ -700,21 +566,14 @@ const QUALITY_BONUS={
 
 // 法宝池（映射到真实weapon id）
 const TREASURE_POOL=[
-  {wid:'spore_cannon', name:'蚀灵玉佩',  icon:'🌿', qmod:0,  desc:'追踪蚀灵符·感染·穿透',       effects:['atkMult','pierce']},
   {wid:'poison_spit',  name:'魔渊魂珠',icon:'💀', qmod:0,  desc:'持续魔气DOT·范围扩散',        effects:['dmgFlat','splashR']},
   {wid:'lightning_bug',name:'九霄雷印',icon:'⚡', qmod:0,  desc:'跳链天雷·连锁清场',           effects:['critRate','comboDmg']},
   {wid:'orbit_bugs',   name:'御灵法镯',  icon:'🌀', qmod:0,  desc:'御灵护体·旋转撞击',          effects:['spdMult','dodgeFrames']},
   {wid:'flame_tower',  name:'丹火剑匣',icon:'🔥', qmod:0,  desc:'丹火剑台·等距环绕',           effects:['dmgFlat','critRate']},
   {wid:'bio_leech',    name:'汲灵血玉',icon:'💉', qmod:-1, desc:'斩敌汲灵·持续回血',            effects:['leechRate','comboDmg']},
-  {wid:'berserker_soul',name:'狂道血晶',icon:'🩸',qmod:1,  desc:'无伤道力暴涨·受伤暴怒',         effects:['comboSpeed','starDmg']},
   {wid:'shell_armor',  name:'金刚法盾',icon:'🛡', qmod:-1, desc:'灵虫血量+80%·减伤',            effects:['hpMult','shield']},
-  {wid:'hive_expand',  name:'洞府宝鉴',icon:'🏯', qmod:-1, desc:'魔军上限+8·精英魔率+',          effects:['xpBoost','evolveRate']},
-  {wid:'rapid_spawn',  name:'灵虫灵卵',icon:'🥚', qmod:-1, desc:'孵化间隔-30%·斩杀孵化',         effects:['hpMult','reflect']},
-  {wid:'blade_storm',  name:'灵刃玉符',icon:'🔪', qmod:1,  desc:'每秒12道灵刃·高频切割',         effects:['atkMult','comboHit']},
-  {wid:'soul_bullet',  name:'魂弹法珠',icon:'💫', qmod:1,  desc:'慢速大魂弹·命中爆裂8向',        effects:['critRate','splashR']},
   {wid:'void_lance',   name:'虚空刺枪',icon:'🗡', qmod:1,  desc:'超长穿透·Boss专克·CD长',       effects:['pierce','dmgReduce']},
   {wid:'frost_seal',   name:'寒冰道符',icon:'❄️', qmod:0,  desc:'冻结控制·2秒冰封·稳场',         effects:['shield','dodgeFrames']},
-  {wid:'thunder_ring', name:'雷罡法环',icon:'⚡', qmod:0,  desc:'闪电护体环·触链连诛',          effects:['reflect','comboSpeed']},
 ];
 
 const VICTORY_DROP_WEIGHTS=[

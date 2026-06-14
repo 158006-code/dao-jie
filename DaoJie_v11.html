@@ -170,21 +170,6 @@ body:not(.battle) .bottom-bar{display:none}
 @keyframes btnSlideUp{0%{transform:translateY(30px);opacity:0}100%{transform:translateY(0);opacity:1}}
 .btn-main{background:#1D9E75;color:#fff;border:none;border-radius:8px;padding:10px 28px;font-size:14px;cursor:pointer;margin:4px;letter-spacing:0.05em;box-shadow:0 0 16px rgba(29,158,117,0.4)}
 .btn-main:active{background:#159060}
-.build-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:80;flex-direction:column;align-items:center;justify-content:center;padding:14px;gap:8px}
-.build-overlay.show{display:flex}
-.build-overlay::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 50% 60%,rgba(29,158,117,0.06),transparent 70%);pointer-events:none}
-.build-title{font-size:16px;font-weight:700;color:#eee;text-align:center;margin-bottom:2px;letter-spacing:0.1em;text-shadow:0 0 12px rgba(29,158,117,0.6)}
-.build-sub{font-size:10px;color:#446644;margin-bottom:8px;text-align:center}
-.build-cards{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;width:100%;max-width:380px}
-.build-card{background:#080e08;border:1px solid #1a2a1a;border-radius:8px;padding:8px;text-align:center;cursor:pointer;transition:all 0.15s}
-.build-card:active,.build-card.selected{border-color:#1D9E75;background:#0d2a1a}
-.bc-icon{font-size:20px;margin-bottom:2px}
-.bc-name{font-size:12px;font-weight:700;color:#ddd;margin-bottom:2px}
-.bc-tag{font-size:8px;padding:1px 5px;border-radius:3px;display:inline-block;margin-bottom:3px}
-.bc-desc{font-size:8px;color:#446644;line-height:1.4}
-.build-start-btn{margin-top:10px;background:#1D9E75;color:#fff;border:none;border-radius:8px;padding:10px 36px;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:0.1em;box-shadow:0 0 20px rgba(29,158,117,0.5)}
-.build-start-btn:active{background:#159060}
-.build-note{font-size:9px;color:#334433;margin-top:4px;text-align:center}
 /* buff-toast 小型HUD条 */
 .buff-toast{position:fixed;top:108px;left:50%;transform:translateX(-50%);z-index:75;pointer-events:none;
   background:rgba(0,0,0,0.82);border-radius:4px;padding:3px 12px;
@@ -533,7 +518,6 @@ body:not(.battle) .bottom-bar{display:none}
 </div>
 <div class="danger-indicator" id="danger-indicator">
   <div class="di-item" id="di-plasma" style="color:#7aadff;border:1px solid #7aadff44">⚡ 九霄雷域</div>
-  <div class="di-item" id="di-spore" style="color:#7fff44;border:1px solid #7fff4444">🌸 蚀灵领域</div>
   <div class="di-item" id="di-hatch" style="color:#ff8800;border:1px solid #ff880044">💀 魔气侵蚀</div>
   <div class="di-item" id="di-mycel" style="color:#ff4422;border:1px solid #ff442244">🍄 领域反噬</div>
 </div>
@@ -569,7 +553,6 @@ body:not(.battle) .bottom-bar{display:none}
 <div class="buff-toast" id="buff-toast"></div>
 <!-- v16: HUD信息流（combo下方激活buff列表） -->
 <div id="hud-buff-stream"></div>
-<div class="build-overlay" id="build-overlay" style="display:none!important"></div>
 <div class="gacha-overlay" id="gacha-overlay">
   <div class="gacha-title">⚡ 天降法宝 · 择器而行 ⚡</div>
   <div class="gacha-sub">选择一件法宝装备，开启渡劫之路（法宝可留存，渡劫后查阅）</div>
@@ -808,7 +791,7 @@ body:not(.battle) .bottom-bar{display:none}
 <div class="dpad" id="dpad" style="display:none">
   <div id="du">▲</div><div id="dd">▼</div><div id="dl">◀</div><div id="dr">▶</div>
 </div>
-<script src="config.js?v=5"></script>
+<script src="config.js?v=6"></script>
 <script src="engine.js?v=3"></script>
 <script src="entities.js?v=3"></script>
 <script src="skills.js?v=3"></script>

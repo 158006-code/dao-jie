@@ -1,20 +1,7 @@
 // ══════════════════════════════════════════
-// 道劫：万法失控 — 技能/Build系统 (skills.js)
-// Build选择 · 法宝品质 · 升级面板 · Combo · 领域
+// 道劫：万法失控 — 技能系统 (skills.js)
+// 法宝品质 · 升级面板 · Combo · 领域
 // ══════════════════════════════════════════
-
-// ── Build系统 ──
-let selectedBuild='spore';
-function selectBuild(b){
-  selectedBuild=b;
-  document.querySelectorAll('.build-card').forEach((el,i)=>{
-    el.classList.toggle('selected',['spore','plasma','swarm','berserk'][i]===b);
-  });
-}
-function applyBuildBonus(G){
-  G.buildWeights={};
-  G.buildLockedPool=null;
-}
 
 // ── 法宝品质 ──
 function rollQuality(qmod=0){
@@ -117,7 +104,6 @@ function equipWeaponById(wid){
 // ── 开局流程 ──
 function finishGameStart(){
   G.paused=false;
-  applyBuildBonus(G);
   spawnBug(3);
   for(let i=0;i<3;i++)setTimeout(()=>{if(G&&!G.dead&&!G.won)spawnEnemy(G);},i*300);
   // 首次升级由击杀累积XP自然触发，不提前弹出
@@ -204,17 +190,13 @@ function initGame(){
     pendingStarFor:{},
     _bossAt:BOSS_AT,bossPhase:0,boss:null,bossMode:false,bossTriggered:Array(BOSS_AT.length).fill(false),
     spawnTimer:0,bugTimer:0,
-    swarmBonus:0,bugHpMult:1*_stageCfg.enemyHpMult,spawnMult:1,killSpawn:0,leechLv:0,dmgReduce:_baseDmgReduce,regenRate:0,eliteRate:0.1*_stageCfg.eliteRateMult,
+    bugHpMult:1*_stageCfg.enemyHpMult,killSpawn:0,leechLv:0,dmgReduce:_baseDmgReduce,regenRate:0,
     baseAtkMult:_baseAtk,baseSpdMult:_baseSpd,baseCdMult:_baseCd,baseDmgFlat:_baseDmgFlat,
     phase:0,_raf:null,
     buffs:{atk:1.2*_baseAtk,spd:1.15*_baseSpd},
     worldCorrupt:false,overmind:false,worldPulseActive:false,worldPulseTimer:0,worldPulseFlash:0,
     noDmgTimer:0,
     dangerZones:[],dangerCircles:[],
-    activeBuild:null,buildWeights:{},buildLockedPool:null,
-    mycelBetray:0,visionCorrupt:0,hatchTideTimer:0,
-    mycelWalls:[],uiCorrupt:0,
-    berserkerLv:0,deathSync:false,
     stillTimer:0,
     vaultEquip:pendingEquip||null,
     vaultEquip2:pendingEquip2||null,
@@ -473,12 +455,8 @@ function showUpgrade(){
       stackSource.push({evolveSlot:sl,evolveId:sl.id,sourceId:w.sourceWeapon,sourceW:WEAPONS[w.sourceWeapon]});
     });
   }
-  const lockedPool=G.buildLockedPool||null;
-  const newPool=Object.keys(WEAPONS).filter(k=>{const w=WEAPONS[k];if(w.type==='evolve'||w.type==='evolvePassive')return false;if(equippedIds.includes(k))return false;if(lockedPool&&!lockedPool.includes(k))return false;return true;});
-  const buildPriorityPool=newPool.sort((a,b)=>{
-    const wa=G.buildWeights[a]||1,wb=G.buildWeights[b]||1;
-    return (Math.random()<wb/(wa+wb)?1:-1);
-  });
+  const newPool=Object.keys(WEAPONS).filter(k=>{const w=WEAPONS[k];if(w.type==='evolve'||w.type==='evolvePassive')return false;if(equippedIds.includes(k))return false;return true;});
+  const buildPriorityPool=[...newPool].sort(()=>Math.random()-0.5);
   let choices=[];
   if(pendingMerge.length>0)choices.push({kind:'merge',m:pendingMerge[0]});
   if(choices.length<3&&evolveable.length>0&&Math.random()<0.75*(G.evolveRateBonus||1))choices.push({kind:'evolve',slot:evolveable[Math.floor(Math.random()*evolveable.length)]});

@@ -351,7 +351,6 @@ function _update(){
       if(Math.random()<(G.killSpawn||0))spawnBug(1,e.x,e.y);
       if(G.leechLv>=1){G.mhp=Math.min(G.mmaxhp,G.mhp+0.8*G.leechLv);triggerTreasureFlash();}
       if(G.leechRate>0){G.mhp=Math.min(G.mmaxhp,G.mhp+e.maxhp*G.leechRate);triggerTreasureFlash();}
-      if(G.deathSync&&G.mhp/G.mmaxhp<0.3)G.mhp=Math.min(G.mmaxhp,G.mhp+3);
     }
   });
   for(let i=de.length-1;i>=0;i--)G.enemies.splice(de[i],1);
@@ -705,17 +704,6 @@ function draw(){
     ctx.fillStyle='rgba(220,0,130,0.05)';ctx.fillRect(0,0,W,H);
     ctx.save();ctx.globalAlpha=0.12+Math.sin(G.elapsed*0.05)*0.06;ctx.strokeStyle='#ff00aa';ctx.lineWidth=8;ctx.strokeRect(4,4,W-8,H-8);ctx.restore();
   }
-  if((G.uiCorrupt||0)>0){
-    const uc=G.uiCorrupt;
-    ctx.save();ctx.globalAlpha=uc*0.5;
-    for(let i=0;i<3;i++){
-      ctx.strokeStyle=`rgba(${Math.floor(100+Math.random()*100)},0,${Math.floor(100+Math.random()*80)},0.7)`;
-      ctx.lineWidth=3+i*2;
-      ctx.strokeRect(i*3+Math.sin(G.elapsed*0.05+i)*3,i*3+Math.cos(G.elapsed*0.04+i)*3,W-i*6,H-i*6);
-    }
-    ctx.restore();
-  }
-
   if(G.eliteFlash>0){ctx.fillStyle=`rgba(0,0,0,${G.eliteFlash/35*0.28})`;ctx.fillRect(0,0,W,H);G.eliteFlash--;}
 
   // 毒液水洼
@@ -2279,9 +2267,7 @@ function draw(){
   // 环绕武器
   G.slots.forEach(sl=>{
     if(!sl.id)return;
-    if(sl.state.orbs){const isThunder=sl.id==='thunder_ring'||sl.id==='storm_cage';const isIce=sl.id==='blizzard_field';sl.state.orbs.forEach(o=>{const col=isIce?'#88CCFF':isThunder?'#4488FF':sl.stars>=2?'#FF00FF':sl.stars>=1?'#FF8800':sl.id==='orbit_storm'?'#00FFB3':'#5DCAA5';ctx.fillStyle=col;ctx.shadowBlur=isThunder||isIce?8:0;ctx.shadowColor=isIce?'#88CCFF':isThunder?'#4488FF':'';ctx.globalAlpha=0.9;ctx.beginPath();ctx.arc(o.x,o.y,sl.stars>=1?7:5,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;ctx.shadowBlur=0;});}
-    if(sl.id==='blade_vortex'&&sl.state.blades){const r=sl.state.bladeR||50;const blades=sl.state.blades;ctx.save();ctx.globalAlpha=0.7;ctx.strokeStyle='#cc88ff';ctx.lineWidth=1.5;ctx.shadowBlur=5;ctx.shadowColor='#cc88ff';ctx.beginPath();ctx.arc(G.mx,G.my,r,0,Math.PI*2);ctx.stroke();ctx.restore();blades.forEach(b=>{ctx.save();ctx.globalAlpha=0.85;ctx.fillStyle='#cc88ff';ctx.shadowBlur=4;ctx.shadowColor='#cc88ff';ctx.beginPath();ctx.arc(b.x,b.y,3,0,Math.PI*2);ctx.fill();ctx.restore();});}
-    if(sl.id==='storm_cage'&&sl.state.cageRadius){const cr=sl.state.cageRadius;ctx.save();ctx.globalAlpha=0.3+0.1*Math.sin(G.elapsed*0.1);ctx.strokeStyle='#ffaa00';ctx.lineWidth=2.5;ctx.shadowBlur=12;ctx.shadowColor='#ffaa00';ctx.setLineDash([8,4]);ctx.beginPath();ctx.arc(G.mx,G.my,cr,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);ctx.restore();}
+    if(sl.state.orbs){const isIce=sl.id==='blizzard_field';sl.state.orbs.forEach(o=>{const col=isIce?'#88CCFF':sl.stars>=2?'#FF00FF':sl.stars>=1?'#FF8800':sl.id==='orbit_storm'?'#00FFB3':'#5DCAA5';ctx.fillStyle=col;ctx.shadowBlur=isIce?8:0;ctx.shadowColor=isIce?'#88CCFF':'';ctx.globalAlpha=0.9;ctx.beginPath();ctx.arc(o.x,o.y,sl.stars>=1?7:5,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;ctx.shadowBlur=0;});}
     if(sl.id==='void_ray'&&sl.state.rayLen){const ang=sl.state.rayAng||0;const len=sl.state.rayLen||300;const w=sl.state.rayW||12;ctx.save();ctx.globalAlpha=0.35+0.08*Math.sin(G.elapsed*0.15);ctx.strokeStyle='#8844cc';ctx.lineWidth=w*0.5;ctx.shadowBlur=20;ctx.shadowColor='#8844cc';ctx.beginPath();ctx.moveTo(G.mx,G.my);ctx.lineTo(G.mx+Math.cos(ang)*len,G.my+Math.sin(ang)*len);ctx.stroke();ctx.globalAlpha=0.15;ctx.lineWidth=w;ctx.stroke();ctx.restore();}
     if(sl.state.towers){
       const towers=sl.state.towers;
@@ -2343,10 +2329,6 @@ function draw(){
     const pulse=Math.sin(b.age*0.13)*0.1;ctx.save();
     if(b.elite){ctx.shadowBlur=12;ctx.shadowColor='#EF9F27';}
     let bugColor='#4DBFA0';
-    if(G.activeBuild==='swarm'){
-      if(b.role==='guard')bugColor='#44AAFF';
-      else if(b.role==='bomber')bugColor='#FF8844';
-    }
     if(b.elite)bugColor='#EF9F27';
     ctx.fillStyle=bugColor;ctx.globalAlpha=0.9+pulse;
     ctx.beginPath();ctx.ellipse(b.x,b.y,5,3,Math.atan2(b.vy,b.vx),0,Math.PI*2);ctx.fill();
