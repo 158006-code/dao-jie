@@ -1,3 +1,4 @@
+# 通用排除
 *.py
 *.txt
 *.png
@@ -6,13 +7,13 @@
 *.msi
 *.exe
 *.zip
+
+# 工具配置
 .claude/
 .vscode/
+
+# 临时/输出
+outputs/
+
+# 无关项目
 bioswarm_*.html
-DaoJie_v1.html
-DaoJie_v2.html
-DaoJie_v3.html
-DaoJie_v4.html
-DaoJie_DevPlan.html
-daojie_redesign_architecture.svg
-daojie_v4_dev_assessment.html
